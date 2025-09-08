@@ -1,4 +1,4 @@
-import pino from 'pino';
+import { pino } from 'pino';
 import { getLoggingConfig } from './config/config.js';
 
 /**
@@ -13,7 +13,7 @@ class Logger {
     this.logger = pino({
       level: this.config.level,
       formatters: {
-        level: (label) => ({ level: label })
+        level: (label: string) => ({ level: label })
       },
       serializers: {
         error: pino.stdSerializers.err,

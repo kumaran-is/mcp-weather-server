@@ -3248,6 +3248,7 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+package-lock.json
 # mkdocs documentation
 /site
 

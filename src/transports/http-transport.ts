@@ -252,7 +252,7 @@ export class StreamableHTTPTransport {
   /**
    * Send message to client via SSE
    */
-  async send(message: unknown, options?: { sessionId?: string }): Promise<void> {
+  async send(message: unknown, options?: { sessionId?: string; [key: string]: unknown }): Promise<void> {
     // Extract sessionId from options or use default
     const sessionId = options?.sessionId || '';
     const client = this.clients.get(sessionId);
