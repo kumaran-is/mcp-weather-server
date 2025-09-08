@@ -28,8 +28,8 @@ export class ConfigManager {
       api: this.loadAPIConfig(),
       logging: this.loadLoggingConfig(),
       security: {
-        allowedOrigins: this.parseAllowedOrigins()
-      }
+        allowedOrigins: this.parseAllowedOrigins(),
+      },
     };
   }
 
@@ -37,7 +37,7 @@ export class ConfigManager {
     const transportType = (process.env.MCP_TRANSPORT || 'stdio') as 'stdio' | 'http' | 'websocket';
 
     const baseConfig: TransportConfig = {
-      type: transportType
+      type: transportType,
     };
 
     if (transportType === 'http') {
@@ -45,14 +45,14 @@ export class ConfigManager {
         port: parseInt(process.env.MCP_HTTP_PORT || '8080'),
         allowedOrigins: this.parseAllowedOrigins(),
         sessionTimeout: parseInt(process.env.SESSION_TIMEOUT || '3600000'), // 1 hour
-        maxSessions: parseInt(process.env.MAX_SESSIONS || '100')
+        maxSessions: parseInt(process.env.MAX_SESSIONS || '100'),
       };
     }
 
     if (transportType === 'websocket') {
       baseConfig.websocket = {
         port: parseInt(process.env.MCP_WS_PORT || '8081'),
-        secure: process.env.MCP_WS_SECURE === 'true'
+        secure: process.env.MCP_WS_SECURE === 'true',
       };
     }
 
@@ -65,7 +65,7 @@ export class ConfigManager {
       geocodingApiUrl: process.env.GEOCODING_API_URL || 'https://geocoding-api.open-meteo.com/v1',
       timeout: parseInt(process.env.API_TIMEOUT || '5000'),
       retries: parseInt(process.env.API_RETRIES || '3'),
-      retryDelay: parseInt(process.env.API_RETRY_DELAY || '1000')
+      retryDelay: parseInt(process.env.API_RETRY_DELAY || '1000'),
     };
   }
 
@@ -76,7 +76,7 @@ export class ConfigManager {
     return {
       level,
       pretty: this.config?.env !== 'production',
-      redact: ['password', 'token', 'key', 'secret']
+      redact: ['password', 'token', 'key', 'secret'],
     };
   }
 

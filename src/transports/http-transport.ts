@@ -15,7 +15,7 @@ export class StreamableHTTPTransport {
   private weatherServer: WeatherMCPServer;
   private httpServer: import('http').Server;
   private clients: Map<string, ClientConnection> = new Map();
-  private messageQueues: Map<string, any[]> = new Map();
+  private messageQueues: Map<string, unknown[]> = new Map();
   private config = getConfig();
   private transportConfig = getTransportConfig();
 
@@ -53,7 +53,7 @@ export class StreamableHTTPTransport {
       if (!this.isOriginAllowed(req)) {
         logger.logSecurityEvent('Invalid origin rejected', {
           origin: req.headers.origin,
-          sessionId
+          sessionId,
         });
         this.sendErrorResponse(res, 403, 'Invalid Origin');
         return;
@@ -63,41 +63,41 @@ export class StreamableHTTPTransport {
       if (protocolVersion !== '2025-06-18') {
         logger.logSecurityEvent('Unsupported protocol version', {
           protocolVersion,
-          sessionId
+          sessionId,
         });
         this.sendErrorResponse(res, 400, 'Unsupported protocol version', {
           supported: ['2025-06-18'],
-          requested: protocolVersion
+          requested: protocolVersion,
         });
         return;
       }
 
       // Handle different HTTP methods
       switch (req.method) {
-        case 'POST':
-          await this.handlePOST(req, res, sessionId, protocolVersion);
-          break;
-        case 'GET':
-          await this.handleGET(req, res, sessionId, lastEventId);
-          break;
-        case 'DELETE':
-          await this.handleDELETE(req, res, sessionId);
-          break;
-        default:
-          this.sendErrorResponse(res, 405, 'Method Not Allowed');
+      case 'POST':
+        await this.handlePOST(req, res, sessionId, protocolVersion);
+        break;
+      case 'GET':
+        await this.handleGET(req, res, sessionId, lastEventId);
+        break;
+      case 'DELETE':
+        await this.handleDELETE(req, res, sessionId);
+        break;
+      default:
+        this.sendErrorResponse(res, 405, 'Method Not Allowed');
       }
 
       logger.logPerformance('handleRequest', startTime, {
         method: req.method,
         sessionId,
-        statusCode: res.statusCode
+        statusCode: res.statusCode,
       });
 
     } catch (error) {
       logger.logError(error as Error, {
         method: req.method,
         sessionId,
-        operation: 'handleRequest'
+        operation: 'handleRequest',
       });
       this.sendErrorResponse(res, 500, 'Internal Server Error');
     }
@@ -110,7 +110,7 @@ export class StreamableHTTPTransport {
     req: IncomingMessage,
     res: ServerResponse,
     sessionId: string,
-    protocolVersion: string
+    protocolVersion: string,
   ) {
     let body = '';
 
@@ -135,14 +135,14 @@ export class StreamableHTTPTransport {
           const response = await this.processMCPMessage(message);
 
           // Check if this is a JSON-RPC response (not SSE)
-          if (response && typeof response === 'object' && response.jsonrpc) {
+          if (response && typeof response === 'object' && 'jsonrpc' in response) {
             // Send as regular JSON response
             res.writeHead(200, {
               'Content-Type': 'application/json',
               'Mcp-Session-Id': sessionId,
               'MCP-Protocol-Version': protocolVersion,
               'Access-Control-Allow-Origin': this.getAllowedOrigins(),
-              'Access-Control-Allow-Headers': 'MCP-Protocol-Version, Mcp-Session-Id, Content-Type'
+              'Access-Control-Allow-Headers': 'MCP-Protocol-Version, Mcp-Session-Id, Content-Type',
             });
             res.end(JSON.stringify(response));
           } else {
@@ -158,7 +158,7 @@ export class StreamableHTTPTransport {
             'Mcp-Session-Id': sessionId,
             'MCP-Protocol-Version': protocolVersion,
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': this.getAllowedOrigins()
+            'Access-Control-Allow-Origin': this.getAllowedOrigins(),
           });
           res.end(JSON.stringify({ status: 'accepted' }));
         }
@@ -177,13 +177,13 @@ export class StreamableHTTPTransport {
     req: IncomingMessage,
     res: ServerResponse,
     sessionId: string,
-    lastEventId?: string
+    lastEventId?: string,
   ) {
     // Validate Accept header
     if (!req.headers.accept?.includes('text/event-stream')) {
       logger.logSecurityEvent('Invalid Accept header', {
         accept: req.headers.accept,
-        sessionId
+        sessionId,
       });
       this.sendErrorResponse(res, 406, 'Accept: text/event-stream required');
       return;
@@ -198,7 +198,7 @@ export class StreamableHTTPTransport {
       'MCP-Protocol-Version': '2025-06-18',
       'Access-Control-Allow-Origin': this.getAllowedOrigins(),
       'Access-Control-Allow-Headers': 'MCP-Protocol-Version, Mcp-Session-Id, Last-Event-Id, Content-Type',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS'
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     });
 
     // Store client connection
@@ -206,7 +206,7 @@ export class StreamableHTTPTransport {
       res,
       sessionId,
       lastEventId,
-      connectedAt: Date.now()
+      connectedAt: Date.now(),
     });
 
     logger.logTransportEvent('SSE stream opened', { sessionId });
@@ -242,7 +242,7 @@ export class StreamableHTTPTransport {
 
     res.writeHead(204, {
       'Mcp-Session-Id': sessionId,
-      'MCP-Protocol-Version': '2025-06-18'
+      'MCP-Protocol-Version': '2025-06-18',
     });
     res.end();
 
@@ -252,7 +252,7 @@ export class StreamableHTTPTransport {
   /**
    * Send message to client via SSE
    */
-  async send(message: any, options?: any): Promise<void> {
+  async send(message: unknown, options?: { sessionId?: string }): Promise<void> {
     // Extract sessionId from options or use default
     const sessionId = options?.sessionId || '';
     const client = this.clients.get(sessionId);
@@ -264,7 +264,10 @@ export class StreamableHTTPTransport {
       if (!this.messageQueues.has(sessionId)) {
         this.messageQueues.set(sessionId, []);
       }
-      this.messageQueues.get(sessionId)!.push(message);
+      const queue = this.messageQueues.get(sessionId);
+      if (queue) {
+        queue.push(message);
+      }
       return;
     }
 
@@ -278,7 +281,7 @@ export class StreamableHTTPTransport {
    * Receive method (required by Transport interface)
    * Not used in HTTP transport as messages come via POST
    */
-  async *receive(): AsyncGenerator<any> {
+  async *receive(): AsyncGenerator<unknown> {
     // HTTP transport doesn't use this method
     // Messages are received via POST requests
     yield {};
@@ -334,14 +337,14 @@ export class StreamableHTTPTransport {
       'Connection': 'keep-alive',
       'Mcp-Session-Id': sessionId,
       'MCP-Protocol-Version': protocolVersion,
-      'Access-Control-Allow-Origin': this.getAllowedOrigins()
+      'Access-Control-Allow-Origin': this.getAllowedOrigins(),
     });
   }
 
   /**
    * Send SSE response
    */
-  private sendSSEResponse(res: ServerResponse, event: string, data: any, eventId: string) {
+  private sendSSEResponse(res: ServerResponse, event: string, data: unknown, eventId: string) {
     try {
       res.write(`id: ${eventId}\n`);
       res.write(`event: ${event}\n`);
@@ -358,15 +361,15 @@ export class StreamableHTTPTransport {
     res: ServerResponse,
     statusCode: number,
     message: string,
-    details?: any
+    details?: Record<string, unknown>,
   ) {
     res.writeHead(statusCode, {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': this.getAllowedOrigins()
+      'Access-Control-Allow-Origin': this.getAllowedOrigins(),
     });
     res.end(JSON.stringify({
       error: message,
-      ...details
+      ...details,
     }));
   }
 
@@ -378,7 +381,7 @@ export class StreamableHTTPTransport {
     code: number,
     message: string,
     sessionId: string,
-    details?: any
+    details?: Record<string, unknown>,
   ) {
     const errorResponse = {
       jsonrpc: '2.0',
@@ -386,14 +389,14 @@ export class StreamableHTTPTransport {
       error: {
         code,
         message,
-        data: details
-      }
+        data: details,
+      },
     };
 
     res.writeHead(400, {
       'Content-Type': 'application/json',
       'Mcp-Session-Id': sessionId,
-      'MCP-Protocol-Version': '2025-06-18'
+      'MCP-Protocol-Version': '2025-06-18',
     });
     res.end(JSON.stringify(errorResponse));
   }
@@ -401,21 +404,24 @@ export class StreamableHTTPTransport {
   /**
    * Process MCP message using the weather server's processMessage method
    */
-  private async processMCPMessage(message: any): Promise<any> {
+  private async processMCPMessage(message: Record<string, unknown>): Promise<unknown> {
     try {
       // Use the weather server's processMessage method
       return await this.weatherServer.processMessage(message);
     } catch (error) {
-      logger.logError(error as Error, { method: message.method, id: message.id });
+      logger.logError(error as Error, {
+        method: (message as { method?: string }).method,
+        id: (message as { id?: string | number }).id,
+      });
 
       return {
         jsonrpc: '2.0',
-        id: message.id,
+        id: (message as { id?: string | number }).id,
         error: {
           code: -32603,
           message: 'Internal error',
-          data: { details: (error as Error).message }
-        }
+          data: { details: (error as Error).message },
+        },
       };
     }
   }
@@ -436,7 +442,7 @@ export class StreamableHTTPTransport {
     return {
       activeClients: this.clients.size,
       queuedMessages: Array.from(this.messageQueues.values()).reduce((sum, queue) => sum + queue.length, 0),
-      port: this.transportConfig.http?.port || 8080
+      port: this.transportConfig.http?.port || 8080,
     };
   }
 }
