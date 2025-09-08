@@ -1,9 +1,16 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  extensionsToTreatAsEsm: ['.ts'],
+  transform: {
+    '^.+\\.ts$': ['ts-jest', { useESM: true }]
+  },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(node-fetch|pino|pino-pretty|@modelcontextprotocol)/)'
+  ],
   testPathIgnorePatterns: ['/dist/', '/node_modules/'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
   collectCoverageFrom: [

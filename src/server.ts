@@ -34,7 +34,7 @@ async function main() {
     if (config.transport.type === 'http') {
       logger.info({ port: config.transport.http?.port }, 'Using HTTP transport');
 
-      const httpTransport = new StreamableHTTPTransport(server);
+      const httpTransport = new StreamableHTTPTransport(server, weatherServer);
       await server.connect(httpTransport);
 
       logger.info('MCP Weather Server started successfully with HTTP transport');

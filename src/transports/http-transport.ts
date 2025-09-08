@@ -1,6 +1,7 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { v4 as uuidv4 } from 'uuid';
 import { Server } from '@modelcontextprotocol/sdk/server';
+import { WeatherMCPServer } from '../mcp-server.js';
 import { getConfig, getTransportConfig } from '../config/config.js';
 import { logger } from '../logger.js';
 
@@ -11,14 +12,16 @@ import { logger } from '../logger.js';
  */
 export class StreamableHTTPTransport {
   private server: Server;
+  private weatherServer: WeatherMCPServer;
   private httpServer: import('http').Server;
   private clients: Map<string, ClientConnection> = new Map();
   private messageQueues: Map<string, any[]> = new Map();
   private config = getConfig();
   private transportConfig = getTransportConfig();
 
-  constructor(mcpServer: Server) {
+  constructor(mcpServer: Server, weatherServer: WeatherMCPServer) {
     this.server = mcpServer;
+    this.weatherServer = weatherServer;
     this.httpServer = createServer(this.handleRequest.bind(this));
 
     const port = this.transportConfig.http?.port || 8080;
@@ -129,17 +132,33 @@ export class StreamableHTTPTransport {
         // Handle the message with the MCP server
         if (message.id) {
           // Request with ID - expect response
-          this.setupSSEForResponse(res, sessionId, protocolVersion);
           const response = await this.processMCPMessage(message);
-          this.sendSSEResponse(res, 'response', response, sessionId);
-          res.end();
+
+          // Check if this is a JSON-RPC response (not SSE)
+          if (response && typeof response === 'object' && response.jsonrpc) {
+            // Send as regular JSON response
+            res.writeHead(200, {
+              'Content-Type': 'application/json',
+              'Mcp-Session-Id': sessionId,
+              'MCP-Protocol-Version': protocolVersion,
+              'Access-Control-Allow-Origin': this.getAllowedOrigins(),
+              'Access-Control-Allow-Headers': 'MCP-Protocol-Version, Mcp-Session-Id, Content-Type'
+            });
+            res.end(JSON.stringify(response));
+          } else {
+            // Send as SSE for streaming responses
+            this.setupSSEForResponse(res, sessionId, protocolVersion);
+            this.sendSSEResponse(res, 'response', response, sessionId);
+            res.end();
+          }
         } else {
           // Notification - no response expected
           await this.processMCPMessage(message);
           res.writeHead(202, {
             'Mcp-Session-Id': sessionId,
             'MCP-Protocol-Version': protocolVersion,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': this.getAllowedOrigins()
           });
           res.end(JSON.stringify({ status: 'accepted' }));
         }
@@ -380,30 +399,12 @@ export class StreamableHTTPTransport {
   }
 
   /**
-   * Process MCP message using the server's request handlers
+   * Process MCP message using the weather server's processMessage method
    */
   private async processMCPMessage(message: any): Promise<any> {
     try {
-      // Use the server's processRequest method if available
-      if (typeof (this.server as any).processRequest === 'function') {
-        return await (this.server as any).processRequest(message);
-      }
-
-      // Fallback: try to find and call the appropriate handler
-      const handler = (this.server as any)[`handle${message.method.charAt(0).toUpperCase()}${message.method.slice(1)}`];
-      if (typeof handler === 'function') {
-        return await handler.call(this.server, message.params || {});
-      }
-
-      // If no handler found, return a method not found error
-      return {
-        jsonrpc: '2.0',
-        id: message.id,
-        error: {
-          code: -32601,
-          message: `Method '${message.method}' not found`
-        }
-      };
+      // Use the weather server's processMessage method
+      return await this.weatherServer.processMessage(message);
     } catch (error) {
       logger.logError(error as Error, { method: message.method, id: message.id });
 

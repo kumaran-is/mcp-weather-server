@@ -32,8 +32,6 @@ export class WeatherMCPServer {
       }
     );
 
-    this.setupLifecycle();
-    this.setupTools();
     this.setupErrorHandling();
 
     logger.info({
@@ -44,39 +42,99 @@ export class WeatherMCPServer {
   }
 
   /**
-   * Set up MCP lifecycle handlers
+   * Process MCP messages directly
+   * This method handles all MCP protocol messages
    */
-  private setupLifecycle(): void {
-    // Initialize request handler
-    this.server.setRequestHandler('initialize', async (request) => {
-      const { protocolVersion, capabilities, clientInfo } = request.params;
+  async processMessage(message: any): Promise<any> {
+    const startTime = Date.now();
 
-      logger.logMCPLifecycle('initialize', {
-        clientInfo,
-        protocolVersion,
-        capabilities
+    try {
+      logger.debug({ method: message.method, id: message.id }, 'Processing MCP message');
+
+      switch (message.method) {
+        case 'initialize':
+          return await this.handleInitialize(message);
+
+        case 'notifications/initialized':
+          return await this.handleInitialized(message);
+
+        case 'shutdown':
+          return await this.handleShutdown(message);
+
+        case 'tools/list':
+          return await this.handleToolsList(message);
+
+        case 'tools/call':
+          return await this.handleToolsCall(message);
+
+        default:
+          logger.logMCPError(-32601, `Method '${message.method}' not found`);
+          return {
+            jsonrpc: '2.0',
+            id: message.id,
+            error: {
+              code: -32601,
+              message: `Method '${message.method}' not found`
+            }
+          };
+      }
+    } catch (error) {
+      logger.logError(error as Error, {
+        method: message.method,
+        id: message.id,
+        duration: Date.now() - startTime
       });
 
-      // Validate protocol version
-      if (protocolVersion !== '2025-06-18') {
-        logger.logMCPError(-32602, 'Unsupported protocol version', {
-          requested: protocolVersion,
-          supported: ['2025-06-18']
-        });
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: {
+          code: -32603,
+          message: 'Internal error',
+          data: { details: (error as Error).message }
+        }
+      };
+    }
+  }
 
-        throw new Error('Unsupported protocol version', {
-          cause: {
-            code: -32602,
-            data: {
-              supported: ['2025-06-18'],
-              requested: protocolVersion
-            }
+  /**
+   * Handle initialize request
+   */
+  private async handleInitialize(message: any): Promise<any> {
+    const { protocolVersion, capabilities, clientInfo } = message.params || {};
+
+    logger.logMCPLifecycle('initialize', {
+      clientInfo,
+      protocolVersion,
+      capabilities
+    });
+
+    // Validate protocol version
+    if (protocolVersion !== '2025-06-18') {
+      logger.logMCPError(-32602, 'Unsupported protocol version', {
+        requested: protocolVersion,
+        supported: ['2025-06-18']
+      });
+
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: {
+          code: -32602,
+          message: 'Unsupported protocol version',
+          data: {
+            supported: ['2025-06-18'],
+            requested: protocolVersion
           }
-        });
-      }
+        }
+      };
+    }
 
-      // Return server capabilities and information
-      const response = {
+    // Return server capabilities and information
+    const response = {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: {
         protocolVersion: '2025-06-18',
         capabilities: {
           tools: { listChanged: true },
@@ -88,163 +146,182 @@ export class WeatherMCPServer {
           version: '1.0.0',
           description: 'MCP server providing weather information using Open-Meteo API'
         }
-      };
-
-      logger.logMCPLifecycle('initialize_response', {
-        protocolVersion: response.protocolVersion,
-        capabilities: response.capabilities
-      });
-
-      return response;
-    });
-
-    // Initialized notification handler
-    this.server.setRequestHandler('notifications/initialized', async () => {
-      logger.logMCPLifecycle('initialized_notification');
-      return {};
-    });
-
-    // Shutdown handler (if supported by SDK)
-    if (typeof (this.server as any).setRequestHandler === 'function') {
-      try {
-        (this.server as any).setRequestHandler('shutdown', async () => {
-          logger.logMCPLifecycle('shutdown');
-          await this.gracefulShutdown();
-          return {};
-        });
-      } catch (error) {
-        // Shutdown handler might not be supported in this SDK version
-        logger.debug('Shutdown handler not supported in this SDK version');
       }
-    }
+    };
+
+    logger.logMCPLifecycle('initialize_response', {
+      protocolVersion: response.result.protocolVersion,
+      capabilities: response.result.capabilities
+    });
+
+    return response;
   }
 
   /**
-   * Set up tool handlers
+   * Handle initialized notification
    */
-  private setupTools(): void {
-    // Tools list handler
-    this.server.setRequestHandler('tools/list', async () => {
-      logger.debug('Listing available tools');
+  private async handleInitialized(message: any): Promise<any> {
+    logger.logMCPLifecycle('initialized_notification');
+    // Notifications don't require a response
+    return null;
+  }
 
-      const tools: MCPTool[] = [
-        {
-          name: 'get_current_weather',
-          description: 'Get current weather for a city using Open-Meteo API',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              city: {
-                type: 'string',
-                description: 'City name (e.g., "London", "New York", "Tokyo")'
-              }
+  /**
+   * Handle shutdown request
+   */
+  private async handleShutdown(message: any): Promise<any> {
+    logger.logMCPLifecycle('shutdown');
+    await this.gracefulShutdown();
+
+    return {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: {}
+    };
+  }
+
+  /**
+   * Handle tools/list request
+   */
+  private async handleToolsList(message: any): Promise<any> {
+    logger.debug('Listing available tools');
+
+    const tools: MCPTool[] = [
+      {
+        name: 'get_current_weather',
+        description: 'Get current weather for a city using Open-Meteo API',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            city: {
+              type: 'string',
+              description: 'City name (e.g., "London", "New York", "Tokyo")'
+            }
+          },
+          required: ['city']
+        }
+      },
+      {
+        name: 'get_weather_forecast',
+        description: 'Get weather forecast for a city (1-7 days)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            city: {
+              type: 'string',
+              description: 'City name'
             },
-            required: ['city']
-          }
-        },
-        {
-          name: 'get_weather_forecast',
-          description: 'Get weather forecast for a city (1-7 days)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              city: {
-                type: 'string',
-                description: 'City name'
-              },
-              days: {
-                type: 'number',
-                description: 'Number of days for forecast (1-7)',
-                minimum: 1,
-                maximum: 7,
-                default: 5
-              }
-            },
-            required: ['city']
-          }
-        },
-        {
-          name: 'retrieve_weather_context',
-          description: 'Retrieve weather context for AI agent queries',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              query: {
-                type: 'string',
-                description: 'Query containing city reference (e.g., "weather in London for travel")'
-              }
-            },
-            required: ['query']
-          }
+            days: {
+              type: 'number',
+              description: 'Number of days for forecast (1-7)',
+              minimum: 1,
+              maximum: 7,
+              default: 5
+            }
+          },
+          required: ['city']
         }
-      ];
-
-      logger.debug({ toolCount: tools.length }, 'Tools listed successfully');
-
-      return { tools };
-    });
-
-    // Tools call handler
-    this.server.setRequestHandler('tools/call', async (request) => {
-      const { name, arguments: args } = request.params;
-      const startTime = Date.now();
-
-      logger.logToolCall(name, args);
-
-      try {
-        let result: any;
-
-        switch (name) {
-          case 'get_current_weather':
-            result = await this.handleGetCurrentWeather(args);
-            break;
-
-          case 'get_weather_forecast':
-            result = await this.handleGetWeatherForecast(args);
-            break;
-
-          case 'retrieve_weather_context':
-            result = await this.handleRetrieveWeatherContext(args);
-            break;
-
-          default:
-            logger.logMCPError(-32601, `Unknown tool: ${name}`);
-            throw new Error(`Unknown tool: ${name}`, {
-              cause: { code: -32601 }
-            });
+      },
+      {
+        name: 'retrieve_weather_context',
+        description: 'Retrieve weather context for AI agent queries',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Query containing city reference (e.g., "weather in London for travel")'
+            }
+          },
+          required: ['query']
         }
-
-        logger.logPerformance(`tool_${name}`, startTime, {
-          success: true,
-          args
-        });
-
-        return result;
-
-      } catch (error) {
-        logger.logError(error as Error, {
-          tool: name,
-          args,
-          duration: Date.now() - startTime
-        });
-
-        // Re-throw with appropriate MCP error codes
-        const err = error as Error;
-        if (err.message.includes('Invalid city parameter')) {
-          throw new Error(err.message, { cause: { code: -32602 } });
-        }
-        if (err.message.includes('City not found')) {
-          throw new Error(err.message, { cause: { code: -32602 } });
-        }
-        if (err.message.includes('Days must be between')) {
-          throw new Error(err.message, { cause: { code: -32602 } });
-        }
-
-        throw new Error(`Tool execution failed: ${err.message}`, {
-          cause: { code: -32603 }
-        });
       }
-    });
+    ];
+
+    logger.debug({ toolCount: tools.length }, 'Tools listed successfully');
+
+    return {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: { tools }
+    };
+  }
+
+  /**
+   * Handle tools/call request
+   */
+  private async handleToolsCall(message: any): Promise<any> {
+    const { name, arguments: args } = message.params || {};
+    const startTime = Date.now();
+
+    logger.logToolCall(name, args);
+
+    try {
+      let result: any;
+
+      switch (name) {
+        case 'get_current_weather':
+          result = await this.handleGetCurrentWeather(args);
+          break;
+
+        case 'get_weather_forecast':
+          result = await this.handleGetWeatherForecast(args);
+          break;
+
+        case 'retrieve_weather_context':
+          result = await this.handleRetrieveWeatherContext(args);
+          break;
+
+        default:
+          logger.logMCPError(-32601, `Unknown tool: ${name}`);
+          return {
+            jsonrpc: '2.0',
+            id: message.id,
+            error: {
+              code: -32601,
+              message: `Unknown tool: ${name}`
+            }
+          };
+      }
+
+      logger.logPerformance(`tool_${name}`, startTime, {
+        success: true,
+        args
+      });
+
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result
+      };
+
+    } catch (error) {
+      logger.logError(error as Error, {
+        tool: name,
+        args,
+        duration: Date.now() - startTime
+      });
+
+      // Return appropriate MCP error response
+      const err = error as Error;
+      let errorCode = -32603; // Internal error
+      let errorMessage = `Tool execution failed: ${err.message}`;
+
+      if (err.message.includes('Invalid city parameter') ||
+          err.message.includes('City not found') ||
+          err.message.includes('Days must be between')) {
+        errorCode = -32602; // Invalid params
+      }
+
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: {
+          code: errorCode,
+          message: errorMessage
+        }
+      };
+    }
   }
 
   /**
