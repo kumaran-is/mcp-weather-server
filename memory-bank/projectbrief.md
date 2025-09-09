@@ -50,7 +50,7 @@ Build a production-ready **Model Context Protocol (MCP)** server that provides c
 ### **Technical Success**
 - ✅ MCP specification 2025-06-18 compliance
 - ✅ TypeScript strict typing throughout
-- ✅ 80%+ test coverage with Jest
+- ✅ 80%+ test coverage with Vitest
 - ✅ Production-ready Docker containerization
 
 ### **Quality Success**
@@ -101,7 +101,7 @@ Build a production-ready **Model Context Protocol (MCP)** server that provides c
 - **Language**: TypeScript 5.8+
 - **Runtime**: Node.js 22.x
 - **Framework**: MCP SDK
-- **Testing**: Jest with 80%+ coverage
+- **Testing**: Vitest with 80%+ coverage
 - **Container**: Docker with multi-stage builds
 
 ### **API Limitations**

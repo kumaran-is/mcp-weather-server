@@ -31,6 +31,17 @@ The Cline MCP settings file is located at:
 
 ### Step 2: Add Weather Server Configuration
 
+**Option 1: Copy from Example Files**
+
+We've provided example configuration files for both transport methods:
+
+- **`cline_mcp_settings.json`** - Stdio transport (recommended for development)
+- **`cline_mcp_settings_http.json`** - HTTP transport (recommended for production)
+
+Copy the contents of the appropriate file to your VS Code settings.
+
+**Option 2: Manual Configuration**
+
 Add the following configuration to your `cline_mcp_settings.json`:
 
 ```json

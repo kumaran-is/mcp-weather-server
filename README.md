@@ -75,7 +75,7 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 - **🚀 Production Ready**: Docker containerization, health checks, graceful shutdown
 - **🔄 Dual Transport**: Stdio for local AI assistants, HTTP for remote clients
 - **⚡ High Performance**: Connection pooling, request caching, timeout handling
-- **🧪 Well Tested**: 80%+ test coverage with Jest
+- **🧪 Well Tested**: 80%+ test coverage with Vitest
 
 ## 🛠️ Technology Stack
 
@@ -552,7 +552,7 @@ For complete Postman setup with all endpoints, request examples, and collection 
 
 **Complete Setup Guide**: See **[CLINE-INTEGRATION.md](CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
 
-**Quick Configuration**:
+**Quick Configuration** (Stdio Transport):
 ```json
 {
   "mcpServers": {
@@ -575,6 +575,8 @@ For complete Postman setup with all endpoints, request examples, and collection 
   }
 }
 ```
+
+**Example Configuration Files**: See `cline_mcp_settings.json` and `cline_mcp_settings_http.json` for complete examples.
 
 **Usage**: Ask Cline natural language questions like "What's the weather in London?" or "Should I bring an umbrella to Paris?"
 

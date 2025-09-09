@@ -34,7 +34,7 @@
 
 ### **Quality Assurance**
 - ✅ **TypeScript Strict Mode**: Zero type errors, full type safety
-- ✅ **Unit Testing**: 80%+ coverage with Vitest (migrated from Jest)
+- ✅ **Unit Testing**: 80%+ coverage with Vitest
 - ✅ **Integration Testing**: End-to-end MCP protocol validation
 - ✅ **Error Scenarios**: Comprehensive error handling coverage
 - ✅ **Performance Testing**: Sub-5-second response times
@@ -112,7 +112,7 @@
 - ✅ **Architecture Design**: Layered architecture with clear separation
 - ✅ **Dependency Management**: Optimized package.json with security
 - ✅ **Build System**: TypeScript compilation and development workflow
-- ✅ **Basic Testing**: Jest setup and initial test structure
+- ✅ **Basic Testing**: Vitest setup and initial test structure
 
 **Key Decisions**:
 - **Node.js 22.x**: Latest LTS for modern features and performance
@@ -143,7 +143,7 @@
 - ✅ **Security Implementation**: CORS, input validation, error handling
 
 **Key Decisions**:
-- **Jest Testing**: Comprehensive framework with mocking capabilities
+- **Vitest Testing**: Comprehensive framework with mocking capabilities
 - **Multi-stage Docker**: Optimized production images
 - **Health Checks**: Built-in monitoring for container orchestration
 - **Graceful Shutdown**: Proper resource cleanup and signal handling

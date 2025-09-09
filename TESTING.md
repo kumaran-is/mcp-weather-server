@@ -6,7 +6,7 @@ This guide provides comprehensive instructions for testing the MCP Weather Serve
 
 1. [Testing with HTTP Transport](#1-testing-with-http-transport)
 2. [Testing with Stdio Transport](#2-testing-with-stdio-transport)
-3. [Testing with Jest Unit Tests](#3-testing-with-jest-unit-tests)
+3. [Testing with Vitest Unit Tests](#3-testing-with-vitest-unit-tests)
 4. [Environment Variables for Testing](#4-environment-variables-for-testing)
 5. [Advanced Testing Scenarios](#5-advanced-testing-scenarios)
 6. [Debugging and Monitoring](#6-debugging-and-monitoring)

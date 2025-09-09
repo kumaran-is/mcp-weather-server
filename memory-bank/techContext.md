@@ -44,8 +44,8 @@
     "build": "tsc",
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
-    "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
   }
 }
 ```
@@ -124,7 +124,7 @@ mcp-weather-server/
 ├── docs/                          # Documentation
 ├── Dockerfile                     # Containerization
 ├── docker-compose.yml             # Orchestration
-├── jest.config.js                 # Testing configuration
+├── vitest.config.ts               # Testing configuration
 ├── tsconfig.json                  # TypeScript configuration
 ├── package.json                   # Dependencies & scripts
 ├── .env.example                   # Environment template
@@ -397,7 +397,7 @@ GET https://geocoding-api.open-meteo.com/v1/search?name=London&count=1&language=
 - **ESLint**: Code linting and style enforcement
 - **Prettier**: Code formatting
 - **TypeScript**: Type checking and compilation
-- **Jest**: Testing framework
+- **Vitest**: Testing framework
 
 ### **Version Control**
 - **Git**: Distributed version control

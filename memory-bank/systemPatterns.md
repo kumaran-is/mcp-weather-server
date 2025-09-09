@@ -432,7 +432,7 @@ export class GracefulDegradation {
 ```typescript
 describe('WeatherService', () => {
   let service: WeatherService;
-  let mockApi: jest.Mocked<WeatherAPI>;
+  let mockApi: vi.Mocked<WeatherAPI>;
 
   beforeEach(() => {
     mockApi = createMockWeatherAPI();
