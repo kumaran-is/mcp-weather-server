@@ -36,11 +36,11 @@ export class WeatherMCPServer {
     this.setupToolHandlers();
     this.setupErrorHandling();
 
-    logger.info({
+    logger.info('Weather MCP Server initialized', {
       name: 'weather-mcp-server',
       version: '1.0.0',
       protocolVersion: '2025-06-18'
-    }, 'Weather MCP Server initialized');
+    });
   }
 
   /**
@@ -51,7 +51,7 @@ export class WeatherMCPServer {
     const startTime = Date.now();
 
     try {
-      logger.debug({ method: message.method, id: message.id }, 'Processing MCP message');
+      logger.debug('Processing MCP message', { method: message.method, id: message.id });
 
       switch (message.method) {
         case 'initialize':
@@ -241,7 +241,7 @@ export class WeatherMCPServer {
       }
     ];
 
-    logger.debug({ toolCount: tools.length }, 'Tools listed successfully');
+    logger.debug('Tools listed successfully', { toolCount: tools.length });
 
     return {
       jsonrpc: '2.0',
@@ -477,7 +477,7 @@ export class WeatherMCPServer {
         }
       ];
 
-      logger.debug({ toolCount: tools.length }, 'Tools listed successfully');
+      logger.debug('Tools listed successfully', { toolCount: tools.length });
 
       return { tools };
     });

@@ -3,7 +3,7 @@
  * Simple console-based logger for initial implementation
  */
 
-// Simple logger interface
+// Comprehensive logger interface
 interface Logger {
   fatal: (message: string, ...args: any[]) => void;
   error: (message: string, ...args: any[]) => void;
@@ -11,19 +11,84 @@ interface Logger {
   info: (message: string, ...args: any[]) => void;
   debug: (message: string, ...args: any[]) => void;
   trace: (message: string, ...args: any[]) => void;
+
+  // Specialized logging methods
+  logMCPError: (code: number, message: string, context?: Record<string, any>) => void;
+  logError: (error: Error, context?: Record<string, any>) => void;
+  logMCPLifecycle: (event: string, context?: Record<string, any>) => void;
+  logToolCall: (name: string, args: any) => void;
+  logPerformance: (operation: string, startTime: number, metadata?: Record<string, any>) => void;
+  logTransportEvent: (event: string, context?: Record<string, any>) => void;
+  logSecurityEvent: (event: string, context?: Record<string, any>) => void;
+  logMCPRequest: (method: string, id: any, params: any) => void;
+  logAPIRequest: (url: string, method: string, context?: Record<string, any>) => void;
+  logAPIResponse: (url: string, statusCode: number, latency: number, context?: Record<string, any>) => void;
 }
 
-// Create simple console logger
+// Create comprehensive console logger
 const createLogger = (): Logger => {
   const timestamp = () => new Date().toISOString();
 
-  return {
+  const baseLogger = {
     fatal: (message: string, ...args: any[]) => console.error(`[${timestamp()}] FATAL:`, message, ...args),
     error: (message: string, ...args: any[]) => console.error(`[${timestamp()}] ERROR:`, message, ...args),
     warn: (message: string, ...args: any[]) => console.warn(`[${timestamp()}] WARN:`, message, ...args),
     info: (message: string, ...args: any[]) => console.log(`[${timestamp()}] INFO:`, message, ...args),
     debug: (message: string, ...args: any[]) => console.debug(`[${timestamp()}] DEBUG:`, message, ...args),
     trace: (message: string, ...args: any[]) => console.trace(`[${timestamp()}] TRACE:`, message, ...args),
+  };
+
+  return {
+    ...baseLogger,
+
+    // Specialized logging methods
+    logMCPError: (code: number, message: string, context?: Record<string, any>) => {
+      baseLogger.error('MCP Error', { code, message, ...context });
+    },
+
+    logError: (error: Error, context?: Record<string, any>) => {
+      baseLogger.error('Application Error', {
+        error: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        },
+        ...context,
+      });
+    },
+
+    logMCPLifecycle: (event: string, context?: Record<string, any>) => {
+      baseLogger.info('MCP Lifecycle', { event, ...context });
+    },
+
+    logToolCall: (name: string, args: any) => {
+      baseLogger.debug('Tool Call', { tool: name, args });
+    },
+
+    logPerformance: (operation: string, startTime: number, metadata?: Record<string, any>) => {
+      const duration = Date.now() - startTime;
+      baseLogger.info('Performance', { operation, duration, ...metadata });
+    },
+
+    logTransportEvent: (event: string, context?: Record<string, any>) => {
+      baseLogger.info('Transport Event', { event, ...context });
+    },
+
+    logSecurityEvent: (event: string, context?: Record<string, any>) => {
+      baseLogger.warn('Security Event', { event, ...context });
+    },
+
+    logMCPRequest: (method: string, id: any, params: any) => {
+      baseLogger.debug('MCP Request', { method, id, params });
+    },
+
+    logAPIRequest: (url: string, method: string, context?: Record<string, any>) => {
+      baseLogger.debug('API Request', { url, method, ...context });
+    },
+
+    logAPIResponse: (url: string, statusCode: number, latency: number, context?: Record<string, any>) => {
+      baseLogger.info('API Response', { url, statusCode, latency, ...context });
+    },
   };
 };
 

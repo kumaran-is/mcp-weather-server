@@ -19,14 +19,14 @@ export class WeatherService {
     try {
       // Input validation
       if (!city || typeof city !== 'string' || city.trim() === '') {
-        logger.error({ city }, 'Invalid city parameter for current weather');
+        logger.error('Invalid city parameter for current weather', { city });
         throw new Error('Invalid city parameter: city must be a non-empty string');
       }
 
       const trimmedCity = city.trim();
 
       // Geocode the city to get coordinates
-      logger.debug({ city: trimmedCity }, 'Geocoding city for current weather');
+      logger.debug('Geocoding city for current weather', { city: trimmedCity });
       const geoResult = await this.geocodeCity(trimmedCity);
 
       // Fetch current weather data using optimized pool
@@ -80,19 +80,19 @@ export class WeatherService {
     try {
       // Input validation
       if (!city || typeof city !== 'string' || city.trim() === '') {
-        logger.error({ city }, 'Invalid city parameter for forecast');
+        logger.error('Invalid city parameter for forecast', { city });
         throw new Error('Invalid city parameter: city must be a non-empty string');
       }
 
       if (days < 1 || days > 7) {
-        logger.error({ days }, 'Invalid days parameter for forecast');
+        logger.error('Invalid days parameter for forecast', { days });
         throw new Error('Days must be between 1 and 7');
       }
 
       const trimmedCity = city.trim();
 
       // Geocode the city to get coordinates
-      logger.debug({ city: trimmedCity, days }, 'Geocoding city for forecast');
+      logger.debug('Geocoding city for forecast', { city: trimmedCity, days });
       const geoResult = await this.geocodeCity(trimmedCity);
 
       // Fetch forecast data using optimized pool
@@ -179,11 +179,11 @@ export class WeatherService {
         region: result.admin1
       };
 
-      logger.debug({
+      logger.debug('Geocoding successful', {
         city,
         result: geoResult.name,
         coordinates: `${geoResult.latitude}, ${geoResult.longitude}`
-      }, 'Geocoding successful');
+      });
 
       return geoResult;
 
@@ -251,12 +251,12 @@ export class WeatherService {
           break;
         }
 
-        logger.warn({
+        logger.warn(`API request failed, retrying in ${delay}ms`, {
           attempt,
           maxRetries,
           delay,
           error: lastError.message
-        }, `API request failed, retrying in ${delay}ms`);
+        });
 
         await new Promise(resolve => setTimeout(resolve, delay));
         delay *= 2; // Exponential backoff

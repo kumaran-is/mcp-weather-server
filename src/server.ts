@@ -131,7 +131,7 @@ export async function main() {
         await fastify.listen({ port });
         logger.info(`MCP Weather Server started successfully with HTTP transport on port ${port}`);
       } catch (error) {
-        logger.fatal('HTTP server error', { error: error.message });
+        logger.fatal('HTTP server error', { error: (error as Error).message });
         process.exit(1);
       }
 

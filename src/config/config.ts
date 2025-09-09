@@ -46,7 +46,7 @@ let envConfig: z.infer<typeof envSchema>;
 
 try {
   envConfig = envSchema.parse(process.env);
-  logger.info('Configuration loaded successfully', { config: envConfig });
+  logger.info('Configuration loaded successfully', envConfig);
 } catch (error) {
   const errorMessage = error instanceof Error ? error.message : String(error);
   logger.fatal('Configuration validation failed', { error: errorMessage });
@@ -212,4 +212,4 @@ export const getConfigSummary = () => ({
   maxRetries: config.resilience.retry.maxRetries,
 });
 
-logger.info(getConfigSummary(), 'Configuration summary');
+logger.info('Configuration summary', getConfigSummary());
