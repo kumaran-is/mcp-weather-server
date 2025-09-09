@@ -271,9 +271,15 @@ For detailed testing scenarios including manual curl commands, environment confi
 
 #### Postman Testing
 
-**Test with Postman GUI:**
+**Quick Import (Recommended):**
 1. Start the server: `npm run http`
-2. Import the collection or create requests manually
+2. Open Postman and click "Import"
+3. Copy and paste the contents of `MCP-Weather-Server.postman_collection.json`
+4. All requests are pre-configured with proper headers and variables!
+
+**Or create manually:**
+1. Start the server: `npm run http`
+2. Create a new collection in Postman
 3. Use these key endpoints:
 
 **Initialize Connection:**

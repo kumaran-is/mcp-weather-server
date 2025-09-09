@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "MCP Weather Server",
+    "description": "Complete Postman collection for testing the MCP Weather Server API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "protocol_version",
+      "value": "2025-06-18",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Initialize Connection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"init-{{timestamp}}\",\n  \"method\": \"initialize\",\n  \"params\": {\n    \"protocolVersion\": \"{{protocol_version}}\",\n    \"capabilities\": {\n      \"sampling\": {}\n    },\n    \"clientInfo\": {\n      \"name\": \"postman-client\",\n      \"version\": \"1.0.0\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Extract session ID from response headers",
+              "if (pm.response.code === 200) {",
+              "    const sessionId = pm.response.headers.get('mcp-session-id');",
+              "    if (sessionId) {",
+              "        pm.collectionVariables.set('session_id', sessionId);",
+              "        console.log('Session ID saved:', sessionId);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Send Initialized Notification",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"notifications/initialized\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "3. List Available Tools",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"tools-{{timestamp}}\",\n  \"method\": \"tools/list\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "4. Get Current Weather - London",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"weather-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_current_weather\",\n    \"arguments\": {\n      \"city\": \"London\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "5. Get Current Weather - New York",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"weather-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_current_weather\",\n    \"arguments\": {\n      \"city\": \"New York\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "6. Get Weather Forecast - 3 Days",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"forecast-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_weather_forecast\",\n    \"arguments\": {\n      \"city\": \"Tokyo\",\n      \"days\": 3\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "7. Get Weather Forecast - 5 Days",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"forecast-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_weather_forecast\",\n    \"arguments\": {\n      \"city\": \"Paris\",\n      \"days\": 5\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "8. Retrieve Weather Context",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"context-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"retrieve_weather_context\",\n    \"arguments\": {\n      \"query\": \"weather in Sydney for weekend travel\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "9. Test Error Handling - Empty City",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"error-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_current_weather\",\n    \"arguments\": {\n      \"city\": \"\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "10. Test Error Handling - Invalid Days",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "MCP-Protocol-Version",
+            "value": "{{protocol_version}}"
+          },
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json,text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"error-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_weather_forecast\",\n    \"arguments\": {\n      \"city\": \"London\",\n      \"days\": 10\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "11. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "12. Terminate Session",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Mcp-Session-Id",
+            "value": "{{session_id}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        }
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for unique request IDs",
+          "pm.globals.set('timestamp', Date.now());"
+        ]
+      }
+    }
+  ]
+}

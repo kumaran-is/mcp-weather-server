@@ -14,7 +14,15 @@ This guide provides comprehensive instructions for testing the MCP Weather Serve
 
 ## 1. Testing with HTTP Transport
 
-### Start the HTTP Server
+### Quick Postman Import (Recommended)
+
+**One-Click Setup:**
+1. Start the server: `npm run http`
+2. Open Postman → Import → Raw Text
+3. Copy and paste the entire contents of `MCP-Weather-Server.postman_collection.json`
+4. All 12 requests are pre-configured with proper headers, variables, and test scripts!
+
+### Manual Setup
 
 **Start HTTP Server (Recommended)**
 ```bash
