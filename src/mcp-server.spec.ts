@@ -1,9 +1,9 @@
-import { WeatherMCPServer } from '../mcp-server';
-import { WeatherService } from '../weather-service';
+import { WeatherMCPServer } from './mcp-server';
+import { WeatherService } from './weather-service';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock the WeatherService
-vi.mock('../weather-service');
+vi.mock('./weather-service');
 const MockWeatherService = WeatherService as any;
 
 describe('WeatherMCPServer', () => {

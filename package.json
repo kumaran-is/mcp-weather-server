@@ -11,9 +11,10 @@
     "stdio": "MCP_TRANSPORT=stdio tsx src/server.ts",
     "http": "MCP_TRANSPORT=http tsx src/server.ts",
     "client": "tsx src/client-example.ts",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --coverage --reporter=verbose",
     "lint": "eslint src/**/*.ts --no-warn-ignored",
     "lint:fix": "eslint src/**/*.ts --fix --no-warn-ignored"
   },

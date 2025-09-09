@@ -1,9 +1,9 @@
-import { WeatherService } from '../weather-service';
-import { getAPIConfig } from '../config/config';
+import { WeatherService } from './weather-service';
+import { getAPIConfig } from './config/config';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 
 // Mock the entire module
-vi.mock('../weather-service', () => ({
+vi.mock('./weather-service', () => ({
   WeatherService: vi.fn().mockImplementation(() => ({
     getCurrentWeather: vi.fn(),
     getForecast: vi.fn()

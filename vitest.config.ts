@@ -6,9 +6,15 @@ export default defineConfig({
     globals: true,
     setupFiles: [],
     testTimeout: 10000,
+    // Clean output configuration
+    reporters: ['verbose'],
+    // Suppress logger output during tests
+    env: {
+      LOG_LEVEL: 'error',
+      NODE_ENV: 'test'
+    },
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
       include: [
         'src/**/*.ts',
         '!src/**/*.test.ts',
@@ -20,7 +26,8 @@ export default defineConfig({
         'node_modules/',
         'dist/',
         'coverage/',
-        '**/*.d.ts'
+        '**/*.d.ts',
+        '**/*.spec.ts'
       ],
       thresholds: {
         global: {
@@ -29,7 +36,23 @@ export default defineConfig({
           lines: 80,
           statements: 80
         }
-      }
+      },
+      // Show coverage summary in a cleaner format
+      reportOnFailure: true,
+      all: true,
+      // Enhanced coverage reporting
+      reporter: [
+        ['text', {
+          skipFull: false,
+          skipEmpty: true,
+          file: undefined
+        }],
+        ['text-summary', {
+          file: undefined
+        }],
+        'lcov',
+        'html'
+      ]
     }
   }
 })
