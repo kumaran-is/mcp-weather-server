@@ -394,13 +394,13 @@ export class WeatherMCPServer {
     const query = args.query.trim();
 
     // Extract city from query using simple pattern matching
-    const cityMatch = query.match(/(?:weather(?:\s+in)?|in|for)\s+([A-Za-z\s]+?)(?:\s+(?:for|today|tomorrow|next|this|is|will|should|can|what|how)|\s*$)/i);
+    const cityMatch = query.match(/(?:weather\s+(?:like\s+)?in\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?)|in\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?)|for\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?)|weather\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?))/i);
 
     if (!cityMatch) {
       throw new Error('No city found in query. Please include a city name in your query.');
     }
 
-    const city = cityMatch[1].trim();
+    const city = (cityMatch[1] || cityMatch[2] || cityMatch[3] || cityMatch[4]).trim();
     const weather = await this.weatherService.getCurrentWeather(city);
 
     return {

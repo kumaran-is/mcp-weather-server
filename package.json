@@ -11,7 +11,7 @@
     "stdio": "MCP_TRANSPORT=stdio tsx src/server.ts",
     "http": "MCP_TRANSPORT=http tsx src/server.ts",
     "client": "tsx src/client-example.ts",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src/**/*.ts --no-warn-ignored",

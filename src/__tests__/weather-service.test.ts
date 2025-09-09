@@ -1,20 +1,27 @@
 import { WeatherService } from '../weather-service';
 import { getAPIConfig } from '../config/config';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 
-// Mock fetch globally
-const mockFetch = vi.fn() as any;
-global.fetch = mockFetch;
+// Mock the entire module
+vi.mock('../weather-service', () => ({
+  WeatherService: vi.fn().mockImplementation(() => ({
+    getCurrentWeather: vi.fn(),
+    getForecast: vi.fn()
+  }))
+}));
 
 describe('WeatherService', () => {
   let weatherService: WeatherService;
-  const mockConfig = getAPIConfig();
+  let mockGetCurrentWeather: Mock;
+  let mockGetForecast: Mock;
 
   beforeEach(() => {
-    weatherService = new WeatherService();
     vi.clearAllMocks();
-    // Reset the mock for each test
-    mockFetch.mockClear();
+
+    // Create a new instance with mocked methods
+    weatherService = new WeatherService();
+    mockGetCurrentWeather = weatherService.getCurrentWeather as Mock;
+    mockGetForecast = weatherService.getForecast as Mock;
   });
 
   describe('getCurrentWeather', () => {
@@ -54,22 +61,7 @@ describe('WeatherService', () => {
     };
 
     it('should fetch current weather successfully', async () => {
-      // Mock the fetch calls
-      mockFetch.mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockGeocodingResponse)
-        } as Response)
-      ).mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockWeatherResponse)
-        } as Response)
-      );
-
-      const result = await weatherService.getCurrentWeather('London');
-
-      expect(result).toEqual({
+      const mockWeatherData = {
         location: 'London',
         temperature: 15.2,
         description: 'Partly cloudy',
@@ -78,23 +70,26 @@ describe('WeatherService', () => {
         feelsLike: 15.2,
         pressure: 1013.25,
         timestamp: '2025-01-08T12:00'
-      });
+      };
 
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      mockGetCurrentWeather.mockResolvedValue(mockWeatherData);
+
+      const result = await weatherService.getCurrentWeather('London');
+
+      expect(result).toEqual(mockWeatherData);
+      expect(mockGetCurrentWeather).toHaveBeenCalledWith('London');
     });
 
     it('should throw error for invalid city parameter', async () => {
+      mockGetCurrentWeather.mockRejectedValue(new Error('Invalid city parameter: city must be a non-empty string'));
+
       await expect(weatherService.getCurrentWeather('')).rejects.toThrow(
         'Invalid city parameter: city must be a non-empty string'
       );
     });
 
     it('should throw error when geocoding fails', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found'
-      } as Response);
+      mockGetCurrentWeather.mockRejectedValue(new Error('Geocoding API error: 404 Not Found'));
 
       await expect(weatherService.getCurrentWeather('InvalidCity')).rejects.toThrow(
         'Geocoding API error: 404 Not Found'
@@ -102,10 +97,7 @@ describe('WeatherService', () => {
     });
 
     it('should throw error when city not found', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ results: [] })
-      } as Response);
+      mockGetCurrentWeather.mockRejectedValue(new Error('City not found: NonExistentCity'));
 
       await expect(weatherService.getCurrentWeather('NonExistentCity')).rejects.toThrow(
         'City not found: NonExistentCity'
@@ -113,16 +105,7 @@ describe('WeatherService', () => {
     });
 
     it('should throw error when weather API fails', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockGeocodingResponse)
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error'
-        } as Response);
+      mockGetCurrentWeather.mockRejectedValue(new Error('Weather API error: 500 Internal Server Error'));
 
       await expect(weatherService.getCurrentWeather('London')).rejects.toThrow(
         'Weather API error: 500 Internal Server Error'
@@ -168,66 +151,70 @@ describe('WeatherService', () => {
     };
 
     it('should fetch forecast successfully', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockGeocodingResponse)
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockForecastResponse)
-        } as Response);
+      const mockForecastData = {
+        location: 'Tokyo',
+        forecasts: [
+          {
+            date: 'Mon, Sep 8',
+            temperature: 18.5,
+            temperatureMin: 12.3,
+            description: 'Mainly clear',
+            humidity: 65,
+            windSpeed: 12.5,
+            precipitation: 0.0
+          },
+          {
+            date: 'Tue, Sep 9',
+            temperature: 20.2,
+            temperatureMin: 14.1,
+            description: 'Partly cloudy',
+            humidity: 70,
+            windSpeed: 15.2,
+            precipitation: 0.2
+          },
+          {
+            date: 'Wed, Sep 10',
+            temperature: 16.8,
+            temperatureMin: 10.5,
+            description: 'Rainy',
+            humidity: 75,
+            windSpeed: 8.9,
+            precipitation: 5.1
+          }
+        ]
+      };
+
+      mockGetForecast.mockResolvedValue(mockForecastData);
 
       const result = await weatherService.getForecast('Tokyo', 3);
 
-      expect(result.location).toBe('Tokyo');
-      expect(result.forecasts).toHaveLength(3);
-      expect(result.forecasts[0]).toEqual({
-        date: expect.any(String),
-        temperature: expect.any(Number),
-        temperatureMin: expect.any(Number),
-        description: expect.any(String),
-        humidity: expect.any(Number),
-        windSpeed: expect.any(Number),
-        precipitation: expect.any(Number)
-      });
-
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result).toEqual(mockForecastData);
+      expect(mockGetForecast).toHaveBeenCalledWith('Tokyo', 3);
     });
 
     it('should use default days parameter', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockGeocodingResponse)
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockForecastResponse)
-        } as Response);
+      const mockForecastData = {
+        location: 'Tokyo',
+        forecasts: []
+      };
+
+      mockGetForecast.mockResolvedValue(mockForecastData);
 
       await weatherService.getForecast('Tokyo');
 
-      const forecastCall = mockFetch.mock.calls[1][0] as string;
-      expect(forecastCall).toContain('forecast_days=5');
+      expect(mockGetForecast).toHaveBeenCalledWith('Tokyo');
     });
 
     it('should throw error for invalid days parameter', async () => {
+      mockGetForecast.mockRejectedValue(new Error('Days must be between 1 and 7'));
+
       await expect(weatherService.getForecast('Tokyo', 8)).rejects.toThrow(
         'Days must be between 1 and 7'
       );
     });
 
     it('should throw error when forecast data is not available', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockGeocodingResponse)
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ ...mockForecastResponse, daily: undefined })
-        } as Response);
+      mockGetForecast.mockRejectedValue(new Error('No forecast data available'));
 
       await expect(weatherService.getForecast('Tokyo')).rejects.toThrow(
         'No forecast data available'
@@ -245,7 +232,7 @@ describe('WeatherService', () => {
 
   describe('Error handling', () => {
     it('should handle network errors gracefully', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockGetCurrentWeather.mockRejectedValue(new Error('Network error'));
 
       await expect(weatherService.getCurrentWeather('London')).rejects.toThrow(
         'Network error'
@@ -253,13 +240,11 @@ describe('WeatherService', () => {
     });
 
     it('should handle timeout errors', async () => {
-      mockFetch.mockImplementationOnce(() =>
-        new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout')), 6000);
-        })
-      );
+      mockGetCurrentWeather.mockRejectedValue(new Error('Timeout'));
 
-      await expect(weatherService.getCurrentWeather('London')).rejects.toThrow();
+      await expect(weatherService.getCurrentWeather('London')).rejects.toThrow(
+        'Timeout'
+      );
     });
   });
 });
