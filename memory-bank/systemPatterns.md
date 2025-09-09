@@ -541,6 +541,48 @@ export class HealthChecker {
 - **Logs**: Treated as event streams
 - **Admin Processes**: Run as one-off processes
 
+### **Documentation Patterns**
+
+#### **Mermaid.js Diagram Pattern**
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant Service
+    participant API
+
+    Client->>Server: Request
+    Server->>Service: Process
+    Service->>API: Fetch Data
+    API-->>Service: Response
+    Service-->>Server: Formatted Data
+    Server-->>Client: Final Response
+```
+**Benefits:**
+- Visual representation of complex flows
+- Easy to understand system interactions
+- Standardized diagram format
+- Integrates well with documentation
+
+#### **README Architecture Pattern**
+```markdown
+## 🏗️ Architecture
+
+### System Flow
+[Sequence diagrams showing request flows]
+
+### Component Interactions
+[Graph showing component relationships]
+
+### Data Flow Patterns
+[Description of data movement patterns]
+```
+**Benefits:**
+- Comprehensive system overview
+- Visual learning aids
+- Professional documentation standard
+- Easy maintenance and updates
+
 ---
 
 **These patterns ensure the MCP Weather Server is maintainable, scalable, secure, and follows industry best practices for modern application development.**
