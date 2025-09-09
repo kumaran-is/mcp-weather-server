@@ -23,20 +23,20 @@ export async function main() {
     const config = getConfig();
     const transportType = process.env.MCP_TRANSPORT || 'stdio';
 
-    logger.info({
+    logger.info('Starting MCP Weather Server', {
       transport: transportType,
       nodeVersion: process.version,
       platform: process.platform
-    }, 'Starting MCP Weather Server');
+    });
 
     // Create MCP server instance
     const weatherServer = new WeatherMCPServer();
     const server = weatherServer.getServer();
 
     // Choose transport based on configuration
-    if (config.transport.type === 'http') {
-      const port = config.transport.http?.port || 8080;
-      logger.info({ port }, 'Using HTTP transport');
+    if (config.server.transport === 'http') {
+      const port = config.server.httpPort;
+      logger.info('Using HTTP transport', { port });
 
       // Create Fastify instance
       const fastify = Fastify({
@@ -131,7 +131,7 @@ export async function main() {
         await fastify.listen({ port });
         logger.info(`MCP Weather Server started successfully with HTTP transport on port ${port}`);
       } catch (error) {
-        logger.fatal(error as Error, 'HTTP server error');
+        logger.fatal('HTTP server error', { error: error.message });
         process.exit(1);
       }
 
@@ -159,24 +159,24 @@ export async function main() {
     }
 
   } catch (error) {
-    logger.fatal(error as Error, 'Failed to start MCP Weather Server');
+    logger.fatal('Failed to start MCP Weather Server', { error: (error as Error).message });
     process.exit(1);
   }
 }
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  logger.fatal(error, 'Uncaught exception in main process');
+  logger.fatal('Uncaught exception in main process', { error: (error as Error).message });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.fatal(reason as Error, 'Unhandled rejection in main process');
+  logger.fatal('Unhandled rejection in main process', { reason: (reason as Error).message });
   process.exit(1);
 });
 
 // Start the server
 main().catch((error) => {
-  logger.fatal(error, 'Fatal error during server startup');
+  logger.fatal('Fatal error during server startup', { error: (error as Error).message });
   process.exit(1);
 });
