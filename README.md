@@ -13,6 +13,10 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🏗️ Architecture](#️-architecture)
+    - [System Flow](#system-flow)
+      - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
+      - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
+    - [Component Interactions](#component-interactions)
   - [🚀 Quick Start](#-quick-start)
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
@@ -87,6 +91,154 @@ mcp-weather-server/
 ├── docs/                 # Documentation
 ├── Dockerfile           # Containerization
 └── docker-compose.yml   # Orchestration
+```
+
+### System Flow
+
+#### HTTP Transport Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Express
+    participant WeatherMCPServer
+    participant WeatherService
+    participant OpenMeteoAPI
+
+    %% Initialization Phase
+    Client->>Express: POST /mcp (initialize)
+    Note over Client,Express: Headers: MCP-Protocol-Version, Content-Type
+    Express->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>Express: Server capabilities & info
+    Express-->>Client: 200 OK (server info)
+
+    Client->>Express: POST /mcp (initialized notification)
+    Express->>WeatherMCPServer: handleInitialized()
+    WeatherMCPServer-->>Express: Acknowledged
+
+    %% Tool Operations
+    Client->>Express: POST /mcp (tools/list)
+    Express->>WeatherMCPServer: handleToolsList()
+    WeatherMCPServer-->>Express: Available tools
+    Express-->>Client: 200 OK (tools array)
+
+    %% Weather Request Flow
+    Client->>Express: POST /mcp (tools/call: get_current_weather)
+    Note over Client,Express: {"city": "London"}
+    Express->>WeatherMCPServer: handleToolsCall()
+    WeatherMCPServer->>WeatherService: getCurrentWeather("London")
+
+    %% Geocoding Phase
+    WeatherService->>OpenMeteoAPI: GET /geocoding-api/search?name=London
+    OpenMeteoAPI-->>WeatherService: Geocoding response
+    Note over WeatherService,OpenMeteoAPI: Returns lat/lng coordinates
+
+    %% Weather Data Fetch
+    WeatherService->>OpenMeteoAPI: GET /forecast?lat=51.5&lng=-0.1&current=...
+    OpenMeteoAPI-->>WeatherService: Weather data
+    Note over WeatherService,OpenMeteoAPI: Temperature, humidity, wind, conditions
+
+    WeatherService-->>WeatherMCPServer: Formatted weather data
+    WeatherMCPServer-->>Express: JSON-RPC response
+    Express-->>Client: 200 OK (weather info)
+
+    %% SSE Stream (for notifications)
+    Client->>Express: GET /mcp (SSE stream)
+    Note over Client,Express: Accept: text/event-stream
+    Express-->>Client: SSE connection established
+    Note over Express,Client: Server can send notifications via SSE
+```
+
+#### Stdio Transport Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant AI Assistant
+    participant StdioTransport
+    participant WeatherMCPServer
+    participant WeatherService
+    participant OpenMeteoAPI
+
+    %% Connection Establishment
+    AI Assistant->>StdioTransport: Start MCP server process
+    StdioTransport->>WeatherMCPServer: Connect server
+    WeatherMCPServer-->>StdioTransport: Server ready
+
+    %% MCP Protocol Handshake
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"initialize",...}
+    StdioTransport->>WeatherMCPServer: processMessage(initialize)
+    WeatherMCPServer-->>StdioTransport: Server capabilities
+    StdioTransport-->>AI Assistant: Server info response
+
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"notifications/initialized"}
+    StdioTransport->>WeatherMCPServer: processMessage(initialized)
+    WeatherMCPServer-->>StdioTransport: Acknowledged
+
+    %% Tool Discovery
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"tools/list"}
+    StdioTransport->>WeatherMCPServer: processMessage(tools/list)
+    WeatherMCPServer-->>StdioTransport: Available tools
+    StdioTransport-->>AI Assistant: Tools array
+
+    %% Weather Query Processing
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"Tokyo"}}}
+    StdioTransport->>WeatherMCPServer: processMessage(tools/call)
+    WeatherMCPServer->>WeatherService: getCurrentWeather("Tokyo")
+
+    %% API Integration
+    WeatherService->>OpenMeteoAPI: Geocoding request
+    OpenMeteoAPI-->>WeatherService: Coordinates
+    WeatherService->>OpenMeteoAPI: Weather forecast request
+    OpenMeteoAPI-->>WeatherService: Weather data
+
+    WeatherService-->>WeatherMCPServer: Formatted response
+    WeatherMCPServer-->>StdioTransport: JSON-RPC success response
+    StdioTransport-->>AI Assistant: Weather information
+
+    %% Error Handling
+    Note over AI Assistant,WeatherMCPServer: If API fails or invalid input
+    WeatherMCPServer-->>StdioTransport: JSON-RPC error response
+    StdioTransport-->>AI Assistant: Error details
+```
+
+### Component Interactions
+
+```mermaid
+graph TB
+    A[Client/AI Assistant] --> B[Transport Layer]
+    B --> C{MCP Protocol Handler}
+
+    C --> D[WeatherMCPServer]
+    D --> E[WeatherService]
+
+    E --> F[Open-Meteo Geocoding API]
+    E --> G[Open-Meteo Weather API]
+
+    D --> H[Logger]
+    D --> I[Configuration]
+
+    B --> J[HTTP Transport]
+    B --> K[Stdio Transport]
+
+    J --> L[Express Server]
+    J --> M[SSE Handler]
+
+    subgraph "Core Components"
+        D
+        E
+        H
+        I
+    end
+
+    subgraph "Transport Options"
+        J
+        K
+    end
+
+    subgraph "External APIs"
+        F
+        G
+    end
 ```
 
 ## 🚀 Quick Start
