@@ -155,6 +155,12 @@
 
 ## 💡 **Important Patterns & Preferences**
 
+### **Documentation Excellence Patterns**
+- **Copy-Paste Friendly Commands**: Always separate each command into individual code blocks for easy copying
+- **Clear Command Descriptions**: Use descriptive headings for each command type
+- **Single-Command Blocks**: Never group multiple commands in one code block
+- **Ready-to-Paste Format**: Ensure commands work immediately when copied without editing
+
 ### **Code Style Preferences**
 - **TypeScript Strict Mode**: Always enabled for type safety
 - **ESLint Rules**: Consistent code formatting and style

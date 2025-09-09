@@ -64,31 +64,48 @@ mcp-weather-server/
 ### Running the Server
 
 #### Development Mode
+
+**HTTP Transport** (recommended for development)
 ```bash
-# HTTP transport (recommended for development)
 npm run http
+```
 
-# Stdio transport (for AI assistants)
+**Stdio Transport** (for AI assistants)
+```bash
 npm run stdio
+```
 
-# Development with auto-restart
+**Development with Auto-restart**
+```bash
 npm run dev
 ```
 
 #### Production Mode
+
+**Build the Project**
 ```bash
-# Build and start
 npm run build
+```
+
+**Start Production Server**
+```bash
 npm start
 ```
 
 #### Docker
-```bash
-# Build and run with Docker
-docker build -t mcp-weather-server .
-docker run -p 8080:8080 mcp-weather-server
 
-# Or use Docker Compose
+**Build Docker Image**
+```bash
+docker build -t mcp-weather-server .
+```
+
+**Run Docker Container**
+```bash
+docker run -p 8080:8080 mcp-weather-server
+```
+
+**Run with Docker Compose**
+```bash
 docker-compose up
 ```
 
@@ -215,24 +232,38 @@ For comprehensive testing instructions, see **[TESTING.md](TESTING.md)** - a com
 ### Quick Test Commands
 
 #### Unit Tests
+
+**Run All Tests**
 ```bash
 npm test
+```
+
+**Run Tests with Coverage**
+```bash
 npm run test:coverage
 ```
 
 #### HTTP Transport Testing
-```bash
-# Start server and run full test suite
-npm run http & sleep 2 && npm run client
 
-# Test individual tools
+**Start Server and Run Full Test Suite**
+```bash
+npm run http & sleep 2 && npm run client
+```
+
+**Test Current Weather**
+```bash
 npm run client weather "London"
+```
+
+**Test Weather Forecast**
+```bash
 npm run client forecast "Tokyo" 3
 ```
 
 #### Stdio Transport Testing
+
+**Quick Stdio Test**
 ```bash
-# Quick stdio test
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 ```
 
@@ -305,11 +336,14 @@ curl http://localhost:8080/health
 ## 🐳 Docker Deployment
 
 ### Production Deployment
-```bash
-# Build image
-docker build -t mcp-weather-server .
 
-# Run container
+**Build Docker Image**
+```bash
+docker build -t mcp-weather-server .
+```
+
+**Run Production Container**
+```bash
 docker run -d \
   --name mcp-weather-server \
   -p 8080:8080 \
@@ -348,17 +382,24 @@ services:
 5. Open a Pull Request
 
 ### Development Setup
+
+**Install Dependencies**
 ```bash
-# Install dependencies
 npm install
+```
 
-# Run in development mode
+**Run in Development Mode**
+```bash
 npm run dev
+```
 
-# Run tests
+**Run Tests**
+```bash
 npm test
+```
 
-# Build for production
+**Build for Production**
+```bash
 npm run build
 ```
 

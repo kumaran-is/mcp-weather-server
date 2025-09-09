@@ -16,10 +16,13 @@ This guide provides comprehensive instructions for testing the MCP Weather Serve
 
 ### Start the HTTP Server
 
+**Start HTTP Server (Recommended)**
 ```bash
-# Terminal 1: Start HTTP server
 npm run http
-# or
+```
+
+**Start with Environment Variable**
+```bash
 MCP_TRANSPORT=http npm run dev
 ```
 
@@ -131,17 +134,20 @@ curl -X POST http://localhost:8080 \
 
 ### Start the Stdio Server
 
+**Start Stdio Server (Recommended)**
 ```bash
-# Terminal 1: Start stdio server
 npm run stdio
-# or
+```
+
+**Start with Environment Variable**
+```bash
 MCP_TRANSPORT=stdio npm run dev
 ```
 
 ### Test with Manual JSON Input
 
+**Send Initialize Request**
 ```bash
-# Terminal 2: Send MCP messages via stdin
 echo '{
   "jsonrpc": "2.0",
   "id": "init-123",
@@ -196,17 +202,23 @@ setTimeout(() => {
 
 ### Run Unit Tests
 
+**Run All Tests**
 ```bash
-# Run all tests
 npm test
+```
 
-# Run with coverage
+**Run Tests with Coverage**
+```bash
 npm run test:coverage
+```
 
-# Run specific test file
+**Run Specific Test File**
+```bash
 npm test -- mcp-server.test.ts
+```
 
-# Run in watch mode
+**Run Tests in Watch Mode**
+```bash
 npm run test:watch
 ```
 
@@ -219,34 +231,42 @@ npm run test:watch
 
 ### HTTP Transport Configuration
 
+**Set Custom Port**
 ```bash
-# Set custom port
 MCP_HTTP_PORT=3000 npm run http
+```
 
-# Configure allowed origins
+**Configure Allowed Origins**
+```bash
 ALLOWED_ORIGINS="http://localhost:3000,http://localhost:8080" npm run http
+```
 
-# Set session timeout
-SESSION_TIMEOUT=1800000 npm run http  # 30 minutes
+**Set Session Timeout**
+```bash
+SESSION_TIMEOUT=1800000 npm run http
 ```
 
 ### API Configuration
 
+**Use Custom Open-Meteo API URL**
 ```bash
-# Use custom Open-Meteo API URL
 OPEN_METEO_BASE_URL="https://api.open-meteo.com/v1" npm run http
+```
 
-# Set API timeouts
-API_TIMEOUT=10000 npm run http  # 10 seconds
+**Set API Timeouts**
+```bash
+API_TIMEOUT=10000 npm run http
 ```
 
 ### Logging Configuration
 
+**Set Log Level**
 ```bash
-# Set log level
 LOG_LEVEL=debug npm run http
+```
 
-# Enable pretty logging
+**Enable Pretty Logging**
+```bash
 LOG_PRETTY=true npm run http
 ```
 
@@ -254,11 +274,13 @@ LOG_PRETTY=true npm run http
 
 ### Load Testing with Multiple Clients
 
+**Start Server**
 ```bash
-# Terminal 1: Start server
 npm run http
+```
 
-# Terminal 2-4: Run multiple clients
+**Run Multiple Clients (in separate terminals)**
+```bash
 for i in {1..3}; do
   npm run client &
 done
@@ -266,28 +288,34 @@ done
 
 ### Error Testing
 
+**Test Invalid City**
 ```bash
-# Test invalid city
 npm run client weather ""
+```
 
-# Test invalid protocol version
+**Test Invalid Protocol Version**
+```bash
 curl -X POST http://localhost:8080 \
   -H "MCP-Protocol-Version: 2024-01-01" \
   -d '{"jsonrpc":"2.0","method":"initialize"}'
+```
 
-# Test CORS
+**Test CORS**
+```bash
 curl -H "Origin: http://evil.com" http://localhost:8080
 ```
 
 ### Session Management Testing
 
+**Test Session Persistence**
 ```bash
-# Test session persistence
 curl -X POST http://localhost:8080 \
   -H "Mcp-Session-Id: test-session-123" \
   -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}'
+```
 
-# Test session cleanup
+**Test Session Cleanup**
+```bash
 curl -X DELETE http://localhost:8080 \
   -H "Mcp-Session-Id: test-session-123"
 ```
@@ -296,16 +324,19 @@ curl -X DELETE http://localhost:8080 \
 
 ### Server Logs
 
+**Enable Debug Logging**
 ```bash
-# Enable debug logging
 LOG_LEVEL=debug npm run http
+```
 
-# Check server stats (if implemented)
+**Check Server Stats**
+```bash
 curl http://localhost:8080/stats
 ```
 
 ### Client Debugging
 
+**Add Debugging to Client**
 ```javascript
 // Add debugging to client-example.ts
 console.log('Request:', JSON.stringify(request, null, 2));
@@ -314,14 +345,18 @@ console.log('Response:', JSON.stringify(response, null, 2));
 
 ## 7. Quick Test Commands
 
+**Full HTTP Test Suite**
 ```bash
-# Full HTTP test suite
 npm run http & sleep 2 && npm run client
+```
 
-# Quick stdio test
+**Quick Stdio Test**
+```bash
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
+```
 
-# Health check
+**Health Check**
+```bash
 curl -f http://localhost:8080/health || echo "Server not responding"
 ```
 
@@ -354,8 +389,8 @@ The MCP Weather Server provides three main tools:
 
 ### Debug Mode
 
+**Enable Maximum Logging**
 ```bash
-# Enable maximum logging
 LOG_LEVEL=trace MCP_TRANSPORT=http npm run dev
 ```
 
