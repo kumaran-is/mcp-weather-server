@@ -1,4 +1,5 @@
 import { Server } from '@modelcontextprotocol/sdk/server';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { v4 as uuidv4 } from 'uuid';
 import { WeatherService } from './weather-service.js';
 import { logger } from './logger.js';
@@ -32,6 +33,7 @@ export class WeatherMCPServer {
       }
     );
 
+    this.setupToolHandlers();
     this.setupErrorHandling();
 
     logger.info({
@@ -412,6 +414,117 @@ export class WeatherMCPServer {
               `This information can be used for travel planning, activity suggestions, or general weather awareness.`
       }]
     };
+  }
+
+  /**
+   * Set up tool handlers with MCP SDK
+   */
+  private setupToolHandlers(): void {
+    // Register tools/list handler
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      logger.debug('Listing available tools');
+
+      const tools: MCPTool[] = [
+        {
+          name: 'get_current_weather',
+          description: 'Get current weather for a city using Open-Meteo API',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              city: {
+                type: 'string',
+                description: 'City name (e.g., "London", "New York", "Tokyo")'
+              }
+            },
+            required: ['city']
+          }
+        },
+        {
+          name: 'get_weather_forecast',
+          description: 'Get weather forecast for a city (1-7 days)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              city: {
+                type: 'string',
+                description: 'City name'
+              },
+              days: {
+                type: 'number',
+                description: 'Number of days for forecast (1-7)',
+                minimum: 1,
+                maximum: 7,
+                default: 5
+              }
+            },
+            required: ['city']
+          }
+        },
+        {
+          name: 'retrieve_weather_context',
+          description: 'Retrieve weather context for AI agent queries',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Query containing city reference (e.g., "weather in London for travel")'
+              }
+            },
+            required: ['query']
+          }
+        }
+      ];
+
+      logger.debug({ toolCount: tools.length }, 'Tools listed successfully');
+
+      return { tools };
+    });
+
+    // Register tools/call handler
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+      const startTime = Date.now();
+
+      logger.logToolCall(name, args);
+
+      try {
+        let result: any;
+
+        switch (name) {
+          case 'get_current_weather':
+            result = await this.handleGetCurrentWeather(args);
+            break;
+
+          case 'get_weather_forecast':
+            result = await this.handleGetWeatherForecast(args);
+            break;
+
+          case 'retrieve_weather_context':
+            result = await this.handleRetrieveWeatherContext(args);
+            break;
+
+          default:
+            throw new Error(`Unknown tool: ${name}`);
+        }
+
+        logger.logPerformance(`tool_${name}`, startTime, {
+          success: true,
+          args
+        });
+
+        return result;
+
+      } catch (error) {
+        logger.logError(error as Error, {
+          tool: name,
+          args,
+          duration: Date.now() - startTime
+        });
+
+        throw error;
+      }
+    });
   }
 
   /**
