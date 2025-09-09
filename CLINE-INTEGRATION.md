@@ -170,6 +170,24 @@ In your `cline_mcp_settings.json`, update the `args` path:
 3. Open a new Cline chat window
 4. The weather server should automatically connect
 
+### Verify Connection
+
+After restart, test that Cline can access the weather MCP server:
+
+**Check available servers:**
+```
+What MCP servers do you have access to?
+```
+
+**Expected response:** Should list "weather" as an available MCP server
+
+**Test weather functionality:**
+```
+What's the weather like in London?
+```
+
+**Expected response:** Should return current weather data for London
+
 ## Testing from Cline Chat
 
 ### Basic Weather Queries
