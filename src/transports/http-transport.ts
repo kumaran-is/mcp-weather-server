@@ -184,15 +184,15 @@ export class StreamableHTTPTransport {
     sessionId: string,
     lastEventId?: string,
   ) {
-      // Validate Accept header for SSE requests
-      if (!req.headers.accept?.includes('text/event-stream') && !req.headers.accept?.includes('*/*')) {
-        logger.logSecurityEvent('Invalid Accept header', {
-          accept: req.headers.accept,
-          sessionId,
-        });
-        this.sendErrorResponse(res, 406, 'Accept: text/event-stream or */* required');
-        return;
-      }
+    // Validate Accept header for SSE requests
+    if (!req.headers.accept?.includes('text/event-stream') && !req.headers.accept?.includes('*/*')) {
+      logger.logSecurityEvent('Invalid Accept header', {
+        accept: req.headers.accept,
+        sessionId,
+      });
+      this.sendErrorResponse(res, 406, 'Accept: text/event-stream or */* required');
+      return;
+    }
 
     // Set up SSE headers
     res.writeHead(200, {
