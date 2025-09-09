@@ -74,11 +74,16 @@ export class StreamableHTTPTransport {
 
       // Handle different HTTP methods
       switch (req.method) {
+      case 'GET':
+        // Check if this is a health check request
+        if (req.url === '/health') {
+          await this.handleHealth(req, res);
+          return;
+        }
+        await this.handleGET(req, res, sessionId, lastEventId);
+        break;
       case 'POST':
         await this.handlePOST(req, res, sessionId, protocolVersion);
-        break;
-      case 'GET':
-        await this.handleGET(req, res, sessionId, lastEventId);
         break;
       case 'DELETE':
         await this.handleDELETE(req, res, sessionId);
@@ -247,6 +252,33 @@ export class StreamableHTTPTransport {
     res.end();
 
     logger.logTransportEvent('Session terminated', { sessionId });
+  }
+
+  /**
+   * Handle health check requests
+   */
+  private async handleHealth(req: IncomingMessage, res: ServerResponse) {
+    const stats = this.getStats();
+    const healthStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      transport: 'http',
+      port: stats.port,
+      activeClients: stats.activeClients,
+      queuedMessages: stats.queuedMessages,
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    };
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': this.getAllowedOrigins(),
+      'Cache-Control': 'no-cache',
+    });
+    res.end(JSON.stringify(healthStatus));
+
+    logger.debug({ operation: 'health_check' }, 'Health check requested');
   }
 
   /**
