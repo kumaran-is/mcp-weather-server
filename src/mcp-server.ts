@@ -111,11 +111,12 @@ export class WeatherMCPServer {
       capabilities
     });
 
-    // Validate protocol version
-    if (protocolVersion !== '2025-06-18') {
+    // Validate protocol version - accept both current and older versions for compatibility
+    const supportedVersions = ['2025-06-18', '2025-03-26'];
+    if (!supportedVersions.includes(protocolVersion)) {
       logger.logMCPError(-32602, 'Unsupported protocol version', {
         requested: protocolVersion,
-        supported: ['2025-06-18']
+        supported: supportedVersions
       });
 
       return {
@@ -125,7 +126,7 @@ export class WeatherMCPServer {
           code: -32602,
           message: 'Unsupported protocol version',
           data: {
-            supported: ['2025-06-18'],
+            supported: supportedVersions,
             requested: protocolVersion
           }
         }
