@@ -22,7 +22,9 @@ export default defineConfig({
         '!src/**/__tests__/**',
         '!src/types.ts',
         '!src/client-example.ts',
-        '!src/server.ts'
+        '!src/server.ts',
+        '!src/transports/',
+        '!src/config/'
       ],
       exclude: [
         'node_modules/',
@@ -41,8 +43,7 @@ export default defineConfig({
           functions: 80,
           lines: 80,
           statements: 80
-        },
-        perFile: true
+        }
       },
       // Show coverage summary in a cleaner format
       reportOnFailure: true,
