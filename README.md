@@ -210,28 +210,33 @@ When using HTTP transport, the server exposes endpoints:
 
 ## 🧪 Testing
 
-### Unit Tests
+For comprehensive testing instructions, see **[TESTING.md](TESTING.md)** - a complete guide covering both stdio and HTTP transport testing.
+
+### Quick Test Commands
+
+#### Unit Tests
 ```bash
 npm test
 npm run test:coverage
 ```
 
-### Integration Tests
+#### HTTP Transport Testing
 ```bash
-# Test with HTTP transport
-npm run http &
-npm run client
-```
+# Start server and run full test suite
+npm run http & sleep 2 && npm run client
 
-### Manual Testing
-```bash
 # Test individual tools
 npm run client weather "London"
 npm run client forecast "Tokyo" 3
-
-# Full test suite
-npm run client
 ```
+
+#### Stdio Transport Testing
+```bash
+# Quick stdio test
+echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
+```
+
+For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[TESTING.md](TESTING.md)**.
 
 ## 🔌 Integration Examples
 
