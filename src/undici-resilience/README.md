@@ -120,28 +120,104 @@ const poolMetrics = metricsCollector.getPoolMetrics('poolName');
 
 ### Environment Variables
 
+All configuration is managed through environment variables for maximum flexibility:
+
 ```bash
-# Connection Pool Settings
+# ===========================================
+# Connection Pool Configuration
+# ===========================================
+# Number of persistent connections to maintain
 POOL_CONNECTIONS=50
+
+# HTTP/1.1 pipelining factor (1-10)
 POOL_PIPELINING=10
+
+# Keep-alive timeout in milliseconds
 KEEP_ALIVE_TIMEOUT=60000
+
+# Maximum keep-alive timeout in milliseconds
+KEEP_ALIVE_MAX_TIMEOUT=600000
+
+# Connection establishment timeout in milliseconds
 CONNECT_TIMEOUT=10000
+
+# Response body timeout in milliseconds (5min for LLM responses)
 BODY_TIMEOUT=300000
+
+# Response headers timeout in milliseconds
 HEADERS_TIMEOUT=30000
 
-# Circuit Breaker
+# Overall request timeout in milliseconds
+REQUEST_TIMEOUT=60000
+
+# ===========================================
+# Circuit Breaker Configuration
+# ===========================================
+# Number of failures before opening circuit
 CIRCUIT_BREAKER_THRESHOLD=5
+
+# Time in milliseconds to wait before attempting recovery
 CIRCUIT_BREAKER_TIMEOUT=60000
 
-# Retry Configuration
+# Time in milliseconds between health checks when half-open
+CIRCUIT_BREAKER_HEALTH_CHECK=5000
+
+# ===========================================
+# Retry Strategy Configuration
+# ===========================================
+# Maximum number of retry attempts
 MAX_RETRIES=3
+
+# Base delay for exponential backoff in milliseconds
 BASE_RETRY_DELAY=1000
+
+# Maximum delay cap in milliseconds
 MAX_RETRY_DELAY=10000
+
+# Jitter factor (0.0-1.0) to randomize delays
 JITTER_FACTOR=0.1
 
-# Resource Limits
+# ===========================================
+# Bulkhead Configuration
+# ===========================================
+# Maximum concurrent operations per bulkhead
+BULKHEAD_MAX_CONCURRENT=10
+
+# Maximum queue size for pending operations
+BULKHEAD_MAX_QUEUE_SIZE=20
+
+# Timeout in milliseconds for queued operations
+BULKHEAD_QUEUE_TIMEOUT=30000
+
+# ===========================================
+# Rate Limiting Configuration
+# ===========================================
+# Maximum requests per time window
+RATE_LIMIT_REQUESTS=100
+
+# Time window in milliseconds for rate limiting
+RATE_LIMIT_WINDOW_MS=60000
+
+# Burst allowance (additional requests beyond the limit)
+RATE_LIMIT_BURST=10
+
+# Use sliding window (true) or fixed window (false)
+RATE_LIMIT_SLIDING=true
+
+# Maximum concurrent requests per pool
 MAX_CONCURRENT_REQUESTS=100
+
+# Rate limit per second across all operations
 RATE_LIMIT_PER_SECOND=10
+
+# ===========================================
+# Token Bucket Rate Limiter (Alternative)
+# ===========================================
+# Token bucket capacity
+TOKEN_BUCKET_CAPACITY=100
+
+# Token refill rate per second
+TOKEN_BUCKET_REFILL_RATE=10
 ```
 
 ### Programmatic Configuration

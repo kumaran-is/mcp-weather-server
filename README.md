@@ -451,7 +451,7 @@ When using HTTP transport, the server exposes endpoints:
 
 ## 🧪 Testing
 
-For comprehensive testing instructions, see **[TESTING.md](TESTING.md)** - a complete guide covering both stdio and HTTP transport testing.
+For comprehensive testing instructions, see **[TESTING.md](docs/TESTING.md)** - a complete guide covering both stdio and HTTP transport testing.
 
 ### Quick Test Commands
 
@@ -491,7 +491,7 @@ npm run client forecast "Tokyo" 3
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 ```
 
-For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[TESTING.md](TESTING.md)**.
+For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[TESTING.md](docs/TESTING.md)**.
 
 #### Postman Testing
 
@@ -550,7 +550,7 @@ For complete Postman setup with all endpoints, request examples, and collection 
 
 ### Cline (Local AI Assistant)
 
-**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
+**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
 
 **Quick Configuration** (Stdio Transport):
 ```json
@@ -716,7 +716,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Issues**: [GitHub Issues](https://github.com/kumaran-is/mcp-weather-server/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
-- **Cline Integration**: [CLINE-INTEGRATION.md](CLINE-INTEGRATION.md) - Complete Cline setup guide
+- **Cline Integration**: [CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md) - Complete Cline setup guide
 
 ## 🧪 Postman Testing Guide
 
