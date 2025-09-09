@@ -17,7 +17,14 @@ export class StreamableHTTPTransport {
   private clients: Map<string, ClientConnection> = new Map();
   private messageQueues: Map<string, unknown[]> = new Map();
   private config = getConfig();
-  private transportConfig = getTransportConfig();
+  private transportConfig = {
+    type: getConfig().server.transport,
+    port: getConfig().server.httpPort,
+    allowedOrigins: getConfig().security.allowedOrigins,
+    http: {
+      port: getConfig().server.httpPort,
+    },
+  };
 
   constructor(mcpServer: Server, weatherServer: WeatherMCPServer) {
     this.server = mcpServer;

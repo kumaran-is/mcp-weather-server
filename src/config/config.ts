@@ -64,6 +64,8 @@ export interface APIConfig {
   baseUrl: string;
   geocodingUrl: string;
   timeout: number;
+  retries: number;
+  retryDelay: number;
 }
 
 export interface SecurityConfig {
@@ -121,6 +123,8 @@ export const config: AppConfig = {
     baseUrl: envConfig.OPEN_METEO_BASE_URL,
     geocodingUrl: envConfig.GEOCODING_API_URL,
     timeout: envConfig.API_TIMEOUT,
+    retries: envConfig.MAX_RETRIES,
+    retryDelay: envConfig.BASE_RETRY_DELAY,
   },
   security: {
     allowedOrigins: envConfig.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
