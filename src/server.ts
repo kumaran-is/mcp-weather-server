@@ -6,7 +6,7 @@
  */
 
 import 'dotenv/config';
-import express from 'express';
+import Fastify from 'fastify';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { WeatherMCPServer } from './mcp-server.js';
@@ -38,23 +38,25 @@ export async function main() {
       const port = config.transport.http?.port || 8080;
       logger.info({ port }, 'Using HTTP transport');
 
-      // Create Express app for HTTP server
-      const app = express();
-      app.use(express.json());
+      // Create Fastify instance
+      const fastify = Fastify({
+        logger: false, // We use our own logger
+        disableRequestLogging: true, // Disable Fastify's request logging
+      });
 
       // Map to store transports by session ID
       const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 
       // Handle POST requests for client-to-server communication
-      app.post('/mcp', async (req, res) => {
+      fastify.post('/mcp', async (request, reply) => {
         // Check for existing session ID
-        const sessionId = req.headers['mcp-session-id'] as string | undefined;
+        const sessionId = request.headers['mcp-session-id'] as string | undefined;
         let transport: StreamableHTTPServerTransport;
 
         if (sessionId && transports[sessionId]) {
           // Reuse existing transport
           transport = transports[sessionId];
-        } else if (!sessionId && isInitializeRequest(req.body)) {
+        } else if (!sessionId && isInitializeRequest(request.body)) {
           // New initialization request - create new transport
           transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
@@ -77,7 +79,7 @@ export async function main() {
           await server.connect(transport);
         } else {
           // Invalid request
-          res.status(400).json({
+          return reply.status(400).send({
             jsonrpc: '2.0',
             error: {
               code: -32000,
@@ -85,40 +87,37 @@ export async function main() {
             },
             id: null,
           });
-          return;
         }
 
         // Handle the request
-        await transport.handleRequest(req, res, req.body);
+        await transport.handleRequest(request.raw, reply.raw, request.body);
       });
 
       // Handle GET requests for server-to-client notifications via SSE
-      app.get('/mcp', async (req, res) => {
-        const sessionId = req.headers['mcp-session-id'] as string | undefined;
+      fastify.get('/mcp', async (request, reply) => {
+        const sessionId = request.headers['mcp-session-id'] as string | undefined;
         if (!sessionId || !transports[sessionId]) {
-          res.status(400).send('Invalid or missing session ID');
-          return;
+          return reply.status(400).send('Invalid or missing session ID');
         }
 
         const transport = transports[sessionId];
-        await transport.handleRequest(req, res);
+        await transport.handleRequest(request.raw, reply.raw);
       });
 
       // Handle DELETE requests for session termination
-      app.delete('/mcp', async (req, res) => {
-        const sessionId = req.headers['mcp-session-id'] as string | undefined;
+      fastify.delete('/mcp', async (request, reply) => {
+        const sessionId = request.headers['mcp-session-id'] as string | undefined;
         if (!sessionId || !transports[sessionId]) {
-          res.status(400).send('Invalid or missing session ID');
-          return;
+          return reply.status(400).send('Invalid or missing session ID');
         }
 
         const transport = transports[sessionId];
-        await transport.handleRequest(req, res);
+        await transport.handleRequest(request.raw, reply.raw);
       });
 
       // Add health check endpoint
-      app.get('/health', (req, res) => {
-        res.json({
+      fastify.get('/health', async (request, reply) => {
+        return reply.send({
           status: 'healthy',
           timestamp: new Date().toISOString(),
           version: '1.0.0',
@@ -127,37 +126,28 @@ export async function main() {
         });
       });
 
-      // Start the HTTP server
-      const httpServer = app.listen(port, () => {
+      // Start the Fastify server
+      try {
+        await fastify.listen({ port });
         logger.info(`MCP Weather Server started successfully with HTTP transport on port ${port}`);
-      });
-
-      // Handle server errors
-      httpServer.on('error', (error) => {
+      } catch (error) {
         logger.fatal(error as Error, 'HTTP server error');
         process.exit(1);
-      });
+      }
 
       // Graceful shutdown
-      process.on('SIGTERM', async () => {
-        logger.info('Received SIGTERM, shutting down gracefully');
-        httpServer.close();
+      const shutdown = async () => {
+        logger.info('Shutting down gracefully');
+        await fastify.close();
         // Close all transports
         for (const transport of Object.values(transports)) {
           await transport.close();
         }
         process.exit(0);
-      });
+      };
 
-      process.on('SIGINT', async () => {
-        logger.info('Received SIGINT, shutting down gracefully');
-        httpServer.close();
-        // Close all transports
-        for (const transport of Object.values(transports)) {
-          await transport.close();
-        }
-        process.exit(0);
-      });
+      process.on('SIGTERM', shutdown);
+      process.on('SIGINT', shutdown);
 
     } else {
       logger.info('Using stdio transport');

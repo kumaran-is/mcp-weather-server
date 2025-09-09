@@ -38,6 +38,7 @@
 - ✅ **Integration Testing**: End-to-end MCP protocol validation
 - ✅ **Error Scenarios**: Comprehensive error handling coverage
 - ✅ **Performance Testing**: Sub-5-second response times
+- ✅ **Framework Migration**: Successfully migrated from Express.js to Fastify 5.6.x
 
 ### **Production Features**
 - ✅ **Docker Containerization**: Multi-stage build optimization
@@ -194,8 +195,9 @@
 ### **Technology Choices**
 1. **Node.js Version**: Started with 20.x, upgraded to 22.x for latest features
 2. **TypeScript Configuration**: Progressive strictness for better type safety
-3. **Testing Framework**: Jest selected for comprehensive testing capabilities
-4. **Container Strategy**: Multi-stage Docker for optimized production builds
+3. **Web Framework**: Migrated from Express.js to Fastify 5.6.x for improved performance
+4. **Testing Framework**: Migrated from Jest to Vitest for faster, ESM-native testing
+5. **Container Strategy**: Multi-stage Docker for optimized production builds
 
 ### **API Design Decisions**
 1. **Tool Naming**: `get_current_weather`, `get_weather_forecast`, `retrieve_weather_context`

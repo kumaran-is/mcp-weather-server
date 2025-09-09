@@ -220,7 +220,7 @@ graph TB
     B --> J[HTTP Transport]
     B --> K[Stdio Transport]
 
-    J --> L[Express Server]
+    J --> L[Fastify Server]
     J --> M[SSE Handler]
 
     subgraph "Core Components"

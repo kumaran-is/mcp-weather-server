@@ -22,6 +22,11 @@
   - Transport abstractions
   - Request/response handling
   - Lifecycle management
+- **Fastify 5.6.x**: High-performance web framework
+  - Low overhead HTTP server
+  - Built-in JSON parsing and validation
+  - Server-Sent Events support
+  - Plugin architecture for extensibility
 
 #### **External APIs**
 - **Open-Meteo API**: Free weather data
@@ -70,7 +75,8 @@
 #### **Production Dependencies**
 ```json
 {
-  "@modelcontextprotocol/sdk": "^1.0.0",     // MCP protocol
+  "@modelcontextprotocol/sdk": "^1.17.5",    // MCP protocol
+  "fastify": "^5.6.0",                       // High-performance web framework
   "uuid": "^9.0.1",                          // Unique identifiers
   "dotenv": "^16.4.1",                       // Environment config
   "pino": "^8.15.0",                         // Structured logging
@@ -85,9 +91,8 @@
   "@types/uuid": "^9.0.7",                   // UUID types
   "typescript": "^5.8.0",                    // TypeScript compiler
   "tsx": "^4.7.0",                          // TypeScript runner
-  "jest": "^29.7.0",                        // Testing framework
-  "@types/jest": "^29.5.5",                 // Jest types
-  "ts-jest": "^29.1.1"                      // Jest TypeScript
+  "vitest": "^2.1.8",                        // Testing framework
+  "@vitest/coverage-v8": "^2.1.8"           // Code coverage
 }
 ```
 

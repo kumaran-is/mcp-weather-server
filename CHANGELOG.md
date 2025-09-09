@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Health check endpoint (`/health`) for HTTP transport monitoring
 - Session management for HTTP transport with automatic cleanup
-- Express.js integration for robust HTTP server implementation
+- Fastify 5.6.x integration for high-performance HTTP server implementation
 - DNS rebinding protection controls for development environments
 - Graceful shutdown handling for HTTP transport with session cleanup
 - **Comprehensive test coverage with 84.11% branch coverage achieved**
@@ -20,34 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test environment configuration with proper mocking and isolation**
 
 ### Changed
+- **Major Framework Migration**: Replaced Express.js with Fastify 5.6.x for improved performance and modern features
 - **Major Testing Framework Migration**: Replaced Jest with Vitest for faster, ESM-native testing
 - Updated MCP endpoint paths from `/` to `/mcp` for HTTP transport
 - Updated `@modelcontextprotocol/sdk` from `^1.0.0` to `^1.17.5`
 - Improved HTTP transport implementation with proper session handling
 - Enhanced error handling for invalid session IDs and malformed requests
 - Updated Cline integration documentation with correct endpoint URLs
-- **Migrated all test scripts from Jest to Vitest (`npm test`, `npm run test:coverage`, etc.)**
-- **Updated TESTING.md documentation to reflect Vitest usage instead of Jest**
-- **Enhanced test configuration with globals, environment setup, and coverage exclusions**
-
-### Fixed
-- MCP endpoint URL configuration in integration documentation
-- Session ID validation and transport reuse logic
-- HTTP transport lifecycle management and cleanup
-- **Test file extensions and import patterns for ESM compatibility**
-- **Coverage reporting and threshold configurations**
-
-### Dependencies
-- Updated `@modelcontextprotocol/sdk`: `^1.0.0` → `^1.17.5`
-- Added `@types/express`: `^5.0.3` (dev dependency)
-- Added `@types/long`: `~4.0.2` (dev dependency)
-- **Added Vitest ecosystem**:
-  - Added `vitest`: `^2.1.8`
-  - Added `@vitest/coverage-v8`: `^2.1.8`
-- **Removed Jest ecosystem**:
-  - Removed `jest`: `^29.7.0`
-  - Removed `@types/jest`: `^29.5.5`
-  - Removed `ts-jest`: `^29.1.1`
 
 ## [1.0.0] - 2025-01-08
 
