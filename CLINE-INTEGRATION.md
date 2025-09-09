@@ -76,7 +76,7 @@ The MCP Weather Server supports two transport methods:
 
 ### Step 4: HTTP Transport Configuration
 
-For **HTTP transport** (requires Cline with HTTP MCP support), use this configuration:
+For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use this configuration:
 
 ```json
 {
@@ -89,7 +89,7 @@ For **HTTP transport** (requires Cline with HTTP MCP support), use this configur
       ],
       "disabled": false,
       "timeout": 30,
-      "type": "http",
+      "type": "streamableHttp",
       "url": "http://localhost:8080",
       "headers": {
         "Content-Type": "application/json"
@@ -111,7 +111,7 @@ For **HTTP transport** (requires Cline with HTTP MCP support), use this configur
       ],
       "disabled": false,
       "timeout": 30,
-      "type": "http",
+      "type": "streamableHttp",
       "url": "https://your-remote-server.com:8080",
       "headers": {
         "Content-Type": "application/json",
