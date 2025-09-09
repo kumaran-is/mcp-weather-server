@@ -18,7 +18,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 /**
  * Main entry point for the MCP Weather Server
  */
-async function main() {
+export async function main() {
   try {
     const config = getConfig();
     const transportType = process.env.MCP_TRANSPORT || 'stdio';
