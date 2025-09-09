@@ -269,6 +269,51 @@ echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 
 For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[TESTING.md](TESTING.md)**.
 
+#### Postman Testing
+
+**Test with Postman GUI:**
+1. Start the server: `npm run http`
+2. Import the collection or create requests manually
+3. Use these key endpoints:
+
+**Initialize Connection:**
+```http
+POST http://localhost:8080
+Content-Type: application/json
+MCP-Protocol-Version: 2025-06-18
+
+{
+  "jsonrpc": "2.0",
+  "id": "init-123",
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {"sampling": {}},
+    "clientInfo": {"name": "postman-test", "version": "1.0.0"}
+  }
+}
+```
+
+**Get Current Weather:**
+```http
+POST http://localhost:8080
+Content-Type: application/json
+MCP-Protocol-Version: 2025-06-18
+Mcp-Session-Id: YOUR_SESSION_ID
+
+{
+  "jsonrpc": "2.0",
+  "id": "weather-123",
+  "method": "tools/call",
+  "params": {
+    "name": "get_current_weather",
+    "arguments": {"city": "London"}
+  }
+}
+```
+
+For complete Postman setup with all endpoints, request examples, and collection templates, see the **[Postman Testing Guide](#postman-testing-guide)** below.
+
 ## 🔌 Integration Examples
 
 ### Cline (Local AI Assistant)
@@ -419,6 +464,98 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Issues**: [GitHub Issues](https://github.com/kumaran-is/mcp-weather-server/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
+
+## 🧪 Postman Testing Guide
+
+### Setup
+1. **Start the server**: `npm run http`
+2. **Open Postman** and create a new collection
+3. **Set base URL**: `http://localhost:8080`
+
+### Required Headers (Add to all requests)
+```
+Content-Type: application/json
+MCP-Protocol-Version: 2025-06-18
+Accept: application/json,text/event-stream
+```
+
+### Key Endpoints
+
+#### 1. Initialize Connection
+```http
+POST http://localhost:8080
+{
+  "jsonrpc": "2.0",
+  "id": "init-123",
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {"sampling": {}},
+    "clientInfo": {"name": "postman-test", "version": "1.0.0"}
+  }
+}
+```
+
+#### 2. List Tools
+```http
+POST http://localhost:8080
+Mcp-Session-Id: YOUR_SESSION_ID
+{
+  "jsonrpc": "2.0",
+  "id": "tools-123",
+  "method": "tools/list"
+}
+```
+
+#### 3. Get Current Weather
+```http
+POST http://localhost:8080
+Mcp-Session-Id: YOUR_SESSION_ID
+{
+  "jsonrpc": "2.0",
+  "id": "weather-123",
+  "method": "tools/call",
+  "params": {
+    "name": "get_current_weather",
+    "arguments": {"city": "London"}
+  }
+}
+```
+
+#### 4. Get Weather Forecast
+```http
+POST http://localhost:8080
+Mcp-Session-Id: YOUR_SESSION_ID
+{
+  "jsonrpc": "2.0",
+  "id": "forecast-123",
+  "method": "tools/call",
+  "params": {
+    "name": "get_weather_forecast",
+    "arguments": {"city": "Paris", "days": 3}
+  }
+}
+```
+
+#### 5. Test Error Handling
+```http
+POST http://localhost:8080
+Mcp-Session-Id: YOUR_SESSION_ID
+{
+  "jsonrpc": "2.0",
+  "id": "error-123",
+  "method": "tools/call",
+  "params": {
+    "name": "get_current_weather",
+    "arguments": {"city": ""}
+  }
+}
+```
+
+### Postman Tips
+- **Extract Session ID**: After initialize, save the `mcp-session-id` header value
+- **Environment Variables**: Create `session_id` variable in Postman environment
+- **Tests Tab**: Add scripts to automatically extract session IDs from responses
 
 ---
 
