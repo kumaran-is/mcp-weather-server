@@ -1,5 +1,4 @@
 import { StreamableHTTPTransport } from './http-transport';
-import { WeatherMCPServer } from '../mcp-server';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { randomUUID } from 'node:crypto';
@@ -10,11 +9,11 @@ vi.mock('../mcp-server');
 vi.mock('../config/config', () => ({
   getConfig: () => ({
     transport: { http: { port: 8080 } },
-    security: { allowedOrigins: ['http://localhost:3000'] }
+    security: { allowedOrigins: ['http://localhost:3000'] },
   }),
   getTransportConfig: () => ({
-    http: { port: 8080 }
-  })
+    http: { port: 8080 },
+  }),
 }));
 vi.mock('../logger', () => ({
   logger: {
@@ -23,8 +22,8 @@ vi.mock('../logger', () => ({
     logSecurityEvent: vi.fn(),
     logMCPRequest: vi.fn(),
     debug: vi.fn(),
-    warn: vi.fn()
-  }
+    warn: vi.fn(),
+  },
 }));
 
 describe('StreamableHTTPTransport', () => {
@@ -38,7 +37,7 @@ describe('StreamableHTTPTransport', () => {
 
     // Mock WeatherMCPServer
     mockWeatherServer = {
-      processMessage: vi.fn()
+      processMessage: vi.fn(),
     };
 
     // Mock MCP Server
@@ -48,7 +47,7 @@ describe('StreamableHTTPTransport', () => {
     mockHttpServer = {
       listen: vi.fn(),
       close: vi.fn(),
-      on: vi.fn()
+      on: vi.fn(),
     };
 
     (createServer as any).mockReturnValue(mockHttpServer);
@@ -86,16 +85,16 @@ describe('StreamableHTTPTransport', () => {
         headers: {
           'mcp-protocol-version': '2025-06-18',
           'content-type': 'application/json',
-          origin: 'http://localhost:3000'
+          origin: 'http://localhost:3000',
         },
         on: vi.fn(),
-        setEncoding: vi.fn()
+        setEncoding: vi.fn(),
       };
 
       mockRes = {
         writeHead: vi.fn(),
         end: vi.fn(),
-        setHeader: vi.fn()
+        setHeader: vi.fn(),
       };
     });
 
@@ -147,8 +146,8 @@ describe('StreamableHTTPTransport', () => {
               params: {
                 protocolVersion: '2025-06-18',
                 capabilities: {},
-                clientInfo: { name: 'test', version: '1.0.0' }
-              }
+                clientInfo: { name: 'test', version: '1.0.0' },
+              },
             }));
           } else if (event === 'end') {
             callback();
@@ -163,8 +162,8 @@ describe('StreamableHTTPTransport', () => {
           result: {
             protocolVersion: '2025-06-18',
             capabilities: { tools: {} },
-            serverInfo: { name: 'weather-mcp-server', version: '1.0.0' }
-          }
+            serverInfo: { name: 'weather-mcp-server', version: '1.0.0' },
+          },
         });
 
         await (transport as any).handlePOST(mockReq as IncomingMessage, mockRes as ServerResponse, 'session-123', '2025-06-18');
@@ -176,13 +175,13 @@ describe('StreamableHTTPTransport', () => {
           params: {
             protocolVersion: '2025-06-18',
             capabilities: {},
-            clientInfo: { name: 'test', version: '1.0.0' }
-          }
+            clientInfo: { name: 'test', version: '1.0.0' },
+          },
         });
 
         expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
           'Content-Type': 'application/json',
-          'Mcp-Session-Id': 'session-123'
+          'Mcp-Session-Id': 'session-123',
         }));
       });
 
@@ -193,8 +192,8 @@ describe('StreamableHTTPTransport', () => {
           method: 'tools/call',
           params: {
             name: 'get_current_weather',
-            arguments: { city: 'London' }
-          }
+            arguments: { city: 'London' },
+          },
         };
 
         (mockReq.on as any).mockImplementation((event: string, callback: Function) => {
@@ -208,8 +207,8 @@ describe('StreamableHTTPTransport', () => {
         mockWeatherServer.processMessage.mockResolvedValue({
           content: [{
             type: 'text',
-            text: 'Weather in London: 15°C'
-          }]
+            text: 'Weather in London: 15°C',
+          }],
         });
 
         await (transport as any).handlePOST(mockReq as IncomingMessage, mockRes as ServerResponse, 'session-456', '2025-06-18');
@@ -221,7 +220,7 @@ describe('StreamableHTTPTransport', () => {
       it('should handle notification (no response expected)', async () => {
         const notification = {
           jsonrpc: '2.0',
-          method: 'notifications/initialized'
+          method: 'notifications/initialized',
         };
 
         (mockReq.on as any).mockImplementation((event: string, callback: Function) => {
@@ -251,7 +250,7 @@ describe('StreamableHTTPTransport', () => {
         await (transport as any).handlePOST(mockReq as IncomingMessage, mockRes as ServerResponse, 'session-999', '2025-06-18');
 
         expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         }));
       });
 
@@ -262,7 +261,7 @@ describe('StreamableHTTPTransport', () => {
 
         expect(mockRes.writeHead).toHaveBeenCalledWith(403, expect.any(Object));
         expect(mockRes.end).toHaveBeenCalledWith(JSON.stringify({
-          error: 'Invalid Origin'
+          error: 'Invalid Origin',
         }));
       });
     });
@@ -272,7 +271,7 @@ describe('StreamableHTTPTransport', () => {
         mockReq.method = 'GET';
         mockReq.headers = {
           ...mockReq.headers,
-          accept: 'text/event-stream'
+          accept: 'text/event-stream',
         };
       });
 
@@ -282,7 +281,7 @@ describe('StreamableHTTPTransport', () => {
         expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Mcp-Session-Id': 'session-123'
+          'Mcp-Session-Id': 'session-123',
         }));
       });
 
@@ -315,7 +314,7 @@ describe('StreamableHTTPTransport', () => {
         await (transport as any).handleDELETE(mockReq as IncomingMessage, mockRes as ServerResponse, 'session-123');
 
         expect(mockRes.writeHead).toHaveBeenCalledWith(204, expect.objectContaining({
-          'Mcp-Session-Id': 'session-123'
+          'Mcp-Session-Id': 'session-123',
         }));
         expect(mockRes.end).toHaveBeenCalled();
       });
@@ -331,7 +330,7 @@ describe('StreamableHTTPTransport', () => {
         await (transport as any).handleHealth(mockReq as IncomingMessage, mockRes as ServerResponse);
 
         expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         }));
 
         expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('"status":"healthy"'));
@@ -343,7 +342,7 @@ describe('StreamableHTTPTransport', () => {
     it('should send message to connected client', async () => {
       const mockClient = {
         res: { write: vi.fn() },
-        sessionId: 'session-123'
+        sessionId: 'session-123',
       };
 
       (transport as any).clients.set('session-123', mockClient);
@@ -375,30 +374,30 @@ describe('StreamableHTTPTransport', () => {
     it('should send error response', () => {
       const mockRes = {
         writeHead: vi.fn(),
-        end: vi.fn()
+        end: vi.fn(),
       };
 
       (transport as any).sendErrorResponse(mockRes as any, 400, 'Bad Request');
 
       expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       }));
       expect(mockRes.end).toHaveBeenCalledWith(JSON.stringify({
-        error: 'Bad Request'
+        error: 'Bad Request',
       }));
     });
 
     it('should send JSON-RPC error response', () => {
       const mockRes = {
         writeHead: vi.fn(),
-        end: vi.fn()
+        end: vi.fn(),
       };
 
       (transport as any).sendJSONRPCError(mockRes as any, -32600, 'Invalid Request', 'session-123');
 
       expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
         'Content-Type': 'application/json',
-        'Mcp-Session-Id': 'session-123'
+        'Mcp-Session-Id': 'session-123',
       }));
 
       expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('"code":-32600'));
@@ -409,7 +408,7 @@ describe('StreamableHTTPTransport', () => {
     it('should close transport gracefully', async () => {
       const mockClient = {
         res: { end: vi.fn() },
-        sessionId: 'session-123'
+        sessionId: 'session-123',
       };
 
       (transport as any).clients.set('session-123', mockClient);
@@ -426,7 +425,7 @@ describe('StreamableHTTPTransport', () => {
       expect(stats).toEqual({
         activeClients: 0,
         queuedMessages: 0,
-        port: 8080
+        port: 8080,
       });
     });
   });
@@ -442,10 +441,6 @@ describe('StreamableHTTPTransport', () => {
 
     it('should handle session initialization', () => {
       const mockOnSessionInitialized = vi.fn();
-      const mockTransport = {
-        sessionId: null,
-        onclose: null
-      };
 
       // Simulate session initialization
       mockOnSessionInitialized('new-session-123');
@@ -483,13 +478,13 @@ describe('StreamableHTTPTransport', () => {
       const message = {
         jsonrpc: '2.0',
         id: '123',
-        method: 'tools/list'
+        method: 'tools/list',
       };
 
       const expectedResponse = {
         jsonrpc: '2.0',
         id: '123',
-        result: { tools: [] }
+        result: { tools: [] },
       };
 
       mockWeatherServer.processMessage.mockResolvedValue(expectedResponse);
@@ -504,7 +499,7 @@ describe('StreamableHTTPTransport', () => {
       const message = {
         jsonrpc: '2.0',
         id: '123',
-        method: 'invalid/method'
+        method: 'invalid/method',
       };
 
       mockWeatherServer.processMessage.mockRejectedValue(new Error('Method not found'));
@@ -517,8 +512,8 @@ describe('StreamableHTTPTransport', () => {
         error: {
           code: -32603,
           message: 'Internal error',
-          data: { details: 'Method not found' }
-        }
+          data: { details: 'Method not found' },
+        },
       });
     });
   });

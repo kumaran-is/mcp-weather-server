@@ -35,12 +35,12 @@ export type {
   PoolConfiguration,
   CircuitBreakerConfig,
   RetryConfig,
-  ResilienceConfig
+  ResilienceConfig,
 } from './config/pool-config.js';
 
 export type {
   PoolStats,
-  PoolHealth
+  PoolHealth,
 } from './http/pool-manager.js';
 
 export type {
@@ -48,16 +48,16 @@ export type {
   PoolMetrics,
   CircuitBreakerMetrics,
   ResilienceMetrics,
-  HealthStatus
+  HealthStatus,
 } from './monitoring/metrics.js';
 
 export type {
   CircuitState,
-  CircuitBreakerStats
+  CircuitBreakerStats,
 } from './resilience/circuit-breaker.js';
 
 export type {
-  RetryAttempt
+  RetryAttempt,
 } from './resilience/retry-strategy.js';
 
 // Re-export commonly used classes
