@@ -76,7 +76,7 @@ The MCP Weather Server supports two transport methods:
 
 ### Step 4: HTTP Transport Configuration
 
-For **HTTP transport**, use this configuration instead:
+For **HTTP transport** (requires Cline with HTTP MCP support), use this configuration:
 
 ```json
 {
@@ -90,14 +90,32 @@ For **HTTP transport**, use this configuration instead:
       "disabled": false,
       "timeout": 30,
       "type": "http",
-      "command": "node",
-      "args": [
-        "/PATH/TO/YOUR/mcp-weather-server/dist/server.js"
+      "url": "http://localhost:8080",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+```
+
+#### Alternative: Remote Server Configuration
+```json
+{
+  "mcpServers": {
+    "remote-weather": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
       ],
-      "env": {
-        "MCP_TRANSPORT": "http",
-        "LOG_LEVEL": "info",
-        "MCP_HTTP_PORT": "8080"
+      "disabled": false,
+      "timeout": 30,
+      "type": "http",
+      "url": "https://your-remote-server.com:8080",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer your-api-token"
       }
     }
   }
