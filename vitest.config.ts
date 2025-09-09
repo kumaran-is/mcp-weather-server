@@ -22,7 +22,6 @@ export default defineConfig({
         '!src/**/__tests__/**',
         '!src/types.ts',
         '!src/client-example.ts',
-        '!src/server.ts',
         '!src/transports/',
         '!src/config/'
       ],
@@ -33,7 +32,6 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.spec.ts',
         'src/client-example.ts',
-        'src/server.ts',
         'src/transports/',
         'src/config/'
       ],
