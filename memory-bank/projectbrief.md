@@ -102,6 +102,8 @@ Build a production-ready **Model Context Protocol (MCP)** server that provides c
 - **Runtime**: Node.js 22.x
 - **Framework**: MCP SDK
 - **Testing**: Vitest with 80%+ coverage
+- **HTTP Client**: undici for high-performance HTTP requests
+- **Version**: 1.2.0 (major framework migration)
 - **Container**: Docker with multi-stage builds
 
 ### **API Limitations**

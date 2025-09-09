@@ -80,7 +80,7 @@
   "uuid": "^9.0.1",                          // Unique identifiers
   "dotenv": "^16.4.1",                       // Environment config
   "pino": "^8.15.0",                         // Structured logging
-  "node-fetch": "^3.3.2"                     // HTTP client
+  "undici": "^6.19.8"                       // High-performance HTTP client
 }
 ```
 
