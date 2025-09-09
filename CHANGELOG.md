@@ -5,12 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2025-09-09
 
 ### Added
 - Health check endpoint (`/health`) for HTTP transport monitoring
 - Session management for HTTP transport with automatic cleanup
-- Fastify 5.6.x integration for high-performance HTTP server implementation
 - DNS rebinding protection controls for development environments
 - Graceful shutdown handling for HTTP transport with session cleanup
 - **Comprehensive test coverage with 84.11% branch coverage achieved**
@@ -21,12 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Major Framework Migration**: Replaced Express.js with Fastify 5.6.x for improved performance and modern features
+- **HTTP Client Migration**: Replaced `node-fetch` with `undici` for better performance and Node.js native HTTP client
 - **Major Testing Framework Migration**: Replaced Jest with Vitest for faster, ESM-native testing
 - Updated MCP endpoint paths from `/` to `/mcp` for HTTP transport
 - Updated `@modelcontextprotocol/sdk` from `^1.0.0` to `^1.17.5`
 - Improved HTTP transport implementation with proper session handling
 - Enhanced error handling for invalid session IDs and malformed requests
 - Updated Cline integration documentation with correct endpoint URLs
+
+### Removed
+- `node-fetch` dependency (replaced with native `undici`)
+- Legacy Express.js HTTP server implementation
 
 ## [1.0.0] - 2025-01-08
 

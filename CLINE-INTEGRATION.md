@@ -92,7 +92,9 @@ For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use thi
       "type": "streamableHttp",
       "url": "http://localhost:8080/mcp",
       "headers": {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "MCP-Protocol-Version": "2025-06-18",
+        "Accept": "application/json, text/event-stream"
       }
     }
   }
