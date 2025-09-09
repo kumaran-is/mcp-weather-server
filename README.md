@@ -717,6 +717,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
 - **Cline Integration**: [CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md) - Complete Cline setup guide
+- **Phase 4 Plan**: [PHASE-4-PLAN.md](docs/PHASE-4-PLAN.md) - Chaos Engineering & Performance Benchmarking roadmap
 
 ## 🧪 Postman Testing Guide
 

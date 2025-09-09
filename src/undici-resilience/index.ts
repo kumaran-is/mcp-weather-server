@@ -25,6 +25,11 @@ export * from './resilience/retry-strategy.js';
 export * from './resilience/bulkhead.js';
 export * from './resilience/rate-limiter.js';
 
+// Streaming components
+export * from './streaming/backpressure-handler.js';
+export * from './streaming/streaming-metrics.js';
+export * from './streaming/streaming-pool-manager.js';
+
 // Type definitions
 export type {
   PoolConfiguration,

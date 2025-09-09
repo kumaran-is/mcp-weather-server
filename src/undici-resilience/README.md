@@ -218,6 +218,30 @@ TOKEN_BUCKET_CAPACITY=100
 
 # Token refill rate per second
 TOKEN_BUCKET_REFILL_RATE=10
+
+# ===========================================
+# Streaming Configuration
+# ===========================================
+# Maximum concurrent streams per pool
+MAX_CONCURRENT_STREAMS=10
+
+# Stream timeout in milliseconds
+STREAM_TIMEOUT=60000
+
+# Enable streaming metrics collection
+ENABLE_STREAMING_METRICS=true
+
+# Backpressure high water mark (bytes)
+BACKPRESSURE_HIGH_WATER_MARK=1048576
+
+# Backpressure low water mark (bytes)
+BACKPRESSURE_LOW_WATER_MARK=524288
+
+# Backpressure timeout (milliseconds)
+BACKPRESSURE_TIMEOUT=30000
+
+# Enable adaptive backpressure
+ADAPTIVE_BACKPRESSURE=true
 ```
 
 ### Programmatic Configuration
