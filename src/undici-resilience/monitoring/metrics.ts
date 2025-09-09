@@ -81,12 +81,12 @@ export class MetricsCollector {
     // Update error rate
     metrics.errorRate = (metrics.failedRequests / metrics.totalRequests) * 100;
 
-    logger.debug({
+    logger.debug('Request success recorded', {
       pool: poolName,
       responseTime,
       context,
       totalRequests: metrics.totalRequests
-    }, 'Request success recorded');
+    });
   }
 
   /**
@@ -112,13 +112,13 @@ export class MetricsCollector {
     // Update error rate
     metrics.errorRate = (metrics.failedRequests / metrics.totalRequests) * 100;
 
-    logger.warn({
+    logger.warn('Request failure recorded', {
       pool: poolName,
       responseTime,
       error: error.message,
       context,
       errorRate: metrics.errorRate
-    }, 'Request failure recorded');
+    });
   }
 
   /**
@@ -188,13 +188,13 @@ export class MetricsCollector {
     const totalRetries = metrics.retrySuccesses + metrics.retryFailures;
     metrics.avgRetryDelay = this.updateAverage(metrics.avgRetryDelay, delay, totalRetries);
 
-    logger.debug({
+    logger.debug('Retry attempt recorded', {
       pool: poolName,
       attempt,
       delay,
       success,
       totalRetries: metrics.retryAttempts
-    }, 'Retry attempt recorded');
+    });
   }
 
   /**

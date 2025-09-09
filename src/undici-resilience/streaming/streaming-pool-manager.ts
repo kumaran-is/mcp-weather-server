@@ -69,12 +69,12 @@ export class StreamingPoolManager {
     // Setup pool event handlers
     this.setupPoolEventHandlers(name, pool);
 
-    logger.info({
+    logger.info('Streaming pool created', {
       pool: name,
       origin,
       connections: poolConfig.connections,
       maxConcurrentStreams: poolConfig.maxConcurrentStreams
-    }, 'Streaming pool created');
+    });
 
     return pool;
   }
@@ -134,13 +134,13 @@ export class StreamingPoolManager {
         streamingMetricsCollector.recordLatency(Date.now() - startTime);
       }
 
-      logger.error({
+      logger.error('Streaming request failed', {
         error: (error as Error).message,
         pool: poolName,
         requestId,
         context,
         latency: Date.now() - startTime
-      }, 'Streaming request failed');
+      });
 
       throw error;
     } finally {
@@ -160,12 +160,12 @@ export class StreamingPoolManager {
     const batchStartTime = Date.now();
     const batchId = this.generateBatchId();
 
-    logger.info({
+    logger.info('Starting batch streaming requests', {
       batchId,
       pool: poolName,
       requestCount: requests.length,
       context
-    }, 'Starting batch streaming requests');
+    });
 
     try {
       // Get backpressure handler
@@ -181,12 +181,12 @@ export class StreamingPoolManager {
             const response = await this.executeStreamRequest(poolName, request, `${context}-batch-${index}`);
             return response;
           } catch (error) {
-            logger.warn({
+            logger.warn('Batch request failed', {
               error: (error as Error).message,
               batchId,
               requestIndex: index,
               latency: Date.now() - requestStartTime
-            }, 'Batch request failed');
+            });
 
             throw error;
           }
@@ -196,23 +196,23 @@ export class StreamingPoolManager {
 
       const totalLatency = Date.now() - batchStartTime;
 
-      logger.info({
+      logger.info('Batch streaming requests completed', {
         batchId,
         pool: poolName,
         completed: results.length,
         totalLatency,
         averageLatency: totalLatency / results.length
-      }, 'Batch streaming requests completed');
+      });
 
       return results;
 
     } catch (error) {
-      logger.error({
+      logger.error('Batch streaming requests failed', {
         error: (error as Error).message,
         batchId,
         pool: poolName,
         context
-      }, 'Batch streaming requests failed');
+      });
 
       throw error;
     }
@@ -234,10 +234,10 @@ export class StreamingPoolManager {
     // Remove cancelled streams
     cancelledStreams.forEach(id => this.activeStreams.delete(id));
 
-    logger.info({
+    logger.info('Active streams cancelled', {
       pool: poolName,
       cancelledCount: cancelledStreams.length
-    }, 'Active streams cancelled');
+    });
   }
 
   /**
@@ -264,7 +264,7 @@ export class StreamingPoolManager {
       if (pool) {
         // Note: undici pools don't support runtime reconfiguration
         // This would require recreating the pool
-        logger.warn({ pool: poolName }, 'Pool reconfiguration requires restart');
+        logger.warn('Pool reconfiguration requires restart', { pool: poolName });
       }
     }
 
@@ -274,7 +274,7 @@ export class StreamingPoolManager {
       handler.updateConfig(config.backpressure);
     }
 
-    logger.info({ pool: poolName, config }, 'Streaming configuration updated');
+    logger.info('Streaming configuration updated', { pool: poolName, config });
   }
 
   /**
@@ -295,9 +295,9 @@ export class StreamingPoolManager {
     for (const [poolName, pool] of this.pools) {
       try {
         await pool.close();
-        logger.debug({ pool: poolName }, 'Pool closed');
+        logger.debug('Pool closed', { pool: poolName });
       } catch (error) {
-        logger.error({ pool: poolName, error: (error as Error).message }, 'Error closing pool');
+        logger.error('Error closing pool', { pool: poolName, error: (error as Error).message });
       }
     }
 
@@ -333,15 +333,15 @@ export class StreamingPoolManager {
           streamingMetricsCollector.recordBackpressureEvent();
         }
 
-        logger.debug({ pool: poolName, ...data }, 'Backpressure applied');
+        logger.debug('Backpressure applied', { pool: poolName, ...data });
       });
 
       handler.on('resume', (data) => {
-        logger.debug({ pool: poolName, ...data }, 'Processing resumed');
+        logger.debug('Processing resumed', { pool: poolName, ...data });
       });
 
       handler.on('error', (error) => {
-        logger.error({ pool: poolName, error: (error as Error).message }, 'Backpressure handler error');
+        logger.error('Backpressure handler error', { pool: poolName, error: (error as Error).message });
       });
     }
 
@@ -456,7 +456,7 @@ export class StreamingPoolManager {
     }
 
     if (errors.length > 0) {
-      logger.warn({ errorCount: errors.length }, 'Some batch requests failed');
+      logger.warn('Some batch requests failed', { errorCount: errors.length });
     }
 
     return results;
@@ -505,7 +505,7 @@ export class StreamingPoolManager {
   private setupPoolEventHandlers(poolName: string, pool: Pool): void {
     // Note: undici Pool doesn't have event handlers in the current version
     // This is a placeholder for future versions or custom implementations
-    logger.debug({ pool: poolName }, 'Pool event handlers setup (placeholder)');
+    logger.debug('Pool event handlers setup (placeholder)', { pool: poolName });
   }
 }
 
