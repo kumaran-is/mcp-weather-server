@@ -248,23 +248,28 @@ export class StreamingMetricsCollector extends EventEmitter {
    * Get health status
    */
   getHealthStatus(): StreamHealthStatus {
-    const metrics = this.getMetrics();
+    // Get current metrics without calling getMetrics() to avoid circular dependency
+    const currentMetrics = { ...this.metrics };
+    currentMetrics.uptime = Date.now() - this.startTime;
+    const uptimeSeconds = currentMetrics.uptime / 1000;
+    currentMetrics.throughput = uptimeSeconds > 0 ? currentMetrics.bytesReceived / uptimeSeconds : 0;
+
     const details: Record<string, any> = {};
 
     // Check connections
-    const connectionHealth = this.checkConnectionHealth(metrics);
+    const connectionHealth = this.checkConnectionHealth(currentMetrics);
     details.connections = connectionHealth.details;
 
     // Check performance
-    const performanceHealth = this.checkPerformanceHealth(metrics);
+    const performanceHealth = this.checkPerformanceHealth(currentMetrics);
     details.performance = performanceHealth.details;
 
     // Check errors
-    const errorHealth = this.checkErrorHealth(metrics);
+    const errorHealth = this.checkErrorHealth(currentMetrics);
     details.errors = errorHealth.details;
 
     // Check resources
-    const resourceHealth = this.checkResourceHealth(metrics);
+    const resourceHealth = this.checkResourceHealth(currentMetrics);
     details.resources = resourceHealth.details;
 
     // Determine overall health
@@ -327,7 +332,7 @@ export class StreamingMetricsCollector extends EventEmitter {
    */
   updateAlertConfig(config: Partial<AlertConfig>): void {
     this.alertConfig = { ...this.alertConfig, ...config };
-    logger.info({ config: this.alertConfig }, 'Alert configuration updated');
+    logger.info('Alert configuration updated', { config: this.alertConfig });
   }
 
   /**
@@ -377,7 +382,7 @@ export class StreamingMetricsCollector extends EventEmitter {
         metrics: this.getMetrics(),
       });
 
-      logger.warn({ alerts }, 'Streaming alerts triggered');
+      logger.warn('Streaming alerts triggered', { alerts });
     }
   }
 

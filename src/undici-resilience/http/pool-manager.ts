@@ -13,6 +13,7 @@ import {
   DEFAULT_RESILIENCE_CONFIG
 } from '../config/pool-config.js';
 import { logger } from '../logger.js';
+import { getAPIConfig } from '../../config/config.js';
 
 export interface PoolStats {
   connected: number;
@@ -47,15 +48,21 @@ export class OptimizedPoolManager {
    * Initialize connection pools for different endpoints
    */
   private initializePools(): void {
+    const apiConfig = getAPIConfig();
+
+    // Extract origin from URLs (remove path components)
+    const weatherOrigin = new URL(apiConfig.baseUrl).origin;
+    const geocodingOrigin = new URL(apiConfig.geocodingUrl).origin;
+
     // Weather API pool
-    this.createPool('weather', 'https://api.open-meteo.com', WEATHER_POOL_CONFIG);
+    this.createPool('weather', weatherOrigin, WEATHER_POOL_CONFIG);
 
     // Geocoding API pool
-    this.createPool('geocoding', 'https://geocoding-api.open-meteo.com', GEOCODING_POOL_CONFIG);
+    this.createPool('geocoding', geocodingOrigin, GEOCODING_POOL_CONFIG);
 
-    logger.info({
+    logger.info('HTTP pools initialized', {
       pools: Array.from(this.pools.keys())
-    }, 'HTTP pools initialized');
+    });
   }
 
   /**
@@ -75,20 +82,20 @@ export class OptimizedPoolManager {
 
     // Add event listeners for monitoring
     pool.on('connect', (origin) => {
-      logger.debug({ pool: name, origin }, 'Pool connection established');
+      logger.debug('Pool connection established', { pool: name, origin });
     });
 
     pool.on('disconnect', (origin, targets, error) => {
-      logger.warn({
+      logger.warn('Pool connection lost', {
         pool: name,
         origin,
         targets: targets?.length || 0,
         error: error?.message
-      }, 'Pool connection lost');
+      });
     });
 
     pool.on('drain', () => {
-      logger.debug({ pool: name }, 'Pool drained');
+      logger.debug('Pool drained', { pool: name });
     });
 
     this.pools.set(name, pool);
@@ -111,12 +118,12 @@ export class OptimizedPoolManager {
     this.errorCounts.set(name, 0);
     this.lastRequestTimes.set(name, null);
 
-    logger.info({
+    logger.info('Pool created with resilience features', {
       pool: name,
       baseUrl,
       connections: config.connections,
       pipelining: config.pipelining
-    }, 'Pool created with resilience features');
+    });
   }
 
   /**
@@ -148,14 +155,19 @@ export class OptimizedPoolManager {
           const baseUrl = this.poolUrls.get(poolName)!;
           const fullUrl = `${baseUrl}${options.path || ''}`;
 
-          logger.logAPIRequest(fullUrl, options.method || 'GET', {
+          logger.debug('API Request', {
+            url: fullUrl,
+            method: options.method || 'GET',
             pool: poolName,
             context
           });
 
           const { statusCode, headers, body } = await pool.request(options);
 
-          logger.logAPIResponse(fullUrl, statusCode, Date.now() - startTime, {
+          logger.info('API Response', {
+            url: fullUrl,
+            statusCode,
+            latency: Date.now() - startTime,
             pool: poolName,
             context
           });
@@ -176,7 +188,8 @@ export class OptimizedPoolManager {
       // Update error metrics
       this.errorCounts.set(poolName, (this.errorCounts.get(poolName) || 0) + 1);
 
-      logger.logError(error as Error, {
+      logger.error('Request failed', {
+        error: (error as Error).message,
         pool: poolName,
         context,
         duration: Date.now() - startTime
@@ -254,7 +267,7 @@ export class OptimizedPoolManager {
       this.pools.delete(poolName);
       this.circuitBreakers.delete(poolName);
       this.retryStrategies.delete(poolName);
-      logger.info({ pool: poolName }, 'Pool closed');
+      logger.info('Pool closed', { pool: poolName });
     }
   }
 
