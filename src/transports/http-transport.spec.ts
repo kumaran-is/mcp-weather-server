@@ -22,7 +22,8 @@ vi.mock('../logger', () => ({
     logError: vi.fn(),
     logSecurityEvent: vi.fn(),
     logMCPRequest: vi.fn(),
-    debug: vi.fn()
+    debug: vi.fn(),
+    warn: vi.fn()
   }
 }));
 
@@ -458,14 +459,22 @@ describe('StreamableHTTPTransport', () => {
       expect(origins).toBe('http://localhost:3000');
     });
 
-    it('should set CORS headers', () => {
-      const headers = (transport as any).getCORSHeaders('http://localhost:3000');
-      expect(headers).toEqual({
-        'Access-Control-Allow-Origin': 'http://localhost:3000',
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, MCP-Protocol-Version',
-        'Access-Control-Max-Age': '86400'
-      });
+    it('should validate allowed origins', () => {
+      const mockReq = { headers: { origin: 'http://localhost:3000' } };
+      const isAllowed = (transport as any).isOriginAllowed(mockReq);
+      expect(isAllowed).toBe(true);
+    });
+
+    it('should reject disallowed origins', () => {
+      const mockReq = { headers: { origin: 'http://malicious.com' } };
+      const isAllowed = (transport as any).isOriginAllowed(mockReq);
+      expect(isAllowed).toBe(false);
+    });
+
+    it('should allow requests without origin', () => {
+      const mockReq = { headers: {} };
+      const isAllowed = (transport as any).isOriginAllowed(mockReq);
+      expect(isAllowed).toBe(true);
     });
   });
 

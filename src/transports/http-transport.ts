@@ -353,6 +353,14 @@ export class StreamableHTTPTransport {
   }
 
   /**
+   * Check if protocol version is valid
+   */
+  private isProtocolVersionValid(protocolVersion: string): boolean {
+    const supportedVersions = ['2025-06-18', '2025-03-26'];
+    return supportedVersions.includes(protocolVersion);
+  }
+
+  /**
    * Get allowed origins for CORS
    */
   private getAllowedOrigins(): string {

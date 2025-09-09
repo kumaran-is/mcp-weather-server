@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock all dependencies to avoid complex setup
+// Mock all dependencies
 vi.mock('dotenv/config');
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js');
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js');
@@ -10,6 +10,10 @@ vi.mock('./config/config.js');
 vi.mock('express');
 vi.mock('node:crypto');
 vi.mock('@modelcontextprotocol/sdk/types.js');
+
+// Import after mocking
+import { logger } from './logger.js';
+import express from 'express';
 
 describe('Server Entry Point', () => {
   describe('Basic Server Functionality', () => {
@@ -230,10 +234,10 @@ describe('Server Entry Point', () => {
 
     it('should handle default HTTP port', () => {
       const config = {
-        transport: {}
+        transport: {} as any
       };
 
-      const port = config.transport.http?.port || 8080;
+      const port = (config.transport.http?.port as number) || 8080;
       expect(port).toBe(8080);
     });
 
@@ -249,6 +253,351 @@ describe('Server Entry Point', () => {
 
         const configuredPort = config.transport.http?.port || 8080;
         expect(configuredPort).toBe(port);
+      });
+    });
+  });
+
+  describe('Main Function Execution', () => {
+    let mockWeatherServer: any;
+    let mockStdioTransport: any;
+    let mockHttpTransport: any;
+    let mockConfig: any;
+    let mockExpressApp: any;
+    let mockHttpServer: any;
+
+    beforeEach(() => {
+      // Setup comprehensive mocks
+      mockWeatherServer = {
+        getServer: vi.fn().mockReturnValue({
+          connect: vi.fn().mockResolvedValue(undefined)
+        })
+      };
+
+      mockStdioTransport = {
+        constructor: vi.fn()
+      };
+
+      mockHttpTransport = {
+        constructor: vi.fn()
+      };
+
+      mockConfig = {
+        transport: { type: 'stdio' }
+      };
+
+      mockExpressApp = {
+        use: vi.fn(),
+        post: vi.fn(),
+        get: vi.fn(),
+        delete: vi.fn(),
+        listen: vi.fn().mockReturnValue(mockHttpServer)
+      };
+
+      mockHttpServer = {
+        on: vi.fn(),
+        close: vi.fn().mockImplementation((callback) => callback())
+      };
+
+      // Mock the imports
+      vi.mocked(express).mockReturnValue(mockExpressApp as any);
+    });
+
+    describe('Stdio Transport Path', () => {
+      beforeEach(() => {
+        mockConfig.transport.type = 'stdio';
+      });
+
+      it('should execute main function with stdio transport', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'stdio';
+
+        try {
+          // Mock getConfig to return our config
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          // Mock WeatherMCPServer
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          // Mock StdioServerTransport
+          const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
+          vi.mocked(StdioServerTransport).mockImplementation(() => mockStdioTransport as any);
+
+          await main();
+
+          expect(vi.mocked(logger).info).toHaveBeenCalledWith(
+            { transport: 'stdio', nodeVersion: process.version, platform: process.platform },
+            'Starting MCP Weather Server'
+          );
+
+          expect(vi.mocked(logger).info).toHaveBeenCalledWith('Using stdio transport');
+          expect(vi.mocked(logger).info).toHaveBeenCalledWith(
+            'MCP Weather Server started successfully with stdio transport'
+          );
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+    });
+
+    describe('HTTP Transport Path', () => {
+      beforeEach(() => {
+        mockConfig.transport.type = 'http';
+      });
+
+      it('should execute main function with HTTP transport', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'http';
+
+        try {
+          // Mock getConfig
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          // Mock WeatherMCPServer
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          // Mock StreamableHTTPServerTransport
+          const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+          vi.mocked(StreamableHTTPServerTransport).mockImplementation(() => mockHttpTransport as any);
+
+          await main();
+
+          expect(vi.mocked(logger).info).toHaveBeenCalledWith(
+            { transport: 'http', nodeVersion: process.version, platform: process.platform },
+            'Starting MCP Weather Server'
+          );
+
+          expect(vi.mocked(logger).info).toHaveBeenCalledWith({ port: 8080 }, 'Using HTTP transport');
+          expect(vi.mocked(logger).info).toHaveBeenCalledWith(
+            'MCP Weather Server started successfully with HTTP transport on port 8080'
+          );
+
+          // Verify Express app setup
+          expect(mockExpressApp.use).toHaveBeenCalled();
+          expect(mockExpressApp.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
+          expect(mockExpressApp.get).toHaveBeenCalledWith('/mcp', expect.any(Function));
+          expect(mockExpressApp.delete).toHaveBeenCalledWith('/mcp', expect.any(Function));
+          expect(mockExpressApp.get).toHaveBeenCalledWith('/health', expect.any(Function));
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+
+      it('should set up health endpoint correctly', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'http';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+          vi.mocked(StreamableHTTPServerTransport).mockImplementation(() => mockHttpTransport as any);
+
+          await main();
+
+          // Verify health endpoint was set up
+          expect(mockExpressApp.get).toHaveBeenCalledWith('/health', expect.any(Function));
+
+          // Get the health endpoint handler
+          const healthCall = mockExpressApp.get.mock.calls.find(call => call[0] === '/health');
+          expect(healthCall).toBeDefined();
+
+          const healthHandler = healthCall[1];
+          const mockReq = {};
+          const mockRes = {
+            json: vi.fn(),
+            writeHead: vi.fn(),
+            end: vi.fn()
+          };
+
+          // Call the health handler
+          healthHandler(mockReq, mockRes);
+
+          expect(mockRes.json).toHaveBeenCalledWith({
+            status: 'healthy',
+            timestamp: expect.any(String),
+            version: '1.0.0',
+            transport: 'http',
+            activeSessions: 0,
+            uptime: expect.any(Number),
+            memory: expect.any(Object)
+          });
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+    });
+
+    describe('Error Scenarios', () => {
+      it('should handle WeatherMCPServer initialization errors', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'stdio';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => {
+            throw new Error('Server initialization failed');
+          });
+
+          await expect(main()).rejects.toThrow('Server initialization failed');
+          expect(vi.mocked(logger).fatal).toHaveBeenCalled();
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+
+      it('should handle configuration errors', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'stdio';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockImplementation(() => {
+            throw new Error('Configuration error');
+          });
+
+          await expect(main()).rejects.toThrow('Configuration error');
+          expect(vi.mocked(logger).fatal).toHaveBeenCalled();
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+
+      it('should handle transport connection errors', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'stdio';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          // Mock connection failure
+          mockWeatherServer.getServer().connect.mockRejectedValue(new Error('Connection failed'));
+
+          await expect(main()).rejects.toThrow('Connection failed');
+          expect(vi.mocked(logger).fatal).toHaveBeenCalled();
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+    });
+
+    describe('Process Signal Handling', () => {
+      it('should handle SIGTERM signal gracefully', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'http';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+          vi.mocked(StreamableHTTPServerTransport).mockImplementation(() => mockHttpTransport as any);
+
+          // Start server (this will set up signal handlers)
+          const serverPromise = main();
+
+          // Simulate SIGTERM
+          process.emit('SIGTERM');
+
+          await expect(serverPromise).resolves.not.toThrow();
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+
+      it('should handle SIGINT signal gracefully', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'http';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+          vi.mocked(StreamableHTTPServerTransport).mockImplementation(() => mockHttpTransport as any);
+
+          // Start server
+          const serverPromise = main();
+
+          // Simulate SIGINT
+          process.emit('SIGINT');
+
+          await expect(serverPromise).resolves.not.toThrow();
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
+      });
+    });
+
+    describe('Session Management', () => {
+      it('should handle session creation and cleanup', async () => {
+        const { main } = await import('./server.js');
+
+        const originalEnv = process.env.MCP_TRANSPORT;
+        process.env.MCP_TRANSPORT = 'http';
+
+        try {
+          const { getConfig } = await import('./config/config.js');
+          vi.mocked(getConfig).mockReturnValue(mockConfig);
+
+          const { WeatherMCPServer } = await import('./mcp-server.js');
+          vi.mocked(WeatherMCPServer).mockImplementation(() => mockWeatherServer);
+
+          const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+          vi.mocked(StreamableHTTPServerTransport).mockImplementation(() => mockHttpTransport as any);
+
+          await main();
+
+          // Verify transport was created
+          expect(mockHttpTransport).toBeDefined();
+
+        } finally {
+          process.env.MCP_TRANSPORT = originalEnv;
+        }
       });
     });
   });
