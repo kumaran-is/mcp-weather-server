@@ -211,4 +211,508 @@ describe('WeatherMCPServer', () => {
       mockProcessOn.mockRestore();
     });
   });
+
+  describe('MCP Protocol Message Processing', () => {
+    describe('processMessage method', () => {
+      it('should handle initialize request', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: '123',
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: { sampling: {} },
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toBeDefined();
+        expect(result.jsonrpc).toBe('2.0');
+        expect(result.id).toBe('123');
+        expect(result.result).toBeDefined();
+        expect(result.result.protocolVersion).toBe('2025-06-18');
+      });
+
+      it('should handle initialized notification', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          method: 'notifications/initialized'
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toBeNull();
+      });
+
+      it('should handle shutdown request', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: '456',
+          method: 'shutdown'
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: '456',
+          result: {}
+        });
+      });
+
+      it('should handle tools/list request', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: '789',
+          method: 'tools/list'
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toBeDefined();
+        expect(result.jsonrpc).toBe('2.0');
+        expect(result.id).toBe('789');
+        expect(result.result).toBeDefined();
+        expect(result.result.tools).toBeDefined();
+        expect(Array.isArray(result.result.tools)).toBe(true);
+        expect(result.result.tools.length).toBe(3);
+      });
+
+      it('should handle tools/call request', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: '999',
+          method: 'tools/call',
+          params: {
+            name: 'get_current_weather',
+            arguments: { city: 'London' }
+          }
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toBeDefined();
+        expect(result.jsonrpc).toBe('2.0');
+        expect(result.id).toBe('999');
+        expect(result.result).toBeDefined();
+        expect(result.result.content).toBeDefined();
+      });
+
+      it('should handle unknown method', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'unknown-123',
+          method: 'unknown/method'
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'unknown-123',
+          error: {
+            code: -32601,
+            message: 'Method \'unknown/method\' not found'
+          }
+        });
+      });
+
+      it('should handle invalid JSON-RPC format', async () => {
+        const message = {
+          id: 'invalid-123',
+          method: 'tools/list'
+          // Missing jsonrpc field
+        };
+
+        const result = await server['processMessage'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'invalid-123',
+          error: {
+            code: -32601,
+            message: 'Method \'undefined\' not found'
+          }
+        });
+      });
+    });
+
+    describe('handleInitialize method', () => {
+      it('should accept supported protocol version', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'init-123',
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: { sampling: {} },
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        const result = await server['handleInitialize'](message);
+
+        expect(result).toBeDefined();
+        expect(result.result.protocolVersion).toBe('2025-06-18');
+        expect(result.result.capabilities).toBeDefined();
+        expect(result.result.serverInfo).toBeDefined();
+      });
+
+      it('should accept legacy protocol version', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'init-456',
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-03-26',
+            capabilities: { sampling: {} },
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        const result = await server['handleInitialize'](message);
+
+        expect(result).toBeDefined();
+        expect(result.result.protocolVersion).toBe('2025-06-18'); // Should return current version
+      });
+
+      it('should reject unsupported protocol version', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'init-789',
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-01-01',
+            capabilities: { sampling: {} },
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        const result = await server['handleInitialize'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'init-789',
+          error: {
+            code: -32602,
+            message: 'Unsupported protocol version',
+            data: {
+              supported: ['2025-06-18', '2025-03-26'],
+              requested: '2024-01-01'
+            }
+          }
+        });
+      });
+
+      it('should handle missing params', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'init-missing',
+          method: 'initialize'
+          // Missing params
+        };
+
+        const result = await server['handleInitialize'](message);
+
+        expect(result).toBeDefined();
+        expect(result.result).toBeDefined();
+      });
+    });
+
+    describe('handleInitialized method', () => {
+      it('should handle initialized notification', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          method: 'notifications/initialized'
+        };
+
+        const result = await server['handleInitialized'](message);
+
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('handleShutdown method', () => {
+      it('should handle shutdown request', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'shutdown-123',
+          method: 'shutdown'
+        };
+
+        const result = await server['handleShutdown'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'shutdown-123',
+          result: {}
+        });
+      });
+    });
+
+    describe('handleToolsList method', () => {
+      it('should return all available tools', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tools-list-123',
+          method: 'tools/list'
+        };
+
+        const result = await server['handleToolsList'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tools-list-123',
+          result: {
+            tools: [
+              {
+                name: 'get_current_weather',
+                description: 'Get current weather for a city using Open-Meteo API',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    city: {
+                      type: 'string',
+                      description: 'City name (e.g., "London", "New York", "Tokyo")'
+                    }
+                  },
+                  required: ['city']
+                }
+              },
+              {
+                name: 'get_weather_forecast',
+                description: 'Get weather forecast for a city (1-7 days)',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    city: {
+                      type: 'string',
+                      description: 'City name'
+                    },
+                    days: {
+                      type: 'number',
+                      description: 'Number of days for forecast (1-7)',
+                      minimum: 1,
+                      maximum: 7,
+                      default: 5
+                    }
+                  },
+                  required: ['city']
+                }
+              },
+              {
+                name: 'retrieve_weather_context',
+                description: 'Retrieve weather context for AI agent queries',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    query: {
+                      type: 'string',
+                      description: 'Query containing city reference (e.g., "weather in London for travel")'
+                    }
+                  },
+                  required: ['query']
+                }
+              }
+            ]
+          }
+        });
+      });
+    });
+
+    describe('handleToolsCall method', () => {
+      it('should handle get_current_weather tool call', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tool-call-123',
+          method: 'tools/call',
+          params: {
+            name: 'get_current_weather',
+            arguments: { city: 'London' }
+          }
+        };
+
+        const result = await server['handleToolsCall'](message);
+
+        expect(result).toBeDefined();
+        expect(result.result).toBeDefined();
+        expect(result.result.content).toBeDefined();
+      });
+
+      it('should handle get_weather_forecast tool call', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tool-call-456',
+          method: 'tools/call',
+          params: {
+            name: 'get_weather_forecast',
+            arguments: { city: 'Tokyo', days: 3 }
+          }
+        };
+
+        const result = await server['handleToolsCall'](message);
+
+        expect(result).toBeDefined();
+        expect(result.result).toBeDefined();
+        expect(result.result.content).toBeDefined();
+      });
+
+      it('should handle retrieve_weather_context tool call', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tool-call-789',
+          method: 'tools/call',
+          params: {
+            name: 'retrieve_weather_context',
+            arguments: { query: 'weather in Paris' }
+          }
+        };
+
+        const result = await server['handleToolsCall'](message);
+
+        expect(result).toBeDefined();
+        expect(result.result).toBeDefined();
+        expect(result.result.content).toBeDefined();
+      });
+
+      it('should handle unknown tool', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tool-call-unknown',
+          method: 'tools/call',
+          params: {
+            name: 'unknown_tool',
+            arguments: {}
+          }
+        };
+
+        const result = await server['handleToolsCall'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tool-call-unknown',
+          error: {
+            code: -32601,
+            message: 'Unknown tool: unknown_tool'
+          }
+        });
+      });
+
+      it('should handle tool execution errors', async () => {
+        // Mock weather service to throw error
+        mockWeatherService.getCurrentWeather.mockRejectedValue(new Error('API Error'));
+
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tool-call-error',
+          method: 'tools/call',
+          params: {
+            name: 'get_current_weather',
+            arguments: { city: 'London' }
+          }
+        };
+
+        const result = await server['handleToolsCall'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tool-call-error',
+          error: {
+            code: -32603,
+            message: 'Tool execution failed: API Error'
+          }
+        });
+      });
+
+      it('should handle missing tool params', async () => {
+        const message = {
+          jsonrpc: '2.0',
+          id: 'tool-call-missing-params',
+          method: 'tools/call'
+          // Missing params
+        };
+
+        const result = await server['handleToolsCall'](message);
+
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tool-call-missing-params',
+          error: {
+            code: -32603,
+            message: 'Tool execution failed: Cannot read properties of undefined (reading \'name\')'
+          }
+        });
+      });
+    });
+  });
+
+  describe('Error Handling in processMessage', () => {
+    it('should handle errors in message processing', async () => {
+      // Mock weather service to throw error
+      mockWeatherService.getCurrentWeather.mockRejectedValue(new Error('Service unavailable'));
+
+      const message = {
+        jsonrpc: '2.0',
+        id: 'error-test-123',
+        method: 'tools/call',
+        params: {
+          name: 'get_current_weather',
+          arguments: { city: 'London' }
+        }
+      };
+
+      const result = await server['processMessage'](message);
+
+      expect(result).toEqual({
+        jsonrpc: '2.0',
+        id: 'error-test-123',
+        error: {
+          code: -32603,
+          message: 'Internal error',
+          data: { details: 'Tool execution failed: Service unavailable' }
+        }
+      });
+    });
+
+    it('should handle errors with startTime', async () => {
+      // Mock weather service to throw error
+      mockWeatherService.getCurrentWeather.mockRejectedValue(new Error('Network timeout'));
+
+      const message = {
+        jsonrpc: '2.0',
+        id: 'error-timing-123',
+        method: 'tools/call',
+        params: {
+          name: 'get_current_weather',
+          arguments: { city: 'London' }
+        }
+      };
+
+      const result = await server['processMessage'](message);
+
+      expect(result).toBeDefined();
+      expect(result.error).toBeDefined();
+      expect(result.error.code).toBe(-32603);
+    });
+  });
+
+  describe('Server Statistics', () => {
+    it('should return correct server statistics', () => {
+      const stats = server.getStats();
+
+      expect(stats).toEqual({
+        serverName: 'weather-mcp-server',
+        version: '1.0.0',
+        protocolVersion: '2025-06-18',
+        toolsCount: 3,
+        uptime: expect.any(Number),
+        memoryUsage: expect.any(Object)
+      });
+
+      expect(stats.uptime).toBeGreaterThanOrEqual(0);
+      expect(stats.memoryUsage).toBeDefined();
+    });
+  });
 });
