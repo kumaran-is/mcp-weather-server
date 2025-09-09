@@ -379,7 +379,7 @@ async function main() {
 }
 
 // Run the client if this file is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
     console.error('Client execution failed:', error);
     process.exit(1);
