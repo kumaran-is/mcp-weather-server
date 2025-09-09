@@ -60,7 +60,76 @@ Add the following configuration to your `cline_mcp_settings.json`:
 
 **Replace `/PATH/TO/YOUR/` with your actual path to the MCP Weather Server.**
 
-### Step 3: Verify Server Build
+### Step 3: Choose Transport Method
+
+The MCP Weather Server supports two transport methods:
+
+#### Option A: Stdio Transport (Recommended for Development)
+- **Pros**: Direct process communication, no network setup
+- **Cons**: Server restarts when Cline restarts
+- **Use case**: Local development and testing
+
+#### Option B: HTTP Transport (Recommended for Production)
+- **Pros**: Persistent server, remote-capable, concurrent access
+- **Cons**: Requires server to be running separately
+- **Use case**: Production use, remote servers, multiple clients
+
+### Step 4: HTTP Transport Configuration
+
+For **HTTP transport**, use this configuration instead:
+
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": false,
+      "timeout": 30,
+      "type": "http",
+      "command": "node",
+      "args": [
+        "/PATH/TO/YOUR/mcp-weather-server/dist/server.js"
+      ],
+      "env": {
+        "MCP_TRANSPORT": "http",
+        "LOG_LEVEL": "info",
+        "MCP_HTTP_PORT": "8080"
+      }
+    }
+  }
+}
+```
+
+#### HTTP Transport Setup:
+
+1. **Start the HTTP server** (keep it running):
+   ```bash
+   cd /path/to/mcp-weather-server
+   npm run http
+   ```
+
+2. **Run in background** (optional):
+   ```bash
+   npm run http &
+   ```
+
+3. **Verify server is running**:
+   ```bash
+   curl http://localhost:8080/health
+   ```
+
+#### HTTP Transport Advantages:
+- ✅ **Persistent**: Server runs independently of Cline
+- ✅ **Remote-capable**: Can run on different machines
+- ✅ **Concurrent**: Multiple clients can connect simultaneously
+- ✅ **Production-ready**: Better for long-running deployments
+- ✅ **Monitoring**: Built-in health checks and metrics
+
+### Step 5: Verify Server Build
 
 Ensure the MCP Weather Server is built:
 
