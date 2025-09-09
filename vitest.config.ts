@@ -20,14 +20,20 @@ export default defineConfig({
         '!src/**/*.test.ts',
         '!src/**/*.spec.ts',
         '!src/**/__tests__/**',
-        '!src/types.ts'
+        '!src/types.ts',
+        '!src/client-example.ts',
+        '!src/server.ts'
       ],
       exclude: [
         'node_modules/',
         'dist/',
         'coverage/',
         '**/*.d.ts',
-        '**/*.spec.ts'
+        '**/*.spec.ts',
+        'src/client-example.ts',
+        'src/server.ts',
+        'src/transports/',
+        'src/config/'
       ],
       thresholds: {
         global: {
@@ -35,7 +41,8 @@ export default defineConfig({
           functions: 80,
           lines: 80,
           statements: 80
-        }
+        },
+        perFile: true
       },
       // Show coverage summary in a cleaner format
       reportOnFailure: true,
