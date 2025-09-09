@@ -21,9 +21,7 @@ export default defineConfig({
         '!src/**/*.spec.ts',
         '!src/**/__tests__/**',
         '!src/types.ts',
-        '!src/client-example.ts',
-        '!src/transports/',
-        '!src/config/'
+        '!src/client-example.ts'
       ],
       exclude: [
         'node_modules/',
@@ -32,8 +30,7 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.spec.ts',
         'src/client-example.ts',
-        'src/transports/',
-        'src/config/'
+        'src/types.ts'
       ],
       thresholds: {
         global: {

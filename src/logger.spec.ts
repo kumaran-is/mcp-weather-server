@@ -1,6 +1,22 @@
 import { Logger, logger } from './logger';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock the config to prevent issues
+vi.mock('./config/config.js', () => ({
+  getConfig: () => ({
+    logging: {
+      level: 'info',
+      pretty: false,
+      redact: ['password', 'token']
+    }
+  }),
+  getLoggingConfig: () => ({
+    level: 'info',
+    pretty: false,
+    redact: ['password', 'token']
+  })
+}));
+
 describe('Logger', () => {
   let testLogger: Logger;
 
@@ -24,26 +40,42 @@ describe('Logger', () => {
   describe('Core Logging Methods', () => {
     it('should have fatal method', () => {
       expect(typeof testLogger.fatal).toBe('function');
+      expect(() => testLogger.fatal('test message')).not.toThrow();
     });
 
     it('should have error method', () => {
       expect(typeof testLogger.error).toBe('function');
+      expect(() => testLogger.error('test message')).not.toThrow();
     });
 
     it('should have warn method', () => {
       expect(typeof testLogger.warn).toBe('function');
+      expect(() => testLogger.warn('test message')).not.toThrow();
     });
 
     it('should have info method', () => {
       expect(typeof testLogger.info).toBe('function');
+      expect(() => testLogger.info('test message')).not.toThrow();
     });
 
     it('should have debug method', () => {
       expect(typeof testLogger.debug).toBe('function');
+      expect(() => testLogger.debug('test message')).not.toThrow();
     });
 
     it('should have trace method', () => {
       expect(typeof testLogger.trace).toBe('function');
+      expect(() => testLogger.trace('test message')).not.toThrow();
+    });
+
+    it('should handle logging with objects', () => {
+      const testObj = { key: 'value', number: 42 };
+      expect(() => testLogger.info(testObj, 'message')).not.toThrow();
+      expect(() => testLogger.error({ error: 'test' }, 'error occurred')).not.toThrow();
+    });
+
+    it('should handle logging with multiple arguments', () => {
+      expect(() => testLogger.info('message', { data: 'test' }, [1, 2, 3])).not.toThrow();
     });
   });
 
