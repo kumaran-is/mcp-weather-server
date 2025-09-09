@@ -1,150 +1,219 @@
-import { AppConfig, TransportConfig, APIConfig, LoggingConfig } from '../types.js';
-
 /**
- * Centralized configuration management for the MCP Weather Server
- * Loads configuration from environment variables with sensible defaults
+ * Centralized configuration management for MCP Weather Server
+ * Environment-based configuration with validation and type safety
  */
-export class ConfigManager {
-  private static instance: ConfigManager;
-  private config: AppConfig;
 
-  private constructor() {
-    this.config = this.loadConfig();
-  }
+import { z } from 'zod';
+import { logger } from '../logger.js';
 
-  public static getInstance(): ConfigManager {
-    if (!ConfigManager.instance) {
-      ConfigManager.instance = new ConfigManager();
-    }
-    return ConfigManager.instance;
-  }
+// Environment variable schema
+const envSchema = z.object({
+  // Server Configuration
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  MCP_TRANSPORT: z.enum(['stdio', 'http']).default('http'),
+  MCP_HTTP_PORT: z.coerce.number().min(1024).max(65535).default(8080),
 
-  private loadConfig(): AppConfig {
-    const env = process.env.NODE_ENV || 'development';
+  // Open-Meteo API Configuration
+  OPEN_METEO_BASE_URL: z.string().url().default('https://api.open-meteo.com/v1'),
+  GEOCODING_API_URL: z.string().url().default('https://geocoding-api.open-meteo.com/v1'),
 
-    return {
-      env,
-      transport: this.loadTransportConfig(),
-      api: this.loadAPIConfig(),
-      logging: this.loadLoggingConfig(),
-      security: {
-        allowedOrigins: this.parseAllowedOrigins(),
-      },
-    };
-  }
+  // Security Configuration
+  ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:8080'),
 
-  private loadTransportConfig(): TransportConfig {
-    const transportType = (process.env.MCP_TRANSPORT || 'stdio') as 'stdio' | 'http' | 'websocket';
+  // Logging Configuration
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-    const baseConfig: TransportConfig = {
-      type: transportType,
-    };
+  // Performance Configuration
+  API_TIMEOUT: z.coerce.number().min(1000).max(60000).default(5000),
+  HTTP_TIMEOUT: z.coerce.number().min(5000).max(300000).default(30000),
+  REQUEST_TIMEOUT: z.coerce.number().min(5000).max(300000).default(60000),
 
-    if (transportType === 'http') {
-      baseConfig.http = {
-        port: parseInt(process.env.MCP_HTTP_PORT || '8080'),
-        allowedOrigins: this.parseAllowedOrigins(),
-        sessionTimeout: parseInt(process.env.SESSION_TIMEOUT || '3600000'), // 1 hour
-        maxSessions: parseInt(process.env.MAX_SESSIONS || '100'),
-      };
-    }
+  // Resilience Configuration
+  CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().min(1).max(20).default(5),
+  CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().min(10000).max(300000).default(60000),
+  MAX_RETRIES: z.coerce.number().min(0).max(10).default(3),
+  BASE_RETRY_DELAY: z.coerce.number().min(100).max(10000).default(1000),
 
-    if (transportType === 'websocket') {
-      baseConfig.websocket = {
-        port: parseInt(process.env.MCP_WS_PORT || '8081'),
-        secure: process.env.MCP_WS_SECURE === 'true',
-      };
-    }
+  // Streaming Configuration
+  MAX_CONCURRENT_STREAMS: z.coerce.number().min(1).max(100).default(10),
+  STREAM_TIMEOUT: z.coerce.number().min(10000).max(300000).default(60000),
+  BACKPRESSURE_HIGH_WATER_MARK: z.coerce.number().min(1024).max(10485760).default(1048576),
+  BACKPRESSURE_LOW_WATER_MARK: z.coerce.number().min(512).max(5242880).default(524288),
+});
 
-    return baseConfig;
-  }
+// Parse and validate environment variables
+let envConfig: z.infer<typeof envSchema>;
 
-  private loadAPIConfig(): APIConfig {
-    return {
-      openMeteoBaseUrl: process.env.OPEN_METEO_BASE_URL || 'https://api.open-meteo.com/v1',
-      geocodingApiUrl: process.env.GEOCODING_API_URL || 'https://geocoding-api.open-meteo.com/v1',
-      timeout: parseInt(process.env.API_TIMEOUT || '5000'),
-      retries: parseInt(process.env.API_RETRIES || '3'),
-      retryDelay: parseInt(process.env.API_RETRY_DELAY || '1000'),
-    };
-  }
-
-  private loadLoggingConfig(): LoggingConfig {
-    const level = (process.env.LOG_LEVEL || (this.config?.env === 'production' ? 'info' : 'debug')) as
-      'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-
-    return {
-      level,
-      pretty: this.config?.env !== 'production',
-      redact: ['password', 'token', 'key', 'secret'],
-    };
-  }
-
-  private parseAllowedOrigins(): string[] {
-    const origins = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:8080';
-    return origins.split(',').map(origin => origin.trim());
-  }
-
-  public getConfig(): AppConfig {
-    return this.config;
-  }
-
-  public getTransportConfig(): TransportConfig {
-    return this.config.transport;
-  }
-
-  public getAPIConfig(): APIConfig {
-    return this.config.api;
-  }
-
-  public getLoggingConfig(): LoggingConfig {
-    return this.config.logging;
-  }
-
-  public isProduction(): boolean {
-    return this.config.env === 'production';
-  }
-
-  public isDevelopment(): boolean {
-    return this.config.env === 'development';
-  }
-
-  // Utility methods for common config checks
-  public shouldUseStdio(): boolean {
-    return this.config.transport.type === 'stdio';
-  }
-
-  public shouldUseHTTP(): boolean {
-    return this.config.transport.type === 'http';
-  }
-
-  public shouldUseWebSocket(): boolean {
-    return this.config.transport.type === 'websocket';
-  }
-
-  public getHTTPPort(): number {
-    return this.config.transport.http?.port || 8080;
-  }
-
-  public getWebSocketPort(): number {
-    return this.config.transport.websocket?.port || 8081;
-  }
-
-  public isOriginAllowed(origin: string): boolean {
-    return this.config.security.allowedOrigins.includes(origin) || origin === '';
-  }
-
-  // Reload configuration (useful for testing or dynamic config updates)
-  public reloadConfig(): void {
-    this.config = this.loadConfig();
-  }
+try {
+  envConfig = envSchema.parse(process.env);
+  logger.info('Configuration loaded successfully', envConfig);
+} catch (error) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  logger.fatal('Configuration validation failed', { error: errorMessage });
+  throw new Error(`Configuration validation failed: ${errorMessage}`);
 }
 
-// Export singleton instance
-export const config = ConfigManager.getInstance();
+// Configuration interfaces
+export interface ServerConfig {
+  nodeEnv: string;
+  transport: 'stdio' | 'http';
+  httpPort: number;
+}
 
-// Export convenience functions
-export const getConfig = () => config.getConfig();
-export const getTransportConfig = () => config.getTransportConfig();
-export const getAPIConfig = () => config.getAPIConfig();
-export const getLoggingConfig = () => config.getLoggingConfig();
+export interface APIConfig {
+  baseUrl: string;
+  geocodingUrl: string;
+  timeout: number;
+  retries: number;
+  retryDelay: number;
+}
+
+export interface SecurityConfig {
+  allowedOrigins: string[];
+}
+
+export interface LoggingConfig {
+  level: string;
+}
+
+export interface PerformanceConfig {
+  apiTimeout: number;
+  httpTimeout: number;
+  requestTimeout: number;
+}
+
+export interface ResilienceConfig {
+  circuitBreaker: {
+    threshold: number;
+    timeout: number;
+  };
+  retry: {
+    maxRetries: number;
+    baseDelay: number;
+  };
+}
+
+export interface StreamingConfig {
+  maxConcurrentStreams: number;
+  streamTimeout: number;
+  backpressure: {
+    highWaterMark: number;
+    lowWaterMark: number;
+  };
+}
+
+export interface AppConfig {
+  server: ServerConfig;
+  api: APIConfig;
+  security: SecurityConfig;
+  logging: LoggingConfig;
+  performance: PerformanceConfig;
+  resilience: ResilienceConfig;
+  streaming: StreamingConfig;
+}
+
+// Build configuration object
+export const config: AppConfig = {
+  server: {
+    nodeEnv: envConfig.NODE_ENV,
+    transport: envConfig.MCP_TRANSPORT,
+    httpPort: envConfig.MCP_HTTP_PORT,
+  },
+  api: {
+    baseUrl: envConfig.OPEN_METEO_BASE_URL,
+    geocodingUrl: envConfig.GEOCODING_API_URL,
+    timeout: envConfig.API_TIMEOUT,
+    retries: envConfig.MAX_RETRIES,
+    retryDelay: envConfig.BASE_RETRY_DELAY,
+  },
+  security: {
+    allowedOrigins: envConfig.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
+  },
+  logging: {
+    level: envConfig.LOG_LEVEL,
+  },
+  performance: {
+    apiTimeout: envConfig.API_TIMEOUT,
+    httpTimeout: envConfig.HTTP_TIMEOUT,
+    requestTimeout: envConfig.REQUEST_TIMEOUT,
+  },
+  resilience: {
+    circuitBreaker: {
+      threshold: envConfig.CIRCUIT_BREAKER_THRESHOLD,
+      timeout: envConfig.CIRCUIT_BREAKER_TIMEOUT,
+    },
+    retry: {
+      maxRetries: envConfig.MAX_RETRIES,
+      baseDelay: envConfig.BASE_RETRY_DELAY,
+    },
+  },
+  streaming: {
+    maxConcurrentStreams: envConfig.MAX_CONCURRENT_STREAMS,
+    streamTimeout: envConfig.STREAM_TIMEOUT,
+    backpressure: {
+      highWaterMark: envConfig.BACKPRESSURE_HIGH_WATER_MARK,
+      lowWaterMark: envConfig.BACKPRESSURE_LOW_WATER_MARK,
+    },
+  },
+};
+
+// Export individual configuration getters for backward compatibility
+export const getConfig = (): AppConfig => config;
+
+export const getServerConfig = (): ServerConfig => config.server;
+export const getAPIConfig = (): APIConfig => config.api;
+export const getSecurityConfig = (): SecurityConfig => config.security;
+export const getLoggingConfig = (): LoggingConfig => config.logging;
+export const getPerformanceConfig = (): PerformanceConfig => config.performance;
+export const getResilienceConfig = (): ResilienceConfig => config.resilience;
+export const getStreamingConfig = (): StreamingConfig => config.streaming;
+
+// Transport-specific configuration
+export const getTransportConfig = () => ({
+  type: config.server.transport,
+  port: config.server.httpPort,
+  allowedOrigins: config.security.allowedOrigins,
+});
+
+// Health check configuration
+export const getHealthConfig = () => ({
+  checks: {
+    api: {
+      url: config.api.baseUrl,
+      timeout: config.performance.apiTimeout,
+    },
+    database: false, // No database in this implementation
+  },
+  thresholds: {
+    errorRate: 0.05, // 5% error rate threshold
+    responseTime: 5000, // 5 second response time threshold
+  },
+});
+
+// Export raw environment config for advanced use cases
+export { envConfig as rawConfig };
+
+// Configuration validation
+export const validateConfig = (): boolean => {
+  try {
+    envSchema.parse(process.env);
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Configuration validation failed', { error: errorMessage });
+    return false;
+  }
+};
+
+// Configuration summary for logging
+export const getConfigSummary = () => ({
+  environment: config.server.nodeEnv,
+  transport: config.server.transport,
+  port: config.server.httpPort,
+  logLevel: config.logging.level,
+  apiTimeout: config.performance.apiTimeout,
+  circuitBreakerThreshold: config.resilience.circuitBreaker.threshold,
+  maxRetries: config.resilience.retry.maxRetries,
+});
+
+logger.info('Configuration summary', getConfigSummary());

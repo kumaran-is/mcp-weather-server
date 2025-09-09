@@ -6,7 +6,7 @@ This guide provides comprehensive instructions for testing the MCP Weather Serve
 
 1. [Testing with HTTP Transport](#1-testing-with-http-transport)
 2. [Testing with Stdio Transport](#2-testing-with-stdio-transport)
-3. [Testing with Jest Unit Tests](#3-testing-with-jest-unit-tests)
+3. [Testing with Vitest Unit Tests](#3-testing-with-vitest-unit-tests)
 4. [Environment Variables for Testing](#4-environment-variables-for-testing)
 5. [Advanced Testing Scenarios](#5-advanced-testing-scenarios)
 6. [Debugging and Monitoring](#6-debugging-and-monitoring)
@@ -60,9 +60,10 @@ npm run client forecast "Tokyo" 3  # Get 3-day forecast
 #### Initialize MCP Connection
 
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
   -H "MCP-Protocol-Version: 2025-06-18" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{
     "jsonrpc": "2.0",
     "id": "init-123",
@@ -78,10 +79,11 @@ curl -X POST http://localhost:8080 \
 #### Send Initialized Notification
 
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
   -H "MCP-Protocol-Version: 2025-06-18" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{
     "jsonrpc": "2.0",
     "method": "notifications/initialized"
@@ -91,10 +93,11 @@ curl -X POST http://localhost:8080 \
 #### List Available Tools
 
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
   -H "MCP-Protocol-Version: 2025-06-18" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{
     "jsonrpc": "2.0",
     "id": "tools-123",
@@ -105,10 +108,11 @@ curl -X POST http://localhost:8080 \
 #### Get Current Weather
 
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
   -H "MCP-Protocol-Version: 2025-06-18" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{
     "jsonrpc": "2.0",
     "id": "weather-123",
@@ -123,10 +127,11 @@ curl -X POST http://localhost:8080 \
 #### Get Weather Forecast
 
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
   -H "MCP-Protocol-Version: 2025-06-18" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{
     "jsonrpc": "2.0",
     "id": "forecast-123",
@@ -303,8 +308,10 @@ npm run client weather ""
 
 **Test Invalid Protocol Version**
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
   -H "MCP-Protocol-Version: 2024-01-01" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","method":"initialize"}'
 ```
 
@@ -317,15 +324,21 @@ curl -H "Origin: http://evil.com" http://localhost:8080
 
 **Test Session Persistence**
 ```bash
-curl -X POST http://localhost:8080 \
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
   -H "Mcp-Session-Id: test-session-123" \
+  -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}'
 ```
 
 **Test Session Cleanup**
 ```bash
-curl -X DELETE http://localhost:8080 \
-  -H "Mcp-Session-Id: test-session-123"
+curl -X DELETE http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -H "Mcp-Session-Id: test-session-123" \
+  -H "Accept: application/json, text/event-stream"
 ```
 
 ## 6. Debugging and Monitoring

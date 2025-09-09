@@ -7,13 +7,13 @@ vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js');
 vi.mock('./mcp-server.js');
 vi.mock('./logger.js');
 vi.mock('./config/config.js');
-vi.mock('express');
+vi.mock('fastify');
 vi.mock('node:crypto');
 vi.mock('@modelcontextprotocol/sdk/types.js');
 
 // Import after mocking
 import { logger } from './logger.js';
-import express from 'express';
+import Fastify from 'fastify';
 
 describe('Server Entry Point', () => {
   describe('Basic Server Functionality', () => {
@@ -262,8 +262,7 @@ describe('Server Entry Point', () => {
     let mockStdioTransport: any;
     let mockHttpTransport: any;
     let mockConfig: any;
-    let mockExpressApp: any;
-    let mockHttpServer: any;
+    let mockFastifyInstance: any;
 
     beforeEach(() => {
       // Setup comprehensive mocks
@@ -285,21 +284,16 @@ describe('Server Entry Point', () => {
         transport: { type: 'stdio' }
       };
 
-      mockExpressApp = {
-        use: vi.fn(),
+      mockFastifyInstance = {
         post: vi.fn(),
         get: vi.fn(),
         delete: vi.fn(),
-        listen: vi.fn().mockReturnValue(mockHttpServer)
-      };
-
-      mockHttpServer = {
-        on: vi.fn(),
-        close: vi.fn().mockImplementation((callback) => callback())
+        listen: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined)
       };
 
       // Mock the imports
-      vi.mocked(express).mockReturnValue(mockExpressApp as any);
+      vi.mocked(Fastify).mockReturnValue(mockFastifyInstance as any);
     });
 
     describe('Stdio Transport Path', () => {
@@ -380,12 +374,11 @@ describe('Server Entry Point', () => {
             'MCP Weather Server started successfully with HTTP transport on port 8080'
           );
 
-          // Verify Express app setup
-          expect(mockExpressApp.use).toHaveBeenCalled();
-          expect(mockExpressApp.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
-          expect(mockExpressApp.get).toHaveBeenCalledWith('/mcp', expect.any(Function));
-          expect(mockExpressApp.delete).toHaveBeenCalledWith('/mcp', expect.any(Function));
-          expect(mockExpressApp.get).toHaveBeenCalledWith('/health', expect.any(Function));
+          // Verify Fastify instance setup
+          expect(mockFastifyInstance.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
+          expect(mockFastifyInstance.get).toHaveBeenCalledWith('/mcp', expect.any(Function));
+          expect(mockFastifyInstance.delete).toHaveBeenCalledWith('/mcp', expect.any(Function));
+          expect(mockFastifyInstance.get).toHaveBeenCalledWith('/health', expect.any(Function));
 
         } finally {
           process.env.MCP_TRANSPORT = originalEnv;
@@ -411,31 +404,26 @@ describe('Server Entry Point', () => {
           await main();
 
           // Verify health endpoint was set up
-          expect(mockExpressApp.get).toHaveBeenCalledWith('/health', expect.any(Function));
+          expect(mockFastifyInstance.get).toHaveBeenCalledWith('/health', expect.any(Function));
 
           // Get the health endpoint handler
-          const healthCall = mockExpressApp.get.mock.calls.find(call => call[0] === '/health');
+          const healthCall = mockFastifyInstance.get.mock.calls.find(call => call[0] === '/health');
           expect(healthCall).toBeDefined();
 
           const healthHandler = healthCall[1];
-          const mockReq = {};
-          const mockRes = {
-            json: vi.fn(),
-            writeHead: vi.fn(),
-            end: vi.fn()
+          const mockReply = {
+            send: vi.fn()
           };
 
           // Call the health handler
-          healthHandler(mockReq, mockRes);
+          await healthHandler({}, mockReply);
 
-          expect(mockRes.json).toHaveBeenCalledWith({
+          expect(mockReply.send).toHaveBeenCalledWith({
             status: 'healthy',
             timestamp: expect.any(String),
             version: '1.0.0',
             transport: 'http',
-            activeSessions: 0,
-            uptime: expect.any(Number),
-            memory: expect.any(Object)
+            activeSessions: 0
           });
 
         } finally {

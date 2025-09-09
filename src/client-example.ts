@@ -6,7 +6,7 @@
  * This example shows the complete MCP lifecycle and tool usage
  */
 
-import fetch from 'node-fetch';
+import { request } from 'undici';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -16,9 +16,24 @@ class MCPWeatherClient {
   private baseUrl: string;
   private sessionId: string;
 
-  constructor(baseUrl: string = 'http://localhost:8080') {
+  constructor(baseUrl: string = 'http://localhost:8080/mcp') {
     this.baseUrl = baseUrl;
     this.sessionId = uuidv4();
+  }
+
+  /**
+   * Parse SSE response and extract JSON data
+   */
+  private parseSSEResponse(responseText: string): any {
+    const lines = responseText.trim().split('\n');
+    let jsonData = '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        jsonData = line.substring(6);
+        break;
+      }
+    }
+    return JSON.parse(jsonData);
   }
 
   /**
@@ -42,27 +57,30 @@ class MCPWeatherClient {
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode, headers, body } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
-          'Accept': 'application/json,text/event-stream'
+          'Accept': 'application/json, text/event-stream'
         },
         body: JSON.stringify(initRequest)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (statusCode !== 200 && statusCode !== 202) {
+        throw new Error(`HTTP ${statusCode}`);
       }
 
-      const initResult = await response.json();
+      const responseText = await body.text();
+      console.log('Raw response:', responseText);
+
+      const initResult = this.parseSSEResponse(responseText);
       console.log('✅ Initialize response:', JSON.stringify(initResult, null, 2));
 
       // Extract session ID from response headers
-      const responseSessionId = response.headers.get('mcp-session-id');
+      const responseSessionId = headers['mcp-session-id'];
       if (responseSessionId) {
-        this.sessionId = responseSessionId;
+        this.sessionId = Array.isArray(responseSessionId) ? responseSessionId[0] : responseSessionId;
         console.log(`📋 Using session ID: ${this.sessionId}`);
       }
 
@@ -84,18 +102,19 @@ class MCPWeatherClient {
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
-          'Mcp-Session-Id': this.sessionId
+          'Mcp-Session-Id': this.sessionId,
+          'Accept': 'application/json, text/event-stream'
         },
         body: JSON.stringify(notification)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (statusCode !== 200 && statusCode !== 202) {
+        throw new Error(`HTTP ${statusCode}`);
       }
 
       console.log('✅ Initialized notification sent');
@@ -112,29 +131,30 @@ class MCPWeatherClient {
   async listTools(): Promise<void> {
     console.log('🔧 Listing available tools...');
 
-    const request = {
+    const requestBody = {
       jsonrpc: '2.0',
       id: uuidv4(),
       method: 'tools/list'
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode, body } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
           'Mcp-Session-Id': this.sessionId,
-          'Accept': 'application/json,text/event-stream'
+          'Accept': 'application/json, text/event-stream'
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (statusCode !== 200) {
+        throw new Error(`HTTP ${statusCode}`);
       }
 
-      const result = await response.json();
+      const responseText = await body.text();
+      const result = this.parseSSEResponse(responseText);
       console.log('✅ Tools list:', JSON.stringify(result, null, 2));
 
     } catch (error) {
@@ -149,7 +169,7 @@ class MCPWeatherClient {
   async getCurrentWeather(city: string): Promise<void> {
     console.log(`🌤️  Getting current weather for ${city}...`);
 
-    const request = {
+    const requestBody = {
       jsonrpc: '2.0',
       id: uuidv4(),
       method: 'tools/call',
@@ -160,22 +180,23 @@ class MCPWeatherClient {
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode, body } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
           'Mcp-Session-Id': this.sessionId,
-          'Accept': 'application/json,text/event-stream'
+          'Accept': 'application/json, text/event-stream'
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (statusCode !== 200) {
+        throw new Error(`HTTP ${statusCode}`);
       }
 
-      const result = await response.json();
+      const responseText = await body.text();
+      const result = this.parseSSEResponse(responseText);
       console.log(`✅ Current weather for ${city}:`, JSON.stringify(result, null, 2));
 
     } catch (error) {
@@ -190,7 +211,7 @@ class MCPWeatherClient {
   async getWeatherForecast(city: string, days: number = 5): Promise<void> {
     console.log(`📅 Getting ${days}-day forecast for ${city}...`);
 
-    const request = {
+    const requestBody = {
       jsonrpc: '2.0',
       id: uuidv4(),
       method: 'tools/call',
@@ -201,22 +222,23 @@ class MCPWeatherClient {
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode, body } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
           'Mcp-Session-Id': this.sessionId,
-          'Accept': 'application/json,text/event-stream'
+          'Accept': 'application/json, text/event-stream'
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (statusCode !== 200) {
+        throw new Error(`HTTP ${statusCode}`);
       }
 
-      const result = await response.json();
+      const responseText = await body.text();
+      const result = this.parseSSEResponse(responseText);
       console.log(`✅ Forecast for ${city}:`, JSON.stringify(result, null, 2));
 
     } catch (error) {
@@ -231,7 +253,7 @@ class MCPWeatherClient {
   async retrieveWeatherContext(query: string): Promise<void> {
     console.log(`🤖 Getting weather context for query: "${query}"`);
 
-    const request = {
+    const requestBody = {
       jsonrpc: '2.0',
       id: uuidv4(),
       method: 'tools/call',
@@ -242,22 +264,23 @@ class MCPWeatherClient {
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode, body } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
           'Mcp-Session-Id': this.sessionId,
-          'Accept': 'application/json,text/event-stream'
+          'Accept': 'application/json, text/event-stream'
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (statusCode !== 200) {
+        throw new Error(`HTTP ${statusCode}`);
       }
 
-      const result = await response.json();
+      const responseText = await body.text();
+      const result = this.parseSSEResponse(responseText);
       console.log(`✅ Weather context for "${query}":`, JSON.stringify(result, null, 2));
 
     } catch (error) {
@@ -272,7 +295,7 @@ class MCPWeatherClient {
   async testErrorHandling(): Promise<void> {
     console.log('🧪 Testing error handling...');
 
-    const request = {
+    const requestBody = {
       jsonrpc: '2.0',
       id: uuidv4(),
       method: 'tools/call',
@@ -283,18 +306,19 @@ class MCPWeatherClient {
     };
 
     try {
-      const response = await fetch(this.baseUrl, {
+      const { statusCode, body } = await request(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'MCP-Protocol-Version': '2025-06-18',
           'Mcp-Session-Id': this.sessionId,
-          'Accept': 'application/json,text/event-stream'
+          'Accept': 'application/json, text/event-stream'
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(requestBody)
       });
 
-      const result = await response.json();
+      const responseText = await body.text();
+      const result = this.parseSSEResponse(responseText);
       console.log('✅ Error handling test:', JSON.stringify(result, null, 2));
 
     } catch (error) {

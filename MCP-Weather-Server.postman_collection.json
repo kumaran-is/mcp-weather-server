@@ -45,8 +45,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"init-{{timestamp}}\",\n  \"method\": \"initialize\",\n  \"params\": {\n    \"protocolVersion\": \"{{protocol_version}}\",\n    \"capabilities\": {\n      \"sampling\": {}\n    },\n    \"clientInfo\": {\n      \"name\": \"postman-client\",\n      \"version\": \"1.0.0\"\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       },
       "event": [
@@ -90,8 +91,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"notifications/initialized\"\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -122,8 +124,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"tools-{{timestamp}}\",\n  \"method\": \"tools/list\"\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -154,8 +157,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"weather-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_current_weather\",\n    \"arguments\": {\n      \"city\": \"London\"\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -186,8 +190,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"weather-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_current_weather\",\n    \"arguments\": {\n      \"city\": \"New York\"\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -218,8 +223,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"forecast-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_weather_forecast\",\n    \"arguments\": {\n      \"city\": \"Tokyo\",\n      \"days\": 3\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -250,8 +256,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"forecast-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_weather_forecast\",\n    \"arguments\": {\n      \"city\": \"Paris\",\n      \"days\": 5\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -282,8 +289,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"context-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"retrieve_weather_context\",\n    \"arguments\": {\n      \"query\": \"weather in Sydney for weekend travel\"\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -314,8 +322,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"error-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_current_weather\",\n    \"arguments\": {\n      \"city\": \"\"\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -346,8 +355,9 @@
           "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"error-{{timestamp}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_weather_forecast\",\n    \"arguments\": {\n      \"city\": \"London\",\n      \"days\": 10\n    }\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     },
@@ -374,8 +384,9 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}",
-          "host": ["{{base_url}}"]
+          "raw": "{{base_url}}/mcp",
+          "host": ["{{base_url}}"],
+          "path": ["mcp"]
         }
       }
     }

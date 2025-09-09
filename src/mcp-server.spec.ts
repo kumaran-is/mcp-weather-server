@@ -14,10 +14,13 @@ describe('WeatherMCPServer', () => {
     // Clear all mocks
     vi.clearAllMocks();
 
-    // Create mock instance
-    mockWeatherService = new MockWeatherService() as any;
+    // Create mock instance with methods
+    mockWeatherService = {
+      getCurrentWeather: vi.fn(),
+      getForecast: vi.fn()
+    };
 
-    // Mock the constructor and methods
+    // Mock the constructor to return our mock instance
     MockWeatherService.mockImplementation(() => mockWeatherService);
 
     // Create server instance

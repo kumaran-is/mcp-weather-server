@@ -17,7 +17,14 @@ export class StreamableHTTPTransport {
   private clients: Map<string, ClientConnection> = new Map();
   private messageQueues: Map<string, unknown[]> = new Map();
   private config = getConfig();
-  private transportConfig = getTransportConfig();
+  private transportConfig = {
+    type: getConfig().server.transport,
+    port: getConfig().server.httpPort,
+    allowedOrigins: getConfig().security.allowedOrigins,
+    http: {
+      port: getConfig().server.httpPort,
+    },
+  };
 
   constructor(mcpServer: Server, weatherServer: WeatherMCPServer) {
     this.server = mcpServer;
@@ -278,7 +285,7 @@ export class StreamableHTTPTransport {
     });
     res.end(JSON.stringify(healthStatus));
 
-    logger.debug({ operation: 'health_check' }, 'Health check requested');
+    logger.debug('Health check requested', { operation: 'health_check' });
   }
 
   /**
@@ -290,7 +297,7 @@ export class StreamableHTTPTransport {
     const client = this.clients.get(sessionId);
 
     if (!client) {
-      logger.warn({ sessionId }, 'No client found for session');
+      logger.warn('No client found for session', { sessionId });
 
       // Queue message for later delivery
       if (!this.messageQueues.has(sessionId)) {
@@ -306,7 +313,7 @@ export class StreamableHTTPTransport {
     const eventId = uuidv4();
     this.sendSSEResponse(client.res, 'message', message, eventId);
 
-    logger.debug({ sessionId, message }, 'Sent SSE message');
+    logger.debug('Sent SSE message', { sessionId, message });
   }
 
   /**

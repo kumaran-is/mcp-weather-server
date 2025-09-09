@@ -1,11 +1,11 @@
-import fetch from 'node-fetch';
 import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types.js';
+import { poolManager } from './undici-resilience/index.js';
 import { getAPIConfig } from './config/config.js';
 import { logger } from './logger.js';
 
 /**
  * Weather service that integrates with Open-Meteo API
- * Provides current weather and forecast functionality
+ * Provides current weather and forecast functionality with optimized undici pools
  */
 export class WeatherService {
   private apiConfig = getAPIConfig();
@@ -19,79 +19,51 @@ export class WeatherService {
     try {
       // Input validation
       if (!city || typeof city !== 'string' || city.trim() === '') {
-        logger.error({ city }, 'Invalid city parameter for current weather');
+        logger.error('Invalid city parameter for current weather', { city });
         throw new Error('Invalid city parameter: city must be a non-empty string');
       }
 
       const trimmedCity = city.trim();
 
       // Geocode the city to get coordinates
-      logger.debug({ city: trimmedCity }, 'Geocoding city for current weather');
+      logger.debug('Geocoding city for current weather', { city: trimmedCity });
       const geoResult = await this.geocodeCity(trimmedCity);
 
-      // Fetch current weather data
-      logger.logAPIRequest(
-        `${this.apiConfig.openMeteoBaseUrl}/forecast`,
-        'GET',
-        { latitude: geoResult.latitude, longitude: geoResult.longitude }
-      );
-
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.apiConfig.timeout);
-
-      const response = await fetch(
-        `${this.apiConfig.openMeteoBaseUrl}/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`,
+      // Fetch current weather data using optimized pool
+      const apiResponse = await poolManager.request<WeatherAPIResponse>(
+        'weather',
         {
-          signal: controller.signal,
+          path: `/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`,
+          method: 'GET',
           headers: {
             'User-Agent': 'MCP-Weather-Server/1.0.0'
           }
-        }
+        },
+        `getCurrentWeather-${trimmedCity}`
       );
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        logger.logAPIResponse(
-          `${this.apiConfig.openMeteoBaseUrl}/forecast`,
-          response.status,
-          Date.now() - startTime,
-          `HTTP ${response.status}`
-        );
-        throw new Error(`Weather API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json() as WeatherAPIResponse;
-
-      logger.logAPIResponse(
-        `${this.apiConfig.openMeteoBaseUrl}/forecast`,
-        response.status,
-        Date.now() - startTime
-      );
-
-      if (!data.current) {
+      if (!apiResponse.current) {
         throw new Error('No current weather data available');
       }
 
-      const weatherData: WeatherData = {
+      const weatherResult: WeatherData = {
         location: geoResult.name,
-        temperature: Math.round(data.current.temperature_2m * 10) / 10, // Round to 1 decimal
-        description: this.mapWeatherCode(data.current.weather_code),
-        humidity: data.current.relative_humidity_2m,
-        windSpeed: Math.round(data.current.wind_speed_10m * 10) / 10,
-        feelsLike: Math.round(data.current.temperature_2m * 10) / 10, // Simplified calculation
+        temperature: Math.round(apiResponse.current.temperature_2m * 10) / 10, // Round to 1 decimal
+        description: this.mapWeatherCode(apiResponse.current.weather_code),
+        humidity: apiResponse.current.relative_humidity_2m,
+        windSpeed: Math.round(apiResponse.current.wind_speed_10m * 10) / 10,
+        feelsLike: Math.round(apiResponse.current.temperature_2m * 10) / 10, // Simplified calculation
         pressure: 1013.25, // Default pressure (Open-Meteo doesn't provide current pressure)
-        timestamp: data.current.time
+        timestamp: apiResponse.current.time
       };
 
       logger.logPerformance('getCurrentWeather', startTime, {
         city: trimmedCity,
         location: geoResult.name,
-        temperature: weatherData.temperature
+        temperature: weatherResult.temperature
       });
 
-      return weatherData;
+      return weatherResult;
 
     } catch (error) {
       logger.logError(error as Error, { city, operation: 'getCurrentWeather' });
@@ -108,56 +80,35 @@ export class WeatherService {
     try {
       // Input validation
       if (!city || typeof city !== 'string' || city.trim() === '') {
-        logger.error({ city }, 'Invalid city parameter for forecast');
+        logger.error('Invalid city parameter for forecast', { city });
         throw new Error('Invalid city parameter: city must be a non-empty string');
       }
 
       if (days < 1 || days > 7) {
-        logger.error({ days }, 'Invalid days parameter for forecast');
+        logger.error('Invalid days parameter for forecast', { days });
         throw new Error('Days must be between 1 and 7');
       }
 
       const trimmedCity = city.trim();
 
       // Geocode the city to get coordinates
-      logger.debug({ city: trimmedCity, days }, 'Geocoding city for forecast');
+      logger.debug('Geocoding city for forecast', { city: trimmedCity, days });
       const geoResult = await this.geocodeCity(trimmedCity);
 
-      // Fetch forecast data
-      const forecastUrl = `${this.apiConfig.openMeteoBaseUrl}/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&forecast_days=${days}`;
+      // Fetch forecast data using optimized pool
+      const forecastResponse = await poolManager.request<WeatherAPIResponse>(
+        'weather',
+        {
+          path: `/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&forecast_days=${days}`,
+          method: 'GET',
+          headers: {
+            'User-Agent': 'MCP-Weather-Server/1.0.0'
+          }
+        },
+        `getForecast-${trimmedCity}-${days}`
+      );
 
-      logger.logAPIRequest(forecastUrl, 'GET', {
-        latitude: geoResult.latitude,
-        longitude: geoResult.longitude,
-        days
-      });
-
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.apiConfig.timeout);
-
-      const response = await fetch(forecastUrl, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'MCP-Weather-Server/1.0.0'
-        }
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        logger.logAPIResponse(
-          forecastUrl,
-          response.status,
-          Date.now() - startTime,
-          `HTTP ${response.status}`
-        );
-        throw new Error(`Forecast API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json() as WeatherAPIResponse;
-
-      logger.logAPIResponse(forecastUrl, response.status, Date.now() - startTime);
+      const data = forecastResponse;
 
       if (!data.daily) {
         throw new Error('No forecast data available');
@@ -201,45 +152,25 @@ export class WeatherService {
    * Geocode a city name to get coordinates
    */
   private async geocodeCity(city: string): Promise<GeocodingResult> {
-    const geoStartTime = Date.now();
-
     try {
-      const geoUrl = `${this.apiConfig.geocodingApiUrl}/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+      // Fetch geocoding data using optimized pool
+      const geocodingResponse = await poolManager.request<GeocodingAPIResponse>(
+        'geocoding',
+        {
+          path: `/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`,
+          method: 'GET',
+          headers: {
+            'User-Agent': 'MCP-Weather-Server/1.0.0'
+          }
+        },
+        `geocodeCity-${city}`
+      );
 
-      logger.logAPIRequest(geoUrl, 'GET', { city });
-
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.apiConfig.timeout);
-
-      const response = await fetch(geoUrl, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'MCP-Weather-Server/1.0.0'
-        }
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        logger.logAPIResponse(
-          geoUrl,
-          response.status,
-          Date.now() - geoStartTime,
-          `HTTP ${response.status}`
-        );
-        throw new Error(`Geocoding API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json() as GeocodingAPIResponse;
-
-      logger.logAPIResponse(geoUrl, response.status, Date.now() - geoStartTime);
-
-      if (!data.results || data.results.length === 0) {
+      if (!geocodingResponse.results || geocodingResponse.results.length === 0) {
         throw new Error(`City not found: ${city}`);
       }
 
-      const result = data.results[0];
+      const result = geocodingResponse.results[0];
       const geoResult: GeocodingResult = {
         name: result.name,
         latitude: result.latitude,
@@ -248,11 +179,11 @@ export class WeatherService {
         region: result.admin1
       };
 
-      logger.debug({
+      logger.debug('Geocoding successful', {
         city,
         result: geoResult.name,
         coordinates: `${geoResult.latitude}, ${geoResult.longitude}`
-      }, 'Geocoding successful');
+      });
 
       return geoResult;
 
@@ -320,12 +251,12 @@ export class WeatherService {
           break;
         }
 
-        logger.warn({
+        logger.warn(`API request failed, retrying in ${delay}ms`, {
           attempt,
           maxRetries,
           delay,
           error: lastError.message
-        }, `API request failed, retrying in ${delay}ms`);
+        });
 
         await new Promise(resolve => setTimeout(resolve, delay));
         delay *= 2; // Exponential backoff
