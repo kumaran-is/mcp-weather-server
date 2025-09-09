@@ -323,17 +323,34 @@ For complete Postman setup with all endpoints, request examples, and collection 
 ## 🔌 Integration Examples
 
 ### Cline (Local AI Assistant)
+
+**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
+
+**Quick Configuration**:
 ```json
 {
   "mcpServers": {
     "weather": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": false,
+      "timeout": 30,
+      "type": "stdio",
       "command": "node",
-      "args": ["/path/to/dist/server.js"],
-      "env": { "MCP_TRANSPORT": "stdio" }
+      "args": ["/path/to/mcp-weather-server/dist/server.js"],
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "LOG_LEVEL": "info"
+      }
     }
   }
 }
 ```
+
+**Usage**: Ask Cline natural language questions like "What's the weather in London?" or "Should I bring an umbrella to Paris?"
 
 ### HTTP Client
 ```javascript
@@ -470,6 +487,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Issues**: [GitHub Issues](https://github.com/kumaran-is/mcp-weather-server/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
+- **Cline Integration**: [CLINE-INTEGRATION.md](CLINE-INTEGRATION.md) - Complete Cline setup guide
 
 ## 🧪 Postman Testing Guide
 
