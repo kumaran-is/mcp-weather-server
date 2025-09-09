@@ -90,7 +90,7 @@ For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use thi
       "disabled": false,
       "timeout": 30,
       "type": "streamableHttp",
-      "url": "http://localhost:8080",
+      "url": "http://localhost:8080/mcp",
       "headers": {
         "Content-Type": "application/json"
       }
@@ -112,7 +112,7 @@ For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use thi
       "disabled": false,
       "timeout": 30,
       "type": "streamableHttp",
-      "url": "https://your-remote-server.com:8080",
+      "url": "https://your-remote-server.com:8080/mcp",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "Bearer your-api-token"
