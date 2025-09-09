@@ -34,7 +34,7 @@
 
 ### **Quality Assurance**
 - ✅ **TypeScript Strict Mode**: Zero type errors, full type safety
-- ✅ **Unit Testing**: 80%+ coverage with Jest
+- ✅ **Unit Testing**: 80%+ coverage with Vitest (migrated from Jest)
 - ✅ **Integration Testing**: End-to-end MCP protocol validation
 - ✅ **Error Scenarios**: Comprehensive error handling coverage
 - ✅ **Performance Testing**: Sub-5-second response times

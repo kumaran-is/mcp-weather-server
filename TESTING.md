@@ -206,7 +206,7 @@ setTimeout(() => {
 }, 1000);
 ```
 
-## 3. Testing with Jest Unit Tests
+## 3. Testing with Vitest Unit Tests
 
 ### Run Unit Tests
 

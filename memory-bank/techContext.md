@@ -60,8 +60,8 @@
 ```
 
 #### **Testing Framework**
-- **Jest**: Comprehensive testing framework
-- **ts-jest**: TypeScript integration
+- **Vitest**: Next-generation testing framework powered by Vite
+- **@vitest/coverage-v8**: Native code coverage with V8 engine
 - **80%+ coverage** requirement
 - **Unit & Integration** tests
 

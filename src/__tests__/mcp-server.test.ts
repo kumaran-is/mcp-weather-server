@@ -1,20 +1,21 @@
 import { WeatherMCPServer } from '../mcp-server';
 import { WeatherService } from '../weather-service';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock the WeatherService
-jest.mock('../weather-service');
-const MockWeatherService = WeatherService as jest.MockedClass<typeof WeatherService>;
+vi.mock('../weather-service');
+const MockWeatherService = WeatherService as any;
 
 describe('WeatherMCPServer', () => {
   let server: WeatherMCPServer;
-  let mockWeatherService: jest.Mocked<WeatherService>;
+  let mockWeatherService: any;
 
   beforeEach(() => {
     // Clear all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create mock instance
-    mockWeatherService = new MockWeatherService() as jest.Mocked<WeatherService>;
+    mockWeatherService = new MockWeatherService() as any;
 
     // Mock the constructor and methods
     MockWeatherService.mockImplementation(() => mockWeatherService);
@@ -24,7 +25,7 @@ describe('WeatherMCPServer', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('Initialization', () => {
@@ -198,7 +199,7 @@ describe('WeatherMCPServer', () => {
   describe('Lifecycle Management', () => {
     it('should handle graceful shutdown', async () => {
       // Mock process.on to avoid actual process listeners
-      const mockProcessOn = jest.spyOn(process, 'on').mockImplementation(() => process);
+      const mockProcessOn = vi.spyOn(process, 'on').mockImplementation(() => process);
 
       // Create new server to test setup
       const newServer = new WeatherMCPServer();
