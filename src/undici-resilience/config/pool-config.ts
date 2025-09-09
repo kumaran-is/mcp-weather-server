@@ -85,6 +85,33 @@ export const DEFAULT_RESILIENCE_CONFIG: ResilienceConfig = {
 };
 
 /**
+ * Bulkhead configuration from environment
+ */
+export const DEFAULT_BULKHEAD_CONFIG = {
+  maxConcurrent: parseInt(process.env.BULKHEAD_MAX_CONCURRENT || '10'),
+  maxQueueSize: parseInt(process.env.BULKHEAD_MAX_QUEUE_SIZE || '20'),
+  queueTimeout: parseInt(process.env.BULKHEAD_QUEUE_TIMEOUT || '30000'),
+};
+
+/**
+ * Rate limiter configuration from environment
+ */
+export const DEFAULT_RATE_LIMITER_CONFIG = {
+  requests: parseInt(process.env.RATE_LIMIT_REQUESTS || '100'),
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'),
+  burst: parseInt(process.env.RATE_LIMIT_BURST || '10'),
+  sliding: process.env.RATE_LIMIT_SLIDING !== 'false', // Default to true
+};
+
+/**
+ * Token bucket configuration from environment
+ */
+export const DEFAULT_TOKEN_BUCKET_CONFIG = {
+  capacity: parseInt(process.env.TOKEN_BUCKET_CAPACITY || '100'),
+  refillRate: parseInt(process.env.TOKEN_BUCKET_REFILL_RATE || '10'),
+};
+
+/**
  * Specialized configuration for weather API endpoints
  */
 export const WEATHER_POOL_CONFIG: PoolConfiguration = {

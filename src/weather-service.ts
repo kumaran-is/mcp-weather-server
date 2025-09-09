@@ -1,6 +1,5 @@
 import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types.js';
-import { poolManager } from './http/pool-manager.js';
-import { metricsCollector } from './monitoring/metrics.js';
+import { poolManager } from './undici-resilience/index.js';
 import { getAPIConfig } from './config/config.js';
 import { logger } from './logger.js';
 
