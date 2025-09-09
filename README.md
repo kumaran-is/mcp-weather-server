@@ -12,6 +12,7 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 - [MCP Weather Server](#mcp-weather-server)
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
+  - [🛠️ Technology Stack](#️-technology-stack)
   - [🏗️ Architecture](#️-architecture)
     - [System Flow](#system-flow)
       - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
@@ -75,6 +76,23 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 - **🔄 Dual Transport**: Stdio for local AI assistants, HTTP for remote clients
 - **⚡ High Performance**: Connection pooling, request caching, timeout handling
 - **🧪 Well Tested**: 80%+ test coverage with Jest
+
+## 🛠️ Technology Stack
+
+| Technology | Version | Purpose | Links |
+|------------|---------|---------|-------|
+| **Node.js** | `>=22.0.0` | JavaScript runtime environment | [Homepage](https://nodejs.org/) |
+| **TypeScript** | `^5.8.0` | Type-safe JavaScript development | [Homepage](https://www.typescriptlang.org/) \| [GitHub](https://github.com/microsoft/TypeScript) |
+| **Fastify** | `^5.6.0` | High-performance web framework for HTTP transport | [Homepage](https://fastify.dev/) \| [GitHub](https://github.com/fastify/fastify) |
+| **@modelcontextprotocol/sdk** | `^1.17.5` | MCP protocol implementation | [GitHub](https://github.com/modelcontextprotocol/typescript-sdk) |
+| **Pino** | `~8.15.0` | High-performance structured logging | [Homepage](https://getpino.io/) \| [GitHub](https://github.com/pinojs/pino) |
+| **Vitest** | `^2.1.8` | Next-generation testing framework | [Homepage](https://vitest.dev/) \| [GitHub](https://github.com/vitest-dev/vitest) |
+| **dotenv** | `~16.4.1` | Environment variable management | [Homepage](https://dotenvx.com/) \| [GitHub](https://github.com/motdotla/dotenv) |
+| **undici** | `^6.19.8` | High-performance HTTP client with connection pooling | [GitHub](https://github.com/nodejs/undici) |
+| **uuid** | `~9.0.1` | RFC-compliant UUID generation | [GitHub](https://github.com/uuidjs/uuid) |
+| **Open-Meteo API** | N/A | Free weather data provider | [Homepage](https://open-meteo.com/) |
+
+> **Note**: Undici provides optimal performance for MCP servers with ~2-3x faster HTTP requests, excellent connection pooling, and streaming support essential for LLM communications.
 
 ## 🏗️ Architecture
 

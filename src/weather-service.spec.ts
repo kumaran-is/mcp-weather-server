@@ -1,8 +1,11 @@
 import { WeatherService } from './weather-service';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Mock undici's request function
+const mockRequest = vi.fn();
+vi.mock('undici', () => ({
+  request: mockRequest
+}));
 
 describe('WeatherService', () => {
   let weatherService: WeatherService;
@@ -152,16 +155,22 @@ describe('WeatherService', () => {
     };
 
     beforeEach(() => {
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockWeatherResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockWeatherResponse)
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
@@ -183,47 +192,56 @@ describe('WeatherService', () => {
     });
 
     it('should handle geocoding API failure', async () => {
-      (global.fetch as any).mockImplementationOnce(() =>
+      mockRequest.mockImplementationOnce(() =>
         Promise.resolve({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error'
+          statusCode: 500,
+          headers: {},
+          body: {
+            json: () => Promise.reject(new Error('Internal Server Error'))
+          }
         })
       );
 
       await expect(weatherService.getCurrentWeather('InvalidCity')).rejects.toThrow(
-        'Geocoding API error: 500 Internal Server Error'
+        'Geocoding API error: 500'
       );
     });
 
     it('should handle weather API failure', async () => {
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: false,
-            status: 404,
-            statusText: 'Not Found'
+            statusCode: 404,
+            headers: {},
+            body: {
+              json: () => Promise.reject(new Error('Not Found'))
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
       });
 
       await expect(weatherService.getCurrentWeather('London')).rejects.toThrow(
-        'Weather API error: 404 Not Found'
+        'Weather API error: 404'
       );
     });
 
     it('should handle network timeout', async () => {
-      (global.fetch as any).mockImplementation(() =>
+      mockRequest.mockImplementation(() =>
         new Promise((resolve) => setTimeout(() => resolve({
-          ok: false,
-          status: 408,
-          statusText: 'Request Timeout'
+          statusCode: 408,
+          headers: {},
+          body: {
+            json: () => Promise.reject(new Error('Request Timeout'))
+          }
         }), 6000))
       );
 
@@ -231,10 +249,13 @@ describe('WeatherService', () => {
     });
 
     it('should handle city not found', async () => {
-      (global.fetch as any).mockImplementationOnce(() =>
+      mockRequest.mockImplementationOnce(() =>
         Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ results: [] })
+          statusCode: 200,
+          headers: {},
+          body: {
+            json: () => Promise.resolve({ results: [] })
+          }
         })
       );
 
@@ -244,16 +265,22 @@ describe('WeatherService', () => {
     });
 
     it('should handle missing current weather data', async () => {
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({}) // Missing current data
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve({}) // Missing current data
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
@@ -288,16 +315,22 @@ describe('WeatherService', () => {
     };
 
     beforeEach(() => {
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockForecastResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockForecastResponse)
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
@@ -329,38 +362,49 @@ describe('WeatherService', () => {
     });
 
     it('should handle forecast API failure', async () => {
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: false,
-            status: 503,
-            statusText: 'Service Unavailable'
+            statusCode: 503,
+            headers: {},
+            body: {
+              json: () => Promise.reject(new Error('Service Unavailable'))
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
       });
 
       await expect(weatherService.getForecast('Tokyo', 3)).rejects.toThrow(
-        'Forecast API error: 503 Service Unavailable'
+        'Forecast API error: 503'
       );
     });
 
     it('should handle missing forecast data', async () => {
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({}) // Missing daily data
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve({}) // Missing daily data
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
@@ -379,16 +423,22 @@ describe('WeatherService', () => {
         }
       };
 
-      (global.fetch as any).mockImplementation((url: string) => {
+      mockRequest.mockImplementation((url: string) => {
         if (url.includes('geocoding-api')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockGeocodingResponse)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockGeocodingResponse)
+            }
           });
         } else if (url.includes('forecast')) {
           return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockResponseWithPrecipitation)
+            statusCode: 200,
+            headers: {},
+            body: {
+              json: () => Promise.resolve(mockResponseWithPrecipitation)
+            }
           });
         }
         return Promise.reject(new Error('Unknown URL'));
@@ -415,9 +465,12 @@ describe('WeatherService', () => {
           }]
         };
 
-        (global.fetch as any).mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResponse)
+        mockRequest.mockResolvedValueOnce({
+          statusCode: 200,
+          headers: {},
+          body: {
+            json: () => Promise.resolve(mockResponse)
+          }
         });
 
         const result = await (weatherService as any).geocodeCity('Paris');
@@ -432,14 +485,16 @@ describe('WeatherService', () => {
       });
 
       it('should handle geocoding API errors', async () => {
-        (global.fetch as any).mockResolvedValueOnce({
-          ok: false,
-          status: 429,
-          statusText: 'Too Many Requests'
+        mockRequest.mockResolvedValueOnce({
+          statusCode: 429,
+          headers: {},
+          body: {
+            json: () => Promise.reject(new Error('Too Many Requests'))
+          }
         });
 
         await expect((weatherService as any).geocodeCity('TestCity')).rejects.toThrow(
-          'Geocoding API error: 429 Too Many Requests'
+          'Geocoding API error: 429'
         );
       });
     });
@@ -496,26 +551,31 @@ describe('WeatherService', () => {
 
   describe('Error Scenarios', () => {
     it('should handle fetch network errors', async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network failure'));
+      mockRequest.mockRejectedValueOnce(new Error('Network failure'));
 
       await expect(weatherService.getCurrentWeather('London')).rejects.toThrow();
     });
 
     it('should handle malformed JSON responses', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON'))
+      mockRequest.mockResolvedValueOnce({
+        statusCode: 200,
+        headers: {},
+        body: {
+          json: () => Promise.reject(new Error('Invalid JSON'))
+        }
       });
 
       await expect(weatherService.getCurrentWeather('London')).rejects.toThrow();
     });
 
     it('should handle timeout scenarios', async () => {
-      (global.fetch as any).mockImplementationOnce(() =>
+      mockRequest.mockImplementationOnce(() =>
         new Promise((resolve) => setTimeout(() => resolve({
-          ok: false,
-          status: 408,
-          statusText: 'Request Timeout'
+          statusCode: 408,
+          headers: {},
+          body: {
+            json: () => Promise.reject(new Error('Request Timeout'))
+          }
         }), 5500))
       );
 

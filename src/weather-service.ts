@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import { request } from 'undici';
 import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types.js';
 import { getAPIConfig } from './config/config.js';
 import { logger } from './logger.js';
@@ -40,7 +40,7 @@ export class WeatherService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.apiConfig.timeout);
 
-      const response = await fetch(
+      const { statusCode, headers, body } = await request(
         `${this.apiConfig.openMeteoBaseUrl}/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`,
         {
           signal: controller.signal,
@@ -52,23 +52,17 @@ export class WeatherService {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
+      if (statusCode !== 200) {
         logger.logAPIResponse(
           `${this.apiConfig.openMeteoBaseUrl}/forecast`,
-          response.status,
+          statusCode,
           Date.now() - startTime,
-          `HTTP ${response.status}`
+          `HTTP ${statusCode}`
         );
-        throw new Error(`Weather API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Weather API error: ${statusCode}`);
       }
 
-      const data = await response.json() as WeatherAPIResponse;
-
-      logger.logAPIResponse(
-        `${this.apiConfig.openMeteoBaseUrl}/forecast`,
-        response.status,
-        Date.now() - startTime
-      );
+      const data = await body.json() as WeatherAPIResponse;
 
       if (!data.current) {
         throw new Error('No current weather data available');
@@ -136,7 +130,7 @@ export class WeatherService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.apiConfig.timeout);
 
-      const response = await fetch(forecastUrl, {
+      const { statusCode, headers, body } = await request(forecastUrl, {
         signal: controller.signal,
         headers: {
           'User-Agent': 'MCP-Weather-Server/1.0.0'
@@ -145,19 +139,19 @@ export class WeatherService {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
+      if (statusCode !== 200) {
         logger.logAPIResponse(
           forecastUrl,
-          response.status,
+          statusCode,
           Date.now() - startTime,
-          `HTTP ${response.status}`
+          `HTTP ${statusCode}`
         );
-        throw new Error(`Forecast API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Forecast API error: ${statusCode}`);
       }
 
-      const data = await response.json() as WeatherAPIResponse;
+      const data = await body.json() as WeatherAPIResponse;
 
-      logger.logAPIResponse(forecastUrl, response.status, Date.now() - startTime);
+      logger.logAPIResponse(forecastUrl, statusCode, Date.now() - startTime);
 
       if (!data.daily) {
         throw new Error('No forecast data available');
@@ -212,7 +206,7 @@ export class WeatherService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.apiConfig.timeout);
 
-      const response = await fetch(geoUrl, {
+      const { statusCode, headers, body } = await request(geoUrl, {
         signal: controller.signal,
         headers: {
           'User-Agent': 'MCP-Weather-Server/1.0.0'
@@ -221,19 +215,19 @@ export class WeatherService {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
+      if (statusCode !== 200) {
         logger.logAPIResponse(
           geoUrl,
-          response.status,
+          statusCode,
           Date.now() - geoStartTime,
-          `HTTP ${response.status}`
+          `HTTP ${statusCode}`
         );
-        throw new Error(`Geocoding API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Geocoding API error: ${statusCode}`);
       }
 
-      const data = await response.json() as GeocodingAPIResponse;
+      const data = await body.json() as GeocodingAPIResponse;
 
-      logger.logAPIResponse(geoUrl, response.status, Date.now() - geoStartTime);
+      logger.logAPIResponse(geoUrl, statusCode, Date.now() - geoStartTime);
 
       if (!data.results || data.results.length === 0) {
         throw new Error(`City not found: ${city}`);
