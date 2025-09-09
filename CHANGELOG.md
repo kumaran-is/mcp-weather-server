@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2025-09-09
+
+### Fixed
+- **TypeScript Compilation Errors**: Fixed logger method calls with incorrect parameter order across all modules
+- **ESLint Errors**: Resolved unused imports, missing trailing commas, and parameter issues
+- **MCP Settings Configuration**: Updated `cline_mcp_settings.json` with correct server path for stdio transport
+- **Logger Interface Issues**: Fixed unused parameters in logger interface with ESLint disable comments
+- **Build System**: Ensured clean TypeScript compilation and ESLint compliance
+- **Test Configuration**: Disabled `@typescript-eslint/no-explicit-any` rule for test files to allow mocking
+
+### Technical Improvements
+- **Code Quality**: Achieved zero TypeScript compilation errors and clean ESLint results
+- **Build Verification**: Confirmed successful `npm run build` and `npm run lint` execution
+- **Configuration Validation**: Verified MCP settings files are correctly configured for both HTTP and stdio transports
+- **Documentation Updates**: Updated memory bank files to reflect current project state
+
 ## [2.0.0] - 2025-09-09
 
 ### 🎉 **MAJOR RELEASE: 100% Production Ready**
@@ -164,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 When contributing to this project, please update the CHANGELOG.md file with your changes under the [Unreleased] section at the top of the file.
 
 ## Version History
+- 2.0.1: **PATCH RELEASE** - Build system fixes and MCP configuration updates
 - 2.0.0: **MAJOR RELEASE** - 100% Production Ready with enterprise-grade resilience and monitoring
 - 1.2.0: Framework migration (Express → Fastify) and HTTP client upgrade (node-fetch → undici)
 - 1.0.0: Initial stable release with full MCP compliance and weather API integration

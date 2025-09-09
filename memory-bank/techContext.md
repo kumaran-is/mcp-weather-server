@@ -32,6 +32,7 @@ The MCP Weather Server is built with a modern, production-ready technology stack
 | **Vitest** | `^2.1.8` | Next-generation testing framework | Fast, TypeScript-native, excellent developer experience |
 | **ESLint** | `^9.9.0` | Code linting and formatting | Industry standard, highly configurable, TypeScript support |
 | **TypeScript ESLint** | `^8.8.0` | TypeScript-specific linting | Enhanced type-aware linting rules |
+| **ESLint Flat Config** | Native | Modern configuration format | Better performance, cleaner configuration |
 
 ### Configuration & Environment
 

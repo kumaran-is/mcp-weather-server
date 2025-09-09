@@ -7,6 +7,7 @@
 - **Phase 2**: Resilience Enhancement ✅ **COMPLETED**
 - **Phase 3**: Streaming & Monitoring ✅ **COMPLETED**
 - **Phase 4**: Chaos Engineering & Benchmarking ✅ **COMPLETED**
+- **Version 2.0.1**: Build System Fixes & MCP Configuration ✅ **COMPLETED**
 
 ---
 
