@@ -5,12 +5,13 @@ This guide provides comprehensive instructions for testing the MCP Weather Serve
 ## Table of Contents
 
 1. [Testing with HTTP Transport](#1-testing-with-http-transport)
-2. [Testing with Stdio Transport](#2-testing-with-stdio-transport)
-3. [Testing with Vitest Unit Tests](#3-testing-with-vitest-unit-tests)
-4. [Environment Variables for Testing](#4-environment-variables-for-testing)
-5. [Advanced Testing Scenarios](#5-advanced-testing-scenarios)
-6. [Debugging and Monitoring](#6-debugging-and-monitoring)
-7. [Quick Test Commands](#7-quick-test-commands)
+2. [Testing with SSE Transport](#2-testing-with-sse-transport)
+3. [Testing with Stdio Transport](#3-testing-with-stdio-transport)
+4. [Testing with Vitest Unit Tests](#4-testing-with-vitest-unit-tests)
+5. [Environment Variables for Testing](#5-environment-variables-for-testing)
+6. [Advanced Testing Scenarios](#6-advanced-testing-scenarios)
+7. [Debugging and Monitoring](#7-debugging-and-monitoring)
+8. [Quick Test Commands](#8-quick-test-commands)
 
 ## 1. Testing with HTTP Transport
 
@@ -136,7 +137,197 @@ curl -X POST http://localhost:8080/mcp \
   }'
 ```
 
-## 2. Testing with Stdio Transport
+## 2. Testing with SSE Transport
+
+### Overview
+
+The Simple SSE (Server-Sent Events) transport is designed specifically for remote Cline connections. It provides a lightweight, bidirectional communication channel that's compatible with Cline's remote server support.
+
+### Start SSE Server
+
+```bash
+# Using npm script
+npm run sse
+
+# Or with environment variable
+MCP_TRANSPORT=sse npm run dev
+
+# With custom port
+MCP_SSE_PORT=3001 npm run sse
+```
+
+You should see:
+```
+[INFO] Starting MCP Weather Server
+[INFO] Using SSE transport
+[INFO] Simple SSE server started on port 8081
+[INFO] SSE endpoint: http://localhost:8081/sse
+```
+
+### Test with curl
+
+#### Health Check
+
+```bash
+curl http://localhost:8081/health
+```
+
+Expected response:
+```json
+{
+  "status": "healthy",
+  "transport": "sse",
+  "endpoint": "http://localhost:8081/sse"
+}
+```
+
+#### Connect to SSE Stream
+
+```bash
+# Connect and listen for events
+curl -N -H "Accept: text/event-stream" http://localhost:8081/sse
+```
+
+You should see:
+```
+event: connected
+data: {"clientId":"uuid-here","message":"Connected to MCP SSE server"}
+
+event: heartbeat
+data: {"timestamp":"2025-09-09T10:00:00.000Z"}
+```
+
+#### Send Commands via POST
+
+In another terminal, send commands to the same endpoint:
+
+```bash
+# Initialize connection
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "init-123",
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-06-18",
+      "capabilities": {"sampling": {}},
+      "clientInfo": {"name": "sse-test", "version": "1.0.0"}
+    }
+  }'
+
+# List tools
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "tools-123",
+    "method": "tools/list"
+  }'
+
+# Get current weather
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "weather-123",
+    "method": "tools/call",
+    "params": {
+      "name": "get_current_weather",
+      "arguments": {
+        "city": "London"
+      }
+    }
+  }'
+```
+
+### Test with MCP Inspector
+
+1. **Start SSE server:**
+   ```bash
+   npm run sse
+   ```
+
+2. **Open MCP Inspector:**
+   ```bash
+   npx @modelcontextprotocol/inspector
+   ```
+
+3. **Configure connection:**
+   - Transport Type: `SSE`
+   - URL: `http://localhost:8081/sse`
+   - Click "Connect"
+
+4. **Test tools:**
+   - Use the Inspector UI to test all weather tools
+   - Monitor the SSE stream for responses
+   - Check connection stability
+
+### Test with Cline (Remote)
+
+1. **Start SSE server on your machine:**
+   ```bash
+   npm run sse
+   ```
+
+2. **Get your IP address:**
+   ```bash
+   # On macOS/Linux
+   ifconfig | grep "inet "
+   
+   # On Windows
+   ipconfig
+   ```
+
+3. **Configure Cline:**
+   - Copy `docs/agent_mcp_setting/cline_mcp_settings_sse.json`
+   - Update URL with your IP: `http://192.168.1.100:8081/sse`
+   - Add to Cline MCP settings
+
+4. **Test in Cline:**
+   - Ask: "What's the weather in London?"
+   - Verify Cline connects and receives weather data
+
+### SSE Transport Features
+
+| Feature | Description |
+|---------|-------------|
+| **Bidirectional** | POST for commands, SSE for responses |
+| **Client Tracking** | Automatic client ID assignment |
+| **Heartbeat** | Keeps connection alive (30s interval) |
+| **CORS Support** | Allows remote connections |
+| **Simple Protocol** | Compatible with Cline's SSE type |
+| **Auto-reconnect** | Clients can reconnect with same ID |
+
+### Common Issues and Solutions
+
+#### Port Already in Use
+
+```bash
+# Check what's using port 8081
+lsof -i :8081
+
+# Kill the process
+kill -9 $(lsof -t -i:8081)
+
+# Or use different port
+MCP_SSE_PORT=3001 npm run sse
+```
+
+#### CORS Issues
+
+The SSE transport automatically sets CORS headers for all origins. If you need to restrict:
+
+```bash
+# Set allowed origins in .env
+ALLOWED_ORIGINS=http://localhost:3000,http://192.168.1.100:3000
+```
+
+#### Connection Drops
+
+SSE connections may drop after inactivity. The server sends heartbeats every 30 seconds to prevent this. Clients should implement auto-reconnect logic.
+
+## 3. Testing with Stdio Transport
 
 ### Start the Stdio Server
 
@@ -204,7 +395,7 @@ setTimeout(() => {
 }, 1000);
 ```
 
-## 3. Testing with Vitest Unit Tests
+## 4. Testing with Vitest Unit Tests
 
 ### Run Unit Tests
 
@@ -236,7 +427,7 @@ npm run test:watch
 - `src/transports/http-transport.spec.ts` - HTTP transport tests
 - `src/logger.spec.ts` - Logging functionality tests
 
-## 4. Environment Variables for Testing
+## 5. Environment Variables for Testing
 
 ### HTTP Transport Configuration
 
@@ -279,7 +470,7 @@ LOG_LEVEL=debug npm run http
 LOG_PRETTY=true npm run http
 ```
 
-## 5. Advanced Testing Scenarios
+## 6. Advanced Testing Scenarios
 
 ### Load Testing with Multiple Clients
 
@@ -345,7 +536,7 @@ curl -X DELETE http://localhost:8080/mcp \
   -H "Accept: application/json, text/event-stream"
 ```
 
-## 6. Debugging and Monitoring
+## 7. Debugging and Monitoring
 
 ### Server Logs
 
@@ -379,7 +570,7 @@ console.log('Request:', JSON.stringify(request, null, 2));
 console.log('Response:', JSON.stringify(response, null, 2));
 ```
 
-## 7. Quick Test Commands
+## 8. Quick Test Commands
 
 **Start HTTP Server and Test**
 ```bash

@@ -49,10 +49,11 @@ COPY .env.example .env.example
 RUN chown -R mcpweather:nodejs /app
 USER mcpweather
 
-# Expose port (can be overridden by environment variable)
+# Expose HTTP port (recommended for Docker deployments)
+# Note: SSE transport (port 8081) is for development/remote Cline, not recommended for Docker
 EXPOSE ${MCP_HTTP_PORT:-8080}
 
-# Health check using environment variable for port
+# Health check for HTTP transport (standard for Docker deployments)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "const port = process.env.MCP_HTTP_PORT || 8080; \
     require('http').get('http://localhost:' + port + '/health', (res) => { \

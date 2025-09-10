@@ -1,6 +1,6 @@
 # MCP Weather Server
 
-A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and designed for both local AI assistants (like Cline) and remote HTTP clients.
+A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **three-transport strategy** for maximum compatibility: stdio for local development, HTTP for production APIs, and SSE for remote Cline connections.
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
@@ -65,7 +65,10 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 - **🌤️ Real-time Weather**: Current weather conditions with temperature, humidity, wind speed
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
 - **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
-- **🔄 Dual Transport**: Stdio for local AI assistants, HTTP/SSE for remote clients
+- **🔄 Three Transport Types**: 
+  - **Stdio**: Local development with Cline in VS Code
+  - **HTTP**: Production APIs, LangChain, microservices
+  - **SSE**: Remote Cline connections, lightweight clients
 - **🛡️ Resilience Patterns**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
 - **⚡ High Performance**: Undici-based HTTP client with connection pooling and streaming
 - **🔒 Security First**: Input validation, Origin checks, CORS support, session management
@@ -98,7 +101,8 @@ mcp-weather-server/
 │   ├── config/
 │   │   └── config.ts              # Centralized configuration management
 │   ├── transports/
-│   │   ├── http-transport.ts      # HTTP/SSE transport implementation
+│   │   ├── http-transport.ts      # HTTP transport with SSE streaming
+│   │   ├── sse-transport.ts       # Simple SSE transport for Cline
 │   │   └── http-transport.spec.ts # Transport unit tests
 │   ├── undici-resilience/         # Advanced HTTP client with resilience patterns
 │   │   ├── config/
@@ -143,6 +147,27 @@ mcp-weather-server/
 ```
 
 ## 🏗️ Architecture
+
+### Transport Strategy
+
+The MCP Weather Server implements a **three-transport strategy** for maximum compatibility:
+
+| Transport | Port | Best For | Protocol | Cline Support |
+|-----------|------|----------|----------|---------------|
+| **Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
+| **HTTP** | 8080 | Production APIs, LangChain | HTTP + SSE | ❌ No |
+| **SSE** | 8081 | Remote Cline, lightweight clients | Simple SSE | ✅ Remote |
+
+#### Transport Decision Matrix
+
+| Your Need | Recommended Transport | Start Command |
+|-----------|----------------------|---------------|
+| Local Cline in VS Code | **Stdio** | (auto-spawned) |
+| Remote Cline access | **SSE** | `npm run sse` |
+| Production API | **HTTP** | `npm run http` |
+| Docker deployment | **HTTP** or **SSE** | See docker-compose |
+| LangChain integration | **HTTP** | `npm run http` |
+| MCP Inspector testing | Any | See docs |
 
 ### System Flow
 
@@ -219,6 +244,43 @@ sequenceDiagram
     HTTPTransport-->>Fastify: 200 OK + SSE headers
     Fastify-->>Client: SSE connection established
     Note over HTTPTransport,Client: Persistent connection for notifications
+```
+
+#### SSE Transport Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Cline
+    participant SSETransport
+    participant WeatherMCPServer
+    participant WeatherService
+    participant OpenMeteoAPI
+
+    %% Connection Establishment
+    Cline->>SSETransport: GET /sse (Accept: text/event-stream)
+    SSETransport-->>Cline: SSE stream opened
+    SSETransport-->>Cline: event: connected + clientId
+    
+    %% Bidirectional Communication
+    Cline->>SSETransport: POST /sse (initialize)
+    SSETransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>SSETransport: Server info
+    SSETransport-->>Cline: SSE event: response
+    
+    %% Tool Call
+    Cline->>SSETransport: POST /sse (tools/call)
+    SSETransport->>WeatherMCPServer: handleToolCall()
+    WeatherMCPServer->>WeatherService: getCurrentWeather(city)
+    WeatherService->>OpenMeteoAPI: GET /forecast
+    OpenMeteoAPI-->>WeatherService: Weather data
+    WeatherService-->>WeatherMCPServer: Formatted result
+    WeatherMCPServer-->>SSETransport: Tool response
+    SSETransport-->>Cline: SSE event: tool result
+    
+    %% Heartbeat
+    loop Every 30 seconds
+        SSETransport-->>Cline: event: heartbeat
+    end
 ```
 
 #### Stdio Transport Sequence Diagram
@@ -379,18 +441,27 @@ graph TB
 
 #### Development Mode
 
-**HTTP Transport** (recommended for development)
-```bash
-npm run http
-```
-
-**Stdio Transport** (for AI assistants)
+**Stdio Transport** (Local Cline in VS Code)
 ```bash
 npm run stdio
+# Or let Cline auto-spawn the process
+```
+
+**HTTP Transport** (Production APIs, LangChain)
+```bash
+npm run http
+# Server runs on http://localhost:8080/mcp
+```
+
+**SSE Transport** (Remote Cline connections)
+```bash
+npm run sse
+# Server runs on http://localhost:8081/sse
 ```
 
 **Development with Auto-restart**
 ```bash
+# Uses transport from .env or MCP_TRANSPORT env var
 npm run dev
 ```
 
@@ -411,7 +482,25 @@ Refer **[DOCKER-DEPLOYMENT.md](docs/DOCKER-DEPLOYMENT.md)**
 
 ## 🔧 Configuration
 
-The server uses environment variables for configuration. Copy `.env.example` to `.env` and modify as needed:
+The server uses environment variables for configuration. Copy `.env.example` to `.env` and modify as needed.
+
+### Key Configuration Options
+
+```bash
+# Transport selection (stdio, http, sse)
+MCP_TRANSPORT=stdio
+
+# Port configuration
+MCP_HTTP_PORT=8080  # For HTTP transport
+MCP_SSE_PORT=8081   # For SSE transport
+
+# Logging
+LOG_LEVEL=info
+```
+
+For complete configuration options, see:
+- [.env.example](.env.example) - Development configuration
+- [.env.production.example](.env.production.example) - Production configuration
 
 ## 📡 API Usage
 
@@ -507,7 +596,7 @@ When using HTTP transport, the server exposes endpoints:
 
 ## 🧪 Testing
 
-For comprehensive testing instructions, see **[TESTING.md](docs/TESTING.md)** - a complete guide covering both stdio and HTTP transport testing.
+For comprehensive testing instructions, see **[TESTING.md](docs/TESTING.md)** - a complete guide covering all three transports (stdio, HTTP, and SSE).
 
 ### Quick Test Commands
 
@@ -550,6 +639,24 @@ curl -X POST http://localhost:8080/mcp \
 curl http://localhost:8080/health
 ```
 
+#### SSE Transport Testing
+
+**Start SSE Server**
+```bash
+npm run sse
+```
+
+**Test with curl**
+```bash
+# Connect to SSE stream
+curl -N -H "Accept: text/event-stream" http://localhost:8081/sse
+
+# Send command (in another terminal)
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}'
+```
+
 #### Stdio Transport Testing
 
 **Quick Stdio Test**
@@ -561,7 +668,7 @@ echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 
 For comprehensive testing with the official MCP Inspector tool:
 - **[MCP Inspector Guide](docs/MCP-INSPECTOR-GUIDE.md)** - Step-by-step testing with visual interface
-- Supports both stdio and HTTP transports
+- Supports all three transports (stdio, HTTP, SSE)
 - Interactive tool testing and protocol validation
 
 For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[docs/TESTING.md](docs/TESTING.md)**.
@@ -576,15 +683,19 @@ For detailed testing scenarios including manual curl commands, environment confi
 
 ## 🔌 Integration Examples
 
-### Cline (Local AI Assistant)
+### Cline (Local & Remote AI Assistant)
 
 **Complete Setup Guide**: See **[CLINE-INTEGRATION.md](docs/agent_mcp_setting/CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
 
-**Quick Configuration** (Stdio Transport):
-Refer **[cline_mcp_settings.json](docs/agent_mcp_setting/cline_mcp_settings.json)**
+#### Configuration Files
 
-**Quick Configuration** (HTTP Streamable Transport):
-Refer **[cline_mcp_settings_http.json](docs/agent_mcp_setting/cline_mcp_settings_http.json)**
+| Use Case | Transport | Config File |
+|----------|-----------|-------------|
+| **Local Cline** | Stdio | [cline_mcp_settings.json](docs/agent_mcp_setting/cline_mcp_settings.json) |
+| **Remote Cline** | SSE | [cline_mcp_settings_sse.json](docs/agent_mcp_setting/cline_mcp_settings_sse.json) |
+| **Documentation Only** | HTTP | [cline_mcp_settings_http.json](docs/agent_mcp_setting/cline_mcp_settings_http.json) |
+
+**Note**: Cline does NOT support HTTP transport. Use Stdio for local or SSE for remote connections.
 
 **Usage**: Ask Cline natural language questions like "What's the weather in London?" or "Should I bring an umbrella to Paris?"
 

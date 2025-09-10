@@ -8,10 +8,11 @@ This guide provides step-by-step instructions for testing the MCP Weather Server
 2. [Installation](#installation)
 3. [Testing Stdio Transport](#testing-stdio-transport)
 4. [Testing HTTP Transport](#testing-http-transport)
-5. [Verifying Server Functionality](#verifying-server-functionality)
-6. [Common Test Scenarios](#common-test-scenarios)
-7. [Troubleshooting](#troubleshooting)
-8. [Best Practices](#best-practices)
+5. [Testing SSE Transport](#testing-sse-transport)
+6. [Verifying Server Functionality](#verifying-server-functionality)
+7. [Common Test Scenarios](#common-test-scenarios)
+8. [Troubleshooting](#troubleshooting)
+9. [Best Practices](#best-practices)
 
 ## What is MCP Inspector?
 
@@ -389,6 +390,187 @@ After connecting with `Streamable HTTP` transport, verify:
 - [ ] SSE stream maintains connection
 - [ ] CORS headers present
 - [ ] Health endpoint responds
+
+**SSE:**
+- [ ] SSE endpoint establishes connection
+- [ ] Bidirectional communication works
+- [ ] Client ID tracking functions
+- [ ] CORS headers present
+
+## Testing SSE Transport
+
+### Overview
+
+The Simple SSE (Server-Sent Events) transport is designed specifically for remote Cline connections. Unlike the HTTP transport's full-featured SSE streaming, this is a simpler implementation that's compatible with Cline's remote server support.
+
+### Step 1: Configure for SSE
+
+1. **Update environment:**
+```bash
+# Edit .env file
+MCP_TRANSPORT=sse
+MCP_SSE_PORT=8081
+```
+
+Or use environment variable:
+```bash
+export MCP_TRANSPORT=sse
+```
+
+### Step 2: Start SSE Server
+
+```bash
+# Start the SSE server
+npm run sse
+
+# Or with explicit transport
+MCP_TRANSPORT=sse npm run dev
+```
+
+You should see:
+```
+[INFO] Starting MCP Weather Server
+[INFO] Using SSE transport
+[INFO] Simple SSE server started on port 8081
+[INFO] SSE endpoint: http://localhost:8081/sse
+```
+
+### Step 3: Launch MCP Inspector for SSE
+
+**Method 1 - Using Command Line:**
+
+```bash
+# Using MCP Inspector with SSE endpoint
+mcp-inspector sse http://localhost:8081/sse
+
+# Or with npx
+npx @modelcontextprotocol/inspector sse http://localhost:8081/sse
+```
+
+**Method 2 - Using Inspector UI:**
+
+1. Open MCP Inspector in your browser
+2. Click "New Connection" or "Connect"
+3. Configure the connection settings:
+   - **Transport Type**: Select `SSE` (Simple SSE)
+   - **URL**: Enter `http://localhost:8081/sse`
+   - Click the "Connect" button
+
+### Step 4: Verify SSE Connection
+
+After connecting with SSE transport, verify:
+
+1. **Connection Status:**
+   - Green "Connected" status
+   - Transport shows "SSE"
+   - URL shows `http://localhost:8081/sse`
+
+2. **Tools Available:**
+   - `get_current_weather` - Get current weather for a city
+   - `get_weather_forecast` - Get weather forecast (1-7 days)  
+   - `retrieve_weather_context` - Get weather info with AI context
+
+3. **Bidirectional Communication:**
+   - Send commands via POST to same endpoint
+   - Receive responses via SSE stream
+   - Client ID automatically assigned
+
+### Step 5: Test SSE Transport Features
+
+1. **Test Current Weather:**
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "get_current_weather",
+       "arguments": {
+         "city": "London"
+       }
+     },
+     "id": 1
+   }
+   ```
+
+2. **Test Forecast:**
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "get_weather_forecast",
+       "arguments": {
+         "city": "Tokyo",
+         "days": 3
+       }
+     },
+     "id": 2
+   }
+   ```
+
+3. **Test Connection Stability:**
+   - Leave connection open for extended period
+   - Verify heartbeat messages keep connection alive
+   - Check automatic reconnection on disconnect
+
+### SSE vs HTTP Transport Comparison
+
+| Feature | SSE Transport | HTTP Transport |
+|---------|---------------|----------------|
+| **Target Client** | Remote Cline | Production APIs |
+| **Protocol** | Simple SSE | Streamable HTTP |
+| **Port** | 8081 | 8080 |
+| **Session Management** | Client ID only | Full sessions |
+| **Complexity** | Simple | Complex |
+| **Best For** | Remote Cline | LangChain/APIs |
+
+### Troubleshooting SSE Transport
+
+#### Connection Issues
+
+**Problem:** "Failed to establish SSE connection"
+
+**Solutions:**
+- Verify server is running: `curl http://localhost:8081/health`
+- Check port availability: `lsof -i :8081`
+- Ensure firewall allows port 8081
+- Check CORS headers in server response
+
+#### Client ID Issues
+
+**Problem:** "Client not recognized" errors
+
+**Solutions:**
+- Client ID is auto-assigned on connection
+- Check server logs for client registration
+- Verify client ID in message headers
+- Ensure proper cleanup on disconnect
+
+#### Remote Access Issues
+
+**Problem:** Can't connect from remote machine
+
+**Solutions:**
+- Use actual IP instead of localhost: `http://192.168.1.100:8081/sse`
+- Check firewall rules for port 8081
+- Verify CORS allows remote origin
+- Consider using reverse proxy or VPN
+
+### Testing SSE with curl
+
+Test SSE endpoint directly:
+
+```bash
+# Test SSE stream connection
+curl -N -H "Accept: text/event-stream" http://localhost:8081/sse
+
+# Send command via POST (in another terminal)
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/list",
+    "id": 1
+  }'
+```
 
 ## Common Test Scenarios
 
