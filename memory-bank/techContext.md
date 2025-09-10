@@ -157,6 +157,9 @@ npm run build
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
+    "stdio": "MCP_TRANSPORT=stdio tsx src/server.ts",
+    "http": "MCP_TRANSPORT=http tsx src/server.ts",
+    "sse": "MCP_TRANSPORT=sse tsx src/server.ts",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src/**/*.ts",
@@ -256,6 +259,79 @@ npm run build
 - **Request Overhead**: < 1ms per request
 - **Memory Footprint**: Minimal compared to Express
 - **Plugin Loading**: Sub-millisecond startup time
+
+## 🔄 Transport Architecture
+
+### Three-Transport Strategy
+
+The MCP Weather Server implements three distinct transport mechanisms, each optimized for specific use cases:
+
+#### 1. Stdio Transport
+**Technology**: Process I/O streams
+**Port**: None (process-based)
+**Use Case**: Local development with Cline in VS Code
+**Features**:
+- Zero network latency
+- Process isolation
+- Automatic lifecycle management
+- JSON-RPC over stdin/stdout
+
+#### 2. HTTP Transport
+**Technology**: Fastify with SSE streaming
+**Port**: 8080 (configurable via MCP_HTTP_PORT)
+**Use Case**: Production APIs, LangChain, microservices
+**Features**:
+- Full HTTP/2 support
+- Session management with UUIDs
+- SSE for real-time notifications
+- CORS and security headers
+- Health check endpoint
+
+#### 3. SSE Transport
+**Technology**: Server-Sent Events
+**Port**: 8081 (configurable via MCP_SSE_PORT)
+**Use Case**: Remote Cline connections
+**Features**:
+- Lightweight bidirectional communication
+- GET for SSE stream, POST for commands
+- Automatic client ID assignment
+- 30-second heartbeat for connection maintenance
+- Cross-origin support
+
+### Transport Selection Logic
+
+```typescript
+// Transport configuration
+const transportConfig = {
+  transport: process.env.MCP_TRANSPORT || 'stdio',
+  httpPort: process.env.MCP_HTTP_PORT || 8080,
+  ssePort: process.env.MCP_SSE_PORT || 8081
+};
+
+// Transport initialization
+switch (transportConfig.transport) {
+  case 'stdio':
+    await initStdioTransport();
+    break;
+  case 'http':
+    await initHttpTransport(transportConfig.httpPort);
+    break;
+  case 'sse':
+    await initSSETransport(transportConfig.ssePort);
+    break;
+}
+```
+
+### Transport Comparison
+
+| Aspect | Stdio | HTTP | SSE |
+|--------|-------|------|-----|
+| **Latency** | <1ms | 5-20ms | ~30ms |
+| **Complexity** | Simple | Complex | Medium |
+| **Cline Support** | ✅ Local | ❌ | ✅ Remote |
+| **Session Mgmt** | No | Yes | Client ID only |
+| **Scalability** | Single | High | Medium |
+| **Best For** | Dev | Production | Remote Cline |
 
 ## 🔒 Security Considerations
 

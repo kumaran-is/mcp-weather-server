@@ -2,7 +2,7 @@
 
 ## 🏗️ Architecture Overview
 
-The MCP Weather Server follows a **modular, layered architecture** designed for **scalability**, **maintainability**, and **production reliability**. The system is built around the **Model Context Protocol (MCP)** with dual transport support and comprehensive resilience patterns.
+The MCP Weather Server follows a **modular, layered architecture** designed for **scalability**, **maintainability**, and **production reliability**. The system is built around the **Model Context Protocol (MCP)** with a **three-transport strategy** (stdio, HTTP, SSE) and comprehensive resilience patterns.
 
 ## 📊 System Architecture
 
@@ -19,10 +19,10 @@ The MCP Weather Server follows a **modular, layered architecture** designed for 
 ┌─────────────────────────────────────────────────────────────┐
 │                 TRANSPORT LAYER                             │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Stdio Transport  │  HTTP Transport (Fastify)      │    │
-│  │  ├─ JSON-RPC 2.0  │  ├─ REST API                   │    │
-│  │  └─ Local IPC     │  ├─ SSE Streams                │    │
-│  │                    │  └─ WebSocket (Future)         │    │
+│  │  Stdio Transport  │  HTTP Transport  │  SSE Transport │    │
+│  │  ├─ JSON-RPC 2.0  │  ├─ Fastify      │  ├─ SSE Stream │    │
+│  │  └─ Local IPC     │  ├─ REST API     │  ├─ POST Cmds  │    │
+│  │                    │  └─ Sessions     │  └─ Client IDs │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────┬───────────────────────────────────────┘
                       │
@@ -94,9 +94,10 @@ interface Transport {
   onMessage(handler: (message: MCPMessage) => void): void;
 }
 
-// Concrete implementations
-class StdioTransport implements Transport { /* ... */ }
-class HttpTransport implements Transport { /* ... */ }
+// Concrete implementations (Three-Transport Strategy)
+class StdioTransport implements Transport { /* Local development */ }
+class HttpTransport implements Transport { /* Production APIs */ }
+class SSETransport implements Transport { /* Remote Cline */ }
 ```
 
 **Benefits**:
@@ -191,19 +192,63 @@ class ServiceFactory {
 - Easy dependency injection
 - Simplified testing with mock services
 
+### 6. Three-Transport Strategy Pattern
+
+**Purpose**: Maximize compatibility across different client types and deployment scenarios
+
+**Implementation**:
+```typescript
+// Transport selection based on use case
+interface TransportStrategy {
+  type: 'stdio' | 'http' | 'sse';
+  port?: number;
+  capabilities: TransportCapabilities;
+}
+
+// Transport decision matrix
+const transportMatrix = {
+  stdio: {
+    useCase: 'Local development with Cline in VS Code',
+    latency: 'Minimal (<1ms)',
+    complexity: 'Simple',
+    clineSupport: true
+  },
+  http: {
+    useCase: 'Production APIs, LangChain, microservices',
+    latency: 'Low-Medium (5-20ms)',
+    complexity: 'Complex',
+    clineSupport: false
+  },
+  sse: {
+    useCase: 'Remote Cline connections, lightweight clients',
+    latency: 'Low (~30ms)',
+    complexity: 'Medium',
+    clineSupport: true
+  }
+};
+```
+
+**Benefits**:
+- Maximum client compatibility
+- Clear transport selection guidance
+- Optimized for specific use cases
+- Future-proof architecture
+
 ## 🔧 Critical Implementation Decisions
 
 ### 1. Transport Architecture Decision
 
-**Decision**: Dual transport support (Stdio + HTTP) with shared MCP core
+**Decision**: Three-transport strategy (Stdio + HTTP + SSE) with shared MCP core
 
 **Rationale**:
-- Stdio for AI assistant integration (Cline, Claude Desktop)
-- HTTP for programmatic access and web applications
+- Stdio for local AI assistant integration (Cline in VS Code)
+- HTTP for production APIs, LangChain, and microservices
+- SSE for remote Cline connections with lightweight protocol
 - Shared core ensures consistency and reduces maintenance
 
 **Alternatives Considered**:
-- Single transport (too limiting)
+- Single transport (too limiting for diverse use cases)
+- Dual transport (Cline remote access not supported)
 - Transport-specific servers (code duplication)
 - Plugin architecture (over-engineering)
 
