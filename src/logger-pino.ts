@@ -6,6 +6,7 @@
 import * as pino from 'pino';
 import type { Logger as PinoLogger } from 'pino';
 import { getConfig } from './config/config.js';
+import { VERSION } from './utils/version.js';
 
 // Logger configuration types
 export interface LoggerConfig {
@@ -33,7 +34,7 @@ function createPinoLogger(): PinoLogger {
         pid: bindings.pid,
         hostname: bindings.hostname,
         service: 'mcp-weather-server',
-        version: '2.2.0',
+        version: VERSION,
         environment: process.env.NODE_ENV || 'development'
       }),
       level: (label) => ({ level: label.toUpperCase() })
@@ -58,7 +59,7 @@ function createPinoLogger(): PinoLogger {
     },
     base: {
       service: 'mcp-weather-server',
-      version: '2.2.0'
+      version: VERSION
     }
   };
 

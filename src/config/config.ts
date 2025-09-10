@@ -4,7 +4,6 @@
  */
 
 import { z } from 'zod';
-import { logger } from '../logger-pino.js';
 
 // Environment variable schema
 const envSchema = z.object({
@@ -47,11 +46,12 @@ let envConfig: z.infer<typeof envSchema>;
 
 try {
   envConfig = envSchema.parse(process.env);
-  logger.info('Configuration loaded successfully', envConfig);
+  // Note: Using console here to avoid circular dependency with logger
+  console.log('Configuration loaded successfully');
 } catch (error) {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  logger.fatal('Configuration validation failed', { error: errorMessage });
-  throw new Error(`Configuration validation failed: ${errorMessage}`);
+  console.error('FATAL: Configuration validation failed:', errorMessage);
+  process.exit(1);
 }
 
 // Configuration interfaces
@@ -203,7 +203,7 @@ export const validateConfig = (): boolean => {
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Configuration validation failed', { error: errorMessage });
+    console.error('Configuration validation failed:', errorMessage);
     return false;
   }
 };
@@ -219,4 +219,4 @@ export const getConfigSummary = () => ({
   maxRetries: config.resilience.retry.maxRetries,
 });
 
-logger.info('Configuration summary', getConfigSummary());
+// Configuration summary available via getConfigSummary() function

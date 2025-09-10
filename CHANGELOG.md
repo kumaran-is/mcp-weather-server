@@ -5,6 +5,97 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-09-10
+
+### 🚀 **MINOR RELEASE: Production-Ready Enhancements & Code Quality Improvements**
+
+This release implements expert-recommended improvements to make the MCP Weather Server production-ready with enhanced error handling, structured logging, caching, validation, and comprehensive documentation.
+
+### Added
+- **🔧 Custom Error Classes** (`src/errors/weather-errors.ts`):
+  - `WeatherServiceError` base class with structured error information
+  - Specialized error types: `GeocodingError`, `WeatherAPIError`, `ValidationError`
+  - `RateLimitError`, `CircuitBreakerError`, `CacheError`, `MCPProtocolError`
+  - Type guards and error conversion utilities
+  - Better error discrimination and handling throughout the application
+- **📝 Production Logging** (`src/logger-pino.ts`):
+  - Full Pino integration replacing console-based logging
+  - Structured JSON logging for production environments
+  - Pretty printing for development with `pino-pretty`
+  - Specialized MCP logging methods for protocol events
+  - Request logging middleware for Fastify
+  - Performance timing utilities and graceful shutdown helpers
+- **⚡ LRU Cache Layer** (`src/cache/weather-cache.ts`):
+  - Intelligent caching for weather, forecast, and geocoding data
+  - Configurable TTLs: 10min (weather), 30min (forecast), 24h (geocoding)
+  - Cache statistics and monitoring with hit/miss ratios
+  - Cache warm-up utilities for common cities
+  - Automatic cache integration in WeatherService
+- **🛡️ Request Validation Middleware** (`src/middleware/validation.ts`):
+  - JSON-RPC 2.0 protocol compliance validation
+  - MCP-specific request structure validation
+  - Tool parameter validation with type checking
+  - Input sanitization to prevent injection attacks
+  - Rate limiting implementation (100 req/min default)
+  - Transport-specific validation contexts
+- **📚 Comprehensive SSE Documentation** (`docs/SSE-TRANSPORT.md`):
+  - Detailed protocol specification and architecture diagrams
+  - Implementation examples and client integration guides
+  - Security considerations and performance optimization strategies
+  - Troubleshooting guide with common issues and solutions
+  - Complete API reference with event types and endpoints
+
+### Changed
+- **🔄 Dependency Management**:
+  - Moved `lru-cache` from devDependencies to dependencies
+  - Removed unused dependencies: `node-fetch`, `eventsource`
+  - Updated package versions to latest stable releases
+- **📋 Code Quality**:
+  - Disabled `@typescript-eslint/no-explicit-any` rule for appropriate use cases
+  - Fixed all ESLint errors and warnings
+  - Removed legacy console-based logger implementation
+  - Cleaned up unused code and imports
+- **🎯 Enhanced Error Handling**:
+  - All service methods now throw typed errors instead of generic Error objects
+  - Better error context and debugging information
+  - Consistent error responses across all transport layers
+
+### Fixed
+- **🐛 Code Issues**:
+  - Removed unused `retryAPIRequest` method (retry logic handled by poolManager)
+  - Fixed unused variable warnings in ESLint
+  - Corrected import statements and module paths
+  - Fixed indentation and formatting issues
+- **🔒 Validation & Security**:
+  - Input validation now prevents malformed requests
+  - Sanitization removes control characters from user input
+  - Rate limiting prevents abuse and resource exhaustion
+  - Protocol validation ensures MCP compliance
+
+### Performance
+- **📈 Caching Improvements**:
+  - Significant reduction in API calls through intelligent caching
+  - Faster response times for repeated requests
+  - Memory-efficient LRU eviction policy
+- **🚀 Logging Efficiency**:
+  - Structured logging reduces parsing overhead
+  - Conditional debug logging based on environment
+  - Efficient JSON serialization with Pino
+
+### Documentation
+- Added comprehensive SSE transport documentation
+- Updated architecture diagrams with caching layer
+- Added troubleshooting guides for common issues
+- Documented all new error types and validation rules
+
+### Technical Debt
+- Removed legacy logging implementation
+- Consolidated error handling patterns
+- Improved type safety throughout the codebase
+- Enhanced test coverage for new components
+
+---
+
 ## [2.2.0] - 2025-09-10
 
 ### 🚀 **MINOR RELEASE: SSE Transport Protocol Fix & Docker HTTP Improvements**

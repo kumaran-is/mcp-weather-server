@@ -3,6 +3,7 @@ import { poolManager } from './undici-resilience/index.js';
 import { logger } from './logger-pino.js';
 import { weatherCache } from './cache/weather-cache.js';
 import { GeocodingError, WeatherAPIError } from './errors/weather-errors.js';
+import { VERSION, NAME } from './utils/version.js';
 
 /**
  * Weather service that integrates with Open-Meteo API
@@ -43,7 +44,7 @@ export class WeatherService {
           path: `/v1/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`,
           method: 'GET',
           headers: {
-            'User-Agent': 'MCP-Weather-Server/1.0.0'
+            'User-Agent': `${NAME}/${VERSION}`
           }
         },
         `getCurrentWeather-${trimmedCity}`
@@ -123,7 +124,7 @@ export class WeatherService {
           path: `/v1/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&forecast_days=${days}`,
           method: 'GET',
           headers: {
-            'User-Agent': 'MCP-Weather-Server/1.0.0'
+            'User-Agent': `${NAME}/${VERSION}`
           }
         },
         `getForecast-${trimmedCity}-${days}`
@@ -200,7 +201,7 @@ export class WeatherService {
           path: `/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`,
           method: 'GET',
           headers: {
-            'User-Agent': 'MCP-Weather-Server/1.0.0'
+            'User-Agent': `${NAME}/${VERSION}`
           }
         },
         `geocodeCity-${city}`

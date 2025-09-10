@@ -587,6 +587,152 @@ const alertRules = [
 ];
 ```
 
+## 🚀 Production-Ready Infrastructure Patterns (v2.3.0)
+
+### Custom Error Handling Pattern
+
+**Pattern**: Hierarchical error classification with structured information
+
+**Implementation**:
+```typescript
+// Base error class with structured information
+export class WeatherServiceError extends Error {
+  public readonly code: string;
+  public readonly statusCode?: number;
+  public readonly timestamp: Date;
+
+  constructor(message: string, code: string, statusCode?: number) {
+    super(message);
+    this.name = 'WeatherServiceError';
+    this.code = code;
+    this.statusCode = statusCode;
+    this.timestamp = new Date();
+  }
+}
+
+// Specialized error types
+export class GeocodingError extends WeatherServiceError {
+  constructor(message: string, city: string) {
+    super(message, 'GEOCODING_ERROR', 404);
+    this.city = city;
+  }
+}
+```
+
+**Benefits**:
+- Better error discrimination and handling
+- Structured error information for monitoring
+- HTTP status code mapping for REST APIs
+- Type-safe error handling with TypeScript
+
+### Structured Logging Pattern
+
+**Pattern**: Production-ready structured logging with Pino
+
+**Implementation**:
+```typescript
+// Enhanced logger with MCP-specific methods
+class EnhancedLogger {
+  private pinoInstance: PinoLogger;
+  
+  logMCPRequest(method: string, id: any, params: any): void {
+    this.debug(`MCP Request: ${method}`, {
+      type: 'mcp_request',
+      method,
+      id,
+      params
+    });
+  }
+  
+  logPerformance(operation: string, startTime: number): void {
+    const duration = Date.now() - startTime;
+    const level = duration > 5000 ? 'warn' : 'info';
+    this[level](`Performance: ${operation}`, {
+      type: 'performance',
+      operation,
+      duration_ms: duration
+    });
+  }
+}
+```
+
+**Benefits**:
+- Machine-readable JSON logs for production
+- Specialized logging methods for MCP protocol
+- Performance timing and monitoring
+- Pretty printing in development
+
+### LRU Caching Pattern
+
+**Pattern**: Multi-tier caching with different TTLs
+
+**Implementation**:
+```typescript
+export class WeatherCache {
+  private weatherCache: LRUCache<string, WeatherData>;
+  private forecastCache: LRUCache<string, ForecastData>;
+  private geocodingCache: LRUCache<string, GeocodingResult>;
+  
+  constructor(config: CacheConfig) {
+    this.weatherCache = new LRUCache({
+      max: config.maxSize,
+      ttl: config.weatherTTL, // 10 minutes
+    });
+    
+    this.forecastCache = new LRUCache({
+      max: config.maxSize,
+      ttl: config.forecastTTL, // 30 minutes
+    });
+    
+    this.geocodingCache = new LRUCache({
+      max: config.maxSize * 2,
+      ttl: config.geocodingTTL, // 24 hours
+    });
+  }
+}
+```
+
+**Benefits**:
+- Reduces API calls and improves response times
+- Memory-efficient LRU eviction policy
+- Different TTLs for different data types
+- Cache statistics and monitoring
+
+### Request Validation Pattern
+
+**Pattern**: Comprehensive validation middleware
+
+**Implementation**:
+```typescript
+export function createValidationMiddleware(transport: TransportType) {
+  return async function validateRequest(request: any): Promise<void> {
+    // JSON-RPC 2.0 validation
+    validateJSONRPC(request);
+    
+    // MCP protocol validation
+    switch (request.method) {
+      case 'tools/call':
+        validateToolCallRequest(request.params);
+        break;
+      case 'initialize':
+        validateInitializeRequest(request.params);
+        break;
+    }
+    
+    // Rate limiting
+    if (rateLimiter.shouldRateLimit(clientId)) {
+      throw new RateLimitError('Rate limit exceeded');
+    }
+  };
+}
+```
+
+**Benefits**:
+- JSON-RPC 2.0 protocol compliance
+- MCP-specific request validation
+- Input sanitization and rate limiting
+- Transport-specific validation contexts
+
 ## 🎯 Design Principles
 
 ### 1. Single Responsibility Principle

@@ -4,6 +4,7 @@ import { WeatherService } from './weather-service.js';
 import { logger } from './logger-pino.js';
 import { MCPTool } from './types.js';
 import { createValidationMiddleware } from './middleware/validation.js';
+import { VERSION, NAME } from './utils/version.js';
 
 /**
  * Weather MCP Server
@@ -22,8 +23,8 @@ export class WeatherMCPServer {
     // Initialize MCP server with configuration
     this.server = new Server(
       {
-        name: 'weather-mcp-server',
-        version: '1.0.0'
+        name: NAME,
+        version: VERSION
       },
       {
         capabilities: {
@@ -148,9 +149,9 @@ export class WeatherMCPServer {
           logging: {}
         },
         serverInfo: {
-          name: 'weather-mcp-server',
+          name: NAME,
           title: 'Weather MCP Server',
-          version: '1.0.0',
+          version: VERSION,
           description: 'MCP server providing weather information using Open-Meteo API'
         }
       }
