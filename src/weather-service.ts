@@ -1,15 +1,14 @@
 import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types.js';
 import { poolManager } from './undici-resilience/index.js';
-import { getAPIConfig } from './config/config.js';
-import { logger } from './logger.js';
+import { logger } from './logger-pino.js';
+import { weatherCache } from './cache/weather-cache.js';
+import { GeocodingError, WeatherAPIError } from './errors/weather-errors.js';
 
 /**
  * Weather service that integrates with Open-Meteo API
  * Provides current weather and forecast functionality with optimized undici pools
  */
 export class WeatherService {
-  private apiConfig = getAPIConfig();
-
   /**
    * Get current weather for a city
    */
@@ -24,6 +23,14 @@ export class WeatherService {
       }
 
       const trimmedCity = city.trim();
+
+      // Check cache first
+      const cached = weatherCache.getWeather(trimmedCity);
+      if (cached) {
+        logger.info('Returning cached weather data', { city: trimmedCity });
+        logger.logPerformance('getCurrentWeather-cached', startTime, { city: trimmedCity });
+        return cached;
+      }
 
       // Geocode the city to get coordinates
       logger.debug('Geocoding city for current weather', { city: trimmedCity });
@@ -57,6 +64,9 @@ export class WeatherService {
         timestamp: apiResponse.current.time
       };
 
+      // Cache the result
+      weatherCache.setWeather(trimmedCity, weatherResult);
+
       logger.logPerformance('getCurrentWeather', startTime, {
         city: trimmedCity,
         location: geoResult.name,
@@ -67,7 +77,10 @@ export class WeatherService {
 
     } catch (error) {
       logger.logError(error as Error, { city, operation: 'getCurrentWeather' });
-      throw error;
+      if (error instanceof Error && error.message.includes('City not found')) {
+        throw new GeocodingError(error.message, city);
+      }
+      throw new WeatherAPIError('Failed to get current weather', 'current', error as Error);
     }
   }
 
@@ -90,6 +103,14 @@ export class WeatherService {
       }
 
       const trimmedCity = city.trim();
+
+      // Check cache first
+      const cached = weatherCache.getForecast(trimmedCity, days);
+      if (cached) {
+        logger.info('Returning cached forecast data', { city: trimmedCity, days });
+        logger.logPerformance('getForecast-cached', startTime, { city: trimmedCity, days });
+        return cached;
+      }
 
       // Geocode the city to get coordinates
       logger.debug('Geocoding city for forecast', { city: trimmedCity, days });
@@ -133,6 +154,9 @@ export class WeatherService {
         forecasts
       };
 
+      // Cache the result
+      weatherCache.setForecast(trimmedCity, days, forecastData);
+
       logger.logPerformance('getForecast', startTime, {
         city: trimmedCity,
         location: geoResult.name,
@@ -144,7 +168,10 @@ export class WeatherService {
 
     } catch (error) {
       logger.logError(error as Error, { city, days, operation: 'getForecast' });
-      throw error;
+      if (error instanceof Error && error.message.includes('City not found')) {
+        throw new GeocodingError(error.message, city);
+      }
+      throw new WeatherAPIError('Failed to get forecast', 'forecast', error as Error);
     }
   }
 
@@ -153,6 +180,19 @@ export class WeatherService {
    */
   private async geocodeCity(city: string): Promise<GeocodingResult> {
     try {
+      // Check cache first
+      const cached = weatherCache.getGeocoding(city);
+      if (cached) {
+        logger.debug('Using cached geocoding data', { city });
+        return {
+          name: city,
+          latitude: cached.latitude,
+          longitude: cached.longitude,
+          country: '',
+          region: ''
+        };
+      }
+
       // Fetch geocoding data using optimized pool
       const geocodingResponse = await poolManager.request<GeocodingAPIResponse>(
         'geocoding',
@@ -167,7 +207,7 @@ export class WeatherService {
       );
 
       if (!geocodingResponse.results || geocodingResponse.results.length === 0) {
-        throw new Error(`City not found: ${city}`);
+        throw new GeocodingError(`City not found: ${city}`, city);
       }
 
       const result = geocodingResponse.results[0];
@@ -178,6 +218,9 @@ export class WeatherService {
         country: result.country,
         region: result.admin1
       };
+
+      // Cache the geocoding result
+      weatherCache.setGeocoding(city, geoResult.latitude, geoResult.longitude);
 
       logger.debug('Geocoding successful', {
         city,
@@ -231,38 +274,4 @@ export class WeatherService {
     return weatherCodes[code] || 'Unknown weather condition';
   }
 
-  /**
-   * Retry mechanism for API calls
-   */
-  private async retryAPIRequest<T>(
-    requestFn: () => Promise<T>,
-    maxRetries: number = this.apiConfig.retries,
-    delay: number = this.apiConfig.retryDelay
-  ): Promise<T> {
-    let lastError: Error;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await requestFn();
-      } catch (error) {
-        lastError = error as Error;
-
-        if (attempt === maxRetries) {
-          break;
-        }
-
-        logger.warn(`API request failed, retrying in ${delay}ms`, {
-          attempt,
-          maxRetries,
-          delay,
-          error: lastError.message
-        });
-
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff
-      }
-    }
-
-    throw lastError!;
-  }
 }

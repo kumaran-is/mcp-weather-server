@@ -1,10 +1,9 @@
 import { Server } from '@modelcontextprotocol/sdk/server';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { v4 as uuidv4 } from 'uuid';
 import { WeatherService } from './weather-service.js';
-import { logger } from './logger.js';
-import { getConfig } from './config/config.js';
-import { MCPServerConfig, MCPTool } from './types.js';
+import { logger } from './logger-pino.js';
+import { MCPTool } from './types.js';
+import { createValidationMiddleware } from './middleware/validation.js';
 
 /**
  * Weather MCP Server
@@ -14,10 +13,11 @@ import { MCPServerConfig, MCPTool } from './types.js';
 export class WeatherMCPServer {
   private server: Server;
   private weatherService: WeatherService;
-  private config = getConfig();
+  private validateRequest: ReturnType<typeof createValidationMiddleware>;
 
   constructor() {
     this.weatherService = new WeatherService();
+    this.validateRequest = createValidationMiddleware('stdio'); // Default to stdio
 
     // Initialize MCP server with configuration
     this.server = new Server(
@@ -51,6 +51,9 @@ export class WeatherMCPServer {
     const startTime = Date.now();
 
     try {
+      // Validate the incoming request
+      await this.validateRequest(message);
+      
       logger.debug('Processing MCP message', { method: message.method, id: message.id });
 
       switch (message.method) {
@@ -164,7 +167,7 @@ export class WeatherMCPServer {
   /**
    * Handle initialized notification
    */
-  private async handleInitialized(message: any): Promise<any> {
+  private async handleInitialized(_message: any): Promise<any> {
     logger.logMCPLifecycle('initialized_notification');
     // Notifications don't require a response
     return null;

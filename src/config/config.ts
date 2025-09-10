@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { logger } from '../logger.js';
+import { logger } from '../logger-pino.js';
 
 // Environment variable schema
 const envSchema = z.object({
