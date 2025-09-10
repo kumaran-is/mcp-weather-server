@@ -214,7 +214,7 @@ const transportMatrix = {
     clineSupport: true
   },
   http: {
-    useCase: 'Production APIs, LangChain, microservices',
+    useCase: 'Production APIs,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, microservices',
     latency: 'Low-Medium (5-20ms)',
     complexity: 'Complex',
     clineSupport: false
@@ -242,7 +242,7 @@ const transportMatrix = {
 
 **Rationale**:
 - Stdio for local AI assistant integration (Cline in VS Code)
-- HTTP for production APIs, LangChain, and microservices
+- HTTP for production APIs,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, and microservices
 - SSE for remote Cline connections with lightweight protocol
 - Shared core ensures consistency and reduces maintenance
 

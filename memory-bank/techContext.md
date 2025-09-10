@@ -279,7 +279,7 @@ The MCP Weather Server implements three distinct transport mechanisms, each opti
 #### 2. HTTP Transport
 **Technology**: Fastify with SSE streaming
 **Port**: 8080 (configurable via MCP_HTTP_PORT)
-**Use Case**: Production APIs, LangChain, microservices
+**Use Case**: Production APIs,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, microservices
 **Features**:
 - Full HTTP/2 support
 - Session management with UUIDs

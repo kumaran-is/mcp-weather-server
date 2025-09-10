@@ -179,7 +179,7 @@
 **Phase 3 (v2.1.0)**: Three-transport strategy (Stdio + HTTP + SSE)
 **Rationale**: 
 - Stdio: Local Cline development
-- HTTP: Production APIs and LangChain
+- HTTP: Production APIs and  LangChain/LangGraphCrewAI/AutoGen/OpenAI
 - SSE: Remote Cline connections
 **Impact**: Maximum compatibility across all use cases
 

@@ -4,23 +4,50 @@ This directory contains configuration files and documentation for integrating th
 
 ## 📚 Table of Contents
 
-1. [Overview](#overview)
-2. [Transport Options](#transport-options)
-3. [Configuration Files](#configuration-files)
-4. [Quick Start](#quick-start)
-   - [Local Development (Stdio)](#local-development-stdio)
-   - [Remote Access (SSE)](#remote-access-sse)
-   - [Production API (HTTP)](#production-api-http)
-5. [Transport Decision Matrix](#transport-decision-matrix)
-6. [Configuration Options](#configuration-options)
-7. [Available Tools](#available-tools)
-8. [Installation Steps](#installation-steps)
-9. [Testing Your Configuration](#testing-your-configuration)
-10. [Troubleshooting](#troubleshooting)
-11. [Performance Considerations](#performance-considerations)
-12. [Security Notes](#security-notes)
-13. [Example Usage](#example-usage)
-14. [Support](#support)
+- [MCP Agent Configuration Guide](#mcp-agent-configuration-guide)
+  - [📚 Table of Contents](#-table-of-contents)
+  - [Overview](#overview)
+  - [Transport Options](#transport-options)
+    - [Comparison Table](#comparison-table)
+  - [Configuration Files](#configuration-files)
+  - [Quick Start](#quick-start)
+    - [Local Development (Stdio)](#local-development-stdio)
+    - [Remote Access (SSE)](#remote-access-sse)
+    - [Production API (HTTP)](#production-api-http)
+  - [Transport Decision Matrix](#transport-decision-matrix)
+  - [Configuration Options](#configuration-options)
+    - [Common Settings](#common-settings)
+    - [Stdio-Specific](#stdio-specific)
+    - [SSE-Specific](#sse-specific)
+  - [Available Tools](#available-tools)
+    - [1. `get_current_weather`](#1-get_current_weather)
+    - [2. `get_weather_forecast`](#2-get_weather_forecast)
+    - [3. `retrieve_weather_context`](#3-retrieve_weather_context)
+  - [Installation Steps](#installation-steps)
+    - [Step 1: Choose Transport](#step-1-choose-transport)
+    - [Step 2: Configure Server](#step-2-configure-server)
+      - [For Stdio (Local):](#for-stdio-local)
+      - [For SSE (Remote):](#for-sse-remote)
+    - [Step 3: Configure Cline](#step-3-configure-cline)
+  - [Testing Your Configuration](#testing-your-configuration)
+    - [Quick Test Commands](#quick-test-commands)
+    - [Test in Cline](#test-in-cline)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Issues \& Solutions](#common-issues--solutions)
+    - [Debug Commands](#debug-commands)
+  - [Performance Considerations](#performance-considerations)
+    - [Optimization Tips](#optimization-tips)
+  - [Security Notes](#security-notes)
+    - [Security by Transport](#security-by-transport)
+    - [Best Practices](#best-practices)
+  - [Example Usage](#example-usage)
+    - [In Cline Chat](#in-cline-chat)
+    - [Programmatic Usage (Python)](#programmatic-usage-python)
+  - [Support](#support)
+    - [Documentation](#documentation)
+    - [Resources](#resources)
+    - [Quick Links](#quick-links)
+  - [Summary](#summary)
 
 ## Overview
 
@@ -43,7 +70,7 @@ The MCP Weather Server supports **three transport protocols** to maximize compat
 | **Latency** | Best (~10ms) | Good (~30ms) | Good (~50ms) |
 | **Complexity** | Simple | Medium | Complex |
 | **Session Mgmt** | No | No | Yes |
-| **Best Use Case** | Local Dev | Remote Cline | APIs/LangChain |
+| **Best Use Case** | Local Dev | Remote Cline | APIs/ LangChain/LangGraphCrewAI/AutoGen/OpenAI |
 
 ## Configuration Files
 
@@ -105,7 +132,7 @@ The MCP Weather Server supports **three transport protocols** to maximize compat
 
 **⚠️ Note:** HTTP transport is NOT supported by Cline. Use for:
 - MCP Inspector testing
-- LangChain integrations
+-  LangChain/LangGraphCrewAI/AutoGen/OpenAI integrations
 - Custom applications
 - API testing
 
@@ -119,7 +146,7 @@ Start with: `npm run http`
 | Remote Cline access | **SSE** | `cline_mcp_settings_sse.json` | `npm run sse` |
 | Docker + Cline | **SSE** | `cline_mcp_settings_sse.json` | `npm run sse` |
 | MCP Inspector testing | **HTTP** | N/A | `npm run http` |
-| LangChain/API | **HTTP** | N/A | `npm run http` |
+|  LangChain/LangGraphCrewAI/AutoGen/OpenAI/API | **HTTP** | N/A | `npm run http` |
 | CLI testing | **Stdio** | N/A | `npm run stdio` |
 
 ## Configuration Options

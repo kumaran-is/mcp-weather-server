@@ -98,7 +98,7 @@ The MCP Weather Server has been enhanced with a comprehensive three-transport st
 **Decision**: Implement three distinct transports - stdio, HTTP, and SSE
 **Rationale**: 
 - Stdio: Local development with Cline in VS Code
-- HTTP: Production APIs, LangChain, microservices
+- HTTP: Production APIs,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, microservices
 - SSE: Remote Cline connections, lightweight clients
 **Impact**: Maximum compatibility across all use cases, seamless integration options
 

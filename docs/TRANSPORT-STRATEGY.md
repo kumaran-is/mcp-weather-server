@@ -16,7 +16,7 @@ The MCP Weather Server implements a **three-transport strategy** to maximize com
 - **Protocol**: HTTP with SSE streaming
 - **Port**: 8080 (configurable)
 - **Primary Use**: Production deployments, microservices
-- **Clients**: MCP Inspector, LangChain, web applications, API gateways
+- **Clients**: MCP Inspector,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, web applications, API gateways
 
 ### 3. **Simple SSE Transport** (Remote Cline)
 - **Protocol**: Server-Sent Events
@@ -30,7 +30,7 @@ The MCP Weather Server implements a **three-transport strategy** to maximize com
 |-----------|---------------------|-----|---------|
 | Local Cline Development | **Stdio** | Zero latency, simple setup | `npm run stdio` |
 | Remote Cline Access | **Simple SSE** | Cline compatible, lightweight | `npm run sse` |
-| LangChain + Docker | **Streamable HTTP** | Production ready, scalable | `npm run http` |
+|  LangChain/LangGraphCrewAI/AutoGen/OpenAI + Docker | **Streamable HTTP** | Production ready, scalable | `npm run http` |
 | Web Applications | **Streamable HTTP** | Full HTTP features, sessions | `npm run http` |
 | MCP Inspector Testing | **Streamable HTTP** | Native support, debugging | `npm run http` |
 | CLI Tools | **Stdio** | Direct process communication | `npm run stdio` |
@@ -93,8 +93,27 @@ MCP_TRANSPORT=sse npm run dev
   "mcpServers": {
     "weather": {
       "command": "npx",
-      "args": ["tsx", "src/server.ts"],
-      "cwd": "/path/to/mcp-weather-server"
+      "args": [
+        "tsx",
+        "src/server.ts"
+      ],
+      "cwd": "/Users/kumaraniyyasamysrinivasan/mydrive/personal/mcp-weather-server",
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      },
+      "type": "stdio",
+      "disabled": false,
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast", 
+        "retrieve_weather_context"
+      ],
+      "alwaysAllow": [
+        "tools/list"
+      ],
+      "timeout": 30000
     }
   }
 }
@@ -106,16 +125,21 @@ MCP_TRANSPORT=sse npm run dev
 {
   "mcpServers": {
     "weather-remote": {
-      "url": "http://your-server:8081/sse",
-      "transport": {
-        "type": "sse"
-      }
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": false,
+      "timeout": 30000,
+      "type": "sse",
+      "url": "http://localhost:8081/sse"
     }
   }
 }
 ```
 
-### 3. LangChain (Streamable HTTP)
+### 3. LangChain/LangGraphCrewAI/AutoGen/OpenAI (Streamable HTTP)
 
 ```python
 from langchain import MCPClient
@@ -158,59 +182,6 @@ npm run stdio
 - Debugging
 - No network setup
 
-### Docker Container
-
-```dockerfile
-# Dockerfile
-FROM node:22-alpine
-WORKDIR /app
-COPY . .
-RUN npm install && npm run build
-
-# Expose both HTTP and SSE ports
-EXPOSE 8080 8081
-
-# Default to HTTP transport for production
-ENV MCP_TRANSPORT=http
-CMD ["npm", "start"]
-```
-
-```yaml
-# docker-compose.yml
-services:
-  mcp-weather:
-    build: .
-    ports:
-      - "8080:8080"  # HTTP
-      - "8081:8081"  # SSE
-    environment:
-      - MCP_TRANSPORT=http  # or sse
-```
-
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mcp-weather-server
-spec:
-  replicas: 3
-  template:
-    spec:
-      containers:
-      - name: mcp-weather
-        image: mcp-weather-server:latest
-        env:
-        - name: MCP_TRANSPORT
-          value: "http"  # Use HTTP for K8s
-        ports:
-        - containerPort: 8080
-          name: http
-        - containerPort: 8081
-          name: sse
-```
-
 ### Cloud Functions / Serverless
 
 ```javascript
@@ -227,7 +198,7 @@ exports.handler = async (event) => {
 
 1. **Different Clients Have Different Needs**
    - Cline uses stdio locally, SSE remotely
-   - LangChain prefers HTTP APIs
+   -  LangChain/LangGraphCrewAI/AutoGen/OpenAI prefers HTTP APIs
    - MCP Inspector supports both stdio and HTTP
 
 2. **Deployment Flexibility**
