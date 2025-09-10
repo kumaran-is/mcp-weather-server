@@ -34,7 +34,29 @@ export async function main() {
     const server = weatherServer.getServer();
 
     // Choose transport based on configuration
-    if (config.server.transport === 'http') {
+    if (config.server.transport === 'sse') {
+      // Simple SSE Transport for Cline remote compatibility
+      const ssePort = config.server.ssePort || 8081;
+      logger.info('Using Simple SSE transport', { port: ssePort });
+      
+      const { SimpleSSETransport } = await import('./transports/sse-transport.js');
+      const sseTransport = new SimpleSSETransport(weatherServer);
+      await sseTransport.start();
+      
+      logger.info(`Simple SSE server started on port ${ssePort}`);
+      logger.info('Connect Cline remotely with URL: http://your-server:8081/sse');
+      
+      // Graceful shutdown
+      const shutdown = async () => {
+        logger.info('Shutting down SSE server gracefully');
+        await sseTransport.close();
+        process.exit(0);
+      };
+      
+      process.on('SIGTERM', shutdown);
+      process.on('SIGINT', shutdown);
+      
+    } else if (config.server.transport === 'http') {
       const port = config.server.httpPort;
       logger.info('Using HTTP transport', { port });
 
@@ -116,7 +138,7 @@ export async function main() {
       });
 
       // Add health check endpoint
-      fastify.get('/health', async (request, reply) => {
+      fastify.get('/health', async (_request, reply) => {
         return reply.send({
           status: 'healthy',
           timestamp: new Date().toISOString(),
@@ -128,7 +150,7 @@ export async function main() {
 
       // Start the Fastify server
       try {
-        await fastify.listen({ port });
+        await fastify.listen({ port, host: '0.0.0.0' });
         logger.info(`MCP Weather Server started successfully with HTTP transport on port ${port}`);
       } catch (error) {
         logger.fatal('HTTP server error', { error: (error as Error).message });
@@ -138,16 +160,42 @@ export async function main() {
       // Graceful shutdown
       const shutdown = async () => {
         logger.info('Shutting down gracefully');
-        await fastify.close();
+        
+        // Stop metrics collection
+        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics.js');
+        streamingMetricsCollector.cleanup();
+        
         // Close all transports
         for (const transport of Object.values(transports)) {
           await transport.close();
         }
-        process.exit(0);
+        
+        // Close Fastify server
+        await fastify.close();
+        
+        // Give a moment for cleanup
+        setTimeout(() => {
+          logger.info('Shutdown complete');
+          process.exit(0);
+        }, 100);
       };
 
       process.on('SIGTERM', shutdown);
       process.on('SIGINT', shutdown);
+      
+      // Prevent multiple shutdown attempts
+      let shutdownInProgress = false;
+      const safeShutdown = async () => {
+        if (!shutdownInProgress) {
+          shutdownInProgress = true;
+          await shutdown();
+        }
+      };
+      
+      process.removeAllListeners('SIGTERM');
+      process.removeAllListeners('SIGINT');
+      process.on('SIGTERM', safeShutdown);
+      process.on('SIGINT', safeShutdown);
 
     } else {
       logger.info('Using stdio transport');
@@ -170,7 +218,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   logger.fatal('Unhandled rejection in main process', { reason: (reason as Error).message });
   process.exit(1);
 });

@@ -92,11 +92,11 @@ export class BackpressureHandler extends EventEmitter {
         this.processingStartTime = Date.now();
         await this.processor(chunk);
       } catch (error) {
-        logger.error({
+        logger.error('Error processing chunk', {
           error: (error as Error).message,
           chunkSize: chunk.length,
           bufferSize: this.buffer.length
-        }, 'Error processing chunk');
+        });
 
         this.emit('error', error);
       }
@@ -117,11 +117,11 @@ export class BackpressureHandler extends EventEmitter {
     this.isPaused = true;
     this.metrics.backpressureEvents++;
 
-    logger.warn({
+    logger.warn('Applying backpressure - pausing processing', {
       bufferSize: this.getBufferSize(),
       highWaterMark: this.config.highWaterMark,
       chunksInBuffer: this.buffer.length
-    }, 'Applying backpressure - pausing processing');
+    });
 
     this.emit('backpressure', {
       bufferSize: this.getBufferSize(),
@@ -153,10 +153,10 @@ export class BackpressureHandler extends EventEmitter {
 
     this.isPaused = false;
 
-    logger.info({
+    logger.info('Resuming processing after backpressure', {
       bufferSize: this.getBufferSize(),
       lowWaterMark: this.config.lowWaterMark
-    }, 'Resuming processing after backpressure');
+    });
 
     this.emit('resume', {
       bufferSize: this.getBufferSize(),
@@ -165,7 +165,7 @@ export class BackpressureHandler extends EventEmitter {
 
     // Process remaining buffer
     this.processBuffer().catch(error => {
-      logger.error({ error: error.message }, 'Error processing buffer after resume');
+      logger.error('Error processing buffer after resume', { error: error.message });
       this.emit('error', error);
     });
   }
@@ -216,10 +216,10 @@ export class BackpressureHandler extends EventEmitter {
     this.buffer = [];
     this.isPaused = false;
 
-    logger.warn({
+    logger.warn('Force draining buffer', {
       drainedChunks,
       drainedBytes
-    }, 'Force draining buffer');
+    });
 
     this.emit('force-drain', {
       drainedChunks,
@@ -250,9 +250,9 @@ export class BackpressureHandler extends EventEmitter {
   updateConfig(newConfig: Partial<BackpressureConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
-    logger.info({
+    logger.info('Backpressure configuration updated', {
       newConfig: this.config
-    }, 'Backpressure configuration updated');
+    });
   }
 
   /**
@@ -260,15 +260,15 @@ export class BackpressureHandler extends EventEmitter {
    */
   private setupEventHandlers(): void {
     this.on('error', (error) => {
-      logger.error({ error: error.message }, 'Backpressure handler error');
+      logger.error('Backpressure handler error', { error: error.message });
     });
 
     this.on('backpressure', (data) => {
-      logger.debug(data, 'Backpressure applied');
+      logger.debug('Backpressure applied', data);
     });
 
     this.on('resume', (data) => {
-      logger.debug(data, 'Processing resumed');
+      logger.debug('Processing resumed', data);
     });
 
     this.on('drain', () => {
@@ -322,7 +322,7 @@ export class BackpressurePoolManager {
     const handler = this.handlers.get(streamId);
     if (handler) {
       handler.shutdown().catch(error => {
-        logger.error({ error: error.message, streamId }, 'Error shutting down handler');
+        logger.error('Error shutting down handler', { error: error.message, streamId });
       });
       this.handlers.delete(streamId);
       this.poolMetrics.delete(streamId);
@@ -381,7 +381,7 @@ export class BackpressurePoolManager {
         try {
           await handler.shutdown();
         } catch (error) {
-          logger.error({ error: (error as Error).message, streamId }, 'Error shutting down handler');
+          logger.error('Error shutting down handler', { error: (error as Error).message, streamId });
         }
       });
 

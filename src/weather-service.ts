@@ -33,7 +33,7 @@ export class WeatherService {
       const apiResponse = await poolManager.request<WeatherAPIResponse>(
         'weather',
         {
-          path: `/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`,
+          path: `/v1/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`,
           method: 'GET',
           headers: {
             'User-Agent': 'MCP-Weather-Server/1.0.0'
@@ -99,7 +99,7 @@ export class WeatherService {
       const forecastResponse = await poolManager.request<WeatherAPIResponse>(
         'weather',
         {
-          path: `/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&forecast_days=${days}`,
+          path: `/v1/forecast?latitude=${geoResult.latitude}&longitude=${geoResult.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&forecast_days=${days}`,
           method: 'GET',
           headers: {
             'User-Agent': 'MCP-Weather-Server/1.0.0'
@@ -157,7 +157,7 @@ export class WeatherService {
       const geocodingResponse = await poolManager.request<GeocodingAPIResponse>(
         'geocoding',
         {
-          path: `/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`,
+          path: `/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`,
           method: 'GET',
           headers: {
             'User-Agent': 'MCP-Weather-Server/1.0.0'

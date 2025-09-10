@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "weather": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "src/server.ts"
+      ],
+      "cwd": "/path-to/mcp-weather-server",
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      },
+      "type": "stdio",
+      "disabled": false,
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast", 
+        "retrieve_weather_context"
+      ],
+      "alwaysAllow": [
+        "tools/list"
+      ],
+      "timeout": 30000
+    }
+  }
+}

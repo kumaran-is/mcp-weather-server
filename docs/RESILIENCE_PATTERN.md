@@ -2,6 +2,31 @@
 
 A comprehensive HTTP client library with resilience patterns for Node.js, built on top of undici for ultra-low latency and production-ready reliability.
 
+## Table of Contents
+
+1. [Features](#-features)
+2. [Installation](#-installation)
+3. [Quick Start](#-quick-start)
+4. [API Reference](#-api-reference)
+   - [Pool Manager](#pool-manager)
+   - [Circuit Breaker](#circuit-breaker)
+   - [Retry Strategies](#retry-strategies)
+   - [Metrics & Monitoring](#metrics--monitoring)
+5. [Configuration](#️-configuration)
+   - [Environment Variables](#environment-variables)
+   - [Programmatic Configuration](#programmatic-configuration)
+6. [Architecture](#️-architecture)
+   - [Core Components](#core-components)
+7. [Advanced Usage](#-advanced-usage)
+   - [Custom Pool Creation](#custom-pool-creation)
+   - [Health Checks Integration](#health-checks-integration)
+   - [Error Handling Patterns](#error-handling-patterns)
+8. [Performance Characteristics](#-performance-characteristics)
+9. [Testing](#-testing)
+10. [Contributing](#-contributing)
+11. [License](#-license)
+12. [Related Links](#-related-links)
+
 ## 🚀 Features
 
 - **Ultra-low latency** through connection pooling and keep-alive

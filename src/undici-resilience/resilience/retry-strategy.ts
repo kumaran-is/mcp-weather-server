@@ -37,11 +37,11 @@ export class RetryStrategy {
     for (let attempt = 1; attempt <= this.config.maxRetries + 1; attempt++) {
       try {
         if (attempt > 1) {
-          logger.debug({
+          logger.debug('Retrying operation', {
             attempt,
             maxRetries: this.config.maxRetries,
             context
-          }, 'Retrying operation');
+          });
         }
 
         return await fn();
@@ -55,14 +55,14 @@ export class RetryStrategy {
         const delay = this.calculateDelay(attempt);
         totalDelay += delay;
 
-        logger.warn({
+        logger.warn('Operation failed, retrying', {
           attempt,
           maxRetries: this.config.maxRetries,
           delay,
           totalDelay,
           error: lastError.message,
           context
-        }, 'Operation failed, retrying');
+        });
 
         await this.sleep(delay);
       }
@@ -72,12 +72,12 @@ export class RetryStrategy {
       throw new Error('Unexpected error: no error captured during retries');
     }
 
-    logger.error({
+    logger.error('All retry attempts exhausted', {
       attempts: this.config.maxRetries + 1,
       totalDelay,
       finalError: lastError.message,
       context
-    }, 'All retry attempts exhausted');
+    });
 
     throw lastError;
   }

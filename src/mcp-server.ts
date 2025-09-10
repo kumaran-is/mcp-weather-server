@@ -134,11 +134,12 @@ export class WeatherMCPServer {
     }
 
     // Return server capabilities and information
+    // Echo back the client's protocol version for compatibility
     const response = {
       jsonrpc: '2.0',
       id: message.id,
       result: {
-        protocolVersion: '2025-06-18',
+        protocolVersion: protocolVersion,
         capabilities: {
           tools: { listChanged: true },
           logging: {}

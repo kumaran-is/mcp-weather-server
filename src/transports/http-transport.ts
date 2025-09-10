@@ -2,7 +2,7 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { v4 as uuidv4 } from 'uuid';
 import { Server } from '@modelcontextprotocol/sdk/server';
 import { WeatherMCPServer } from '../mcp-server.js';
-import { getConfig, getTransportConfig } from '../config/config.js';
+import { getConfig } from '../config/config.js';
 import { logger } from '../logger.js';
 
 /**

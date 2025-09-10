@@ -1,0 +1,28 @@
+{
+  "_comment": "IMPORTANT: Cline does NOT support HTTP transport for MCP servers.",
+  "_note": "Cline only supports stdio transport. Use cline_mcp_settings.json instead.",
+  "_explanation": "The HTTP transport is for other MCP clients that support HTTP/SSE, not for Cline.",
+  "_alternative": "To use with Cline, you must run the server in stdio mode.",
+  
+  "WORKING_CONFIGURATION": "Please use cline_mcp_settings.json with stdio transport",
+  
+  "why_this_doesnt_work": {
+    "reason1": "Cline only supports stdio (stdin/stdout) transport",
+    "reason2": "The 'sse' type in Cline is for different purposes, not MCP",
+    "reason3": "HTTP transport requires a client that supports MCP over HTTP"
+  },
+  
+  "correct_usage": {
+    "description": "For Cline, always use stdio transport",
+    "config_file": "cline_mcp_settings.json",
+    "command": "npx tsx src/server.ts",
+    "transport": "stdio (default)"
+  },
+  
+  "http_transport_is_for": [
+    "MCP Inspector (use: mcp-inspector http http://localhost:8080/mcp)",
+    "Custom MCP clients that support HTTP",
+    "Web-based MCP clients",
+    "Testing with curl/Postman"
+  ]
+}

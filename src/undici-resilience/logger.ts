@@ -5,12 +5,18 @@
 
 // Simple logger interface
 interface Logger {
-  fatal: (message: string, ...args: any[]) => void;
-  error: (message: string, ...args: any[]) => void;
-  warn: (message: string, ...args: any[]) => void;
-  info: (message: string, ...args: any[]) => void;
-  debug: (message: string, ...args: any[]) => void;
-  trace: (message: string, ...args: any[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  fatal: (message: string, ...args: unknown[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  error: (message: string, ...args: unknown[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  warn: (message: string, ...args: unknown[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  info: (message: string, ...args: unknown[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  debug: (message: string, ...args: unknown[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  trace: (message: string, ...args: unknown[]) => void;
 }
 
 // Create simple console logger
@@ -18,12 +24,12 @@ const createLogger = (): Logger => {
   const timestamp = () => new Date().toISOString();
 
   return {
-    fatal: (message: string, ...args: any[]) => console.error(`[${timestamp()}] FATAL:`, message, ...args),
-    error: (message: string, ...args: any[]) => console.error(`[${timestamp()}] ERROR:`, message, ...args),
-    warn: (message: string, ...args: any[]) => console.warn(`[${timestamp()}] WARN:`, message, ...args),
-    info: (message: string, ...args: any[]) => console.log(`[${timestamp()}] INFO:`, message, ...args),
-    debug: (message: string, ...args: any[]) => console.debug(`[${timestamp()}] DEBUG:`, message, ...args),
-    trace: (message: string, ...args: any[]) => console.trace(`[${timestamp()}] TRACE:`, message, ...args),
+    fatal: (_message: string, ..._args: unknown[]) => console.error(`[${timestamp()}] FATAL:`, _message, ..._args),
+    error: (_message: string, ..._args: unknown[]) => console.error(`[${timestamp()}] ERROR:`, _message, ..._args),
+    warn: (_message: string, ..._args: unknown[]) => console.warn(`[${timestamp()}] WARN:`, _message, ..._args),
+    info: (_message: string, ..._args: unknown[]) => console.log(`[${timestamp()}] INFO:`, _message, ..._args),
+    debug: (_message: string, ..._args: unknown[]) => console.debug(`[${timestamp()}] DEBUG:`, _message, ..._args),
+    trace: (_message: string, ..._args: unknown[]) => console.trace(`[${timestamp()}] TRACE:`, _message, ..._args),
   };
 };
 
@@ -31,7 +37,7 @@ const createLogger = (): Logger => {
 const logger = createLogger();
 
 // Function to update logger configuration (placeholder for future Pino integration)
-export const updateLoggerConfig = (level: string) => {
+export const updateLoggerConfig = () => {
   // Placeholder - will be implemented when Pino is properly configured
 };
 
@@ -49,28 +55,28 @@ export const log = {
 };
 
 // Child logger factory for different components (simplified)
-export const createChildLogger = (bindings: Record<string, any>) => {
+export const createChildLogger = (bindings: Record<string, unknown>) => {
   const childLogger = createLogger();
   const prefix = Object.entries(bindings).map(([k, v]) => `${k}=${v}`).join(' ');
 
   return {
-    fatal: (message: string, ...args: any[]) => childLogger.fatal(`[${prefix}] ${message}`, ...args),
-    error: (message: string, ...args: any[]) => childLogger.error(`[${prefix}] ${message}`, ...args),
-    warn: (message: string, ...args: any[]) => childLogger.warn(`[${prefix}] ${message}`, ...args),
-    info: (message: string, ...args: any[]) => childLogger.info(`[${prefix}] ${message}`, ...args),
-    debug: (message: string, ...args: any[]) => childLogger.debug(`[${prefix}] ${message}`, ...args),
-    trace: (message: string, ...args: any[]) => childLogger.trace(`[${prefix}] ${message}`, ...args),
+    fatal: (_message: string, ..._args: unknown[]) => childLogger.fatal(`[${prefix}] ${_message}`, ..._args),
+    error: (_message: string, ..._args: unknown[]) => childLogger.error(`[${prefix}] ${_message}`, ..._args),
+    warn: (_message: string, ..._args: unknown[]) => childLogger.warn(`[${prefix}] ${_message}`, ..._args),
+    info: (_message: string, ..._args: unknown[]) => childLogger.info(`[${prefix}] ${_message}`, ..._args),
+    debug: (_message: string, ..._args: unknown[]) => childLogger.debug(`[${prefix}] ${_message}`, ..._args),
+    trace: (_message: string, ..._args: unknown[]) => childLogger.trace(`[${prefix}] ${_message}`, ..._args),
   };
 };
 
 // Performance logging utilities
-export const logPerformance = (operation: string, startTime: number, metadata?: Record<string, any>) => {
+export const logPerformance = (operation: string, startTime: number, metadata?: Record<string, unknown>) => {
   const duration = Date.now() - startTime;
   logger.info(`Operation completed: ${operation}`, { duration, performance: true, ...metadata });
 };
 
 // Error logging with context
-export const logError = (error: Error, context?: Record<string, any>) => {
+export const logError = (error: Error, context?: Record<string, unknown>) => {
   logger.error('Error occurred', {
     error: {
       message: error.message,
@@ -82,15 +88,15 @@ export const logError = (error: Error, context?: Record<string, any>) => {
 };
 
 // Request logging middleware helper (simplified)
-export const logRequest = (req: any, res: any, next?: () => void) => {
+export const logRequest = (req: Record<string, unknown>, res: Record<string, unknown>, next?: () => void) => {
   const startTime = Date.now();
-  const requestId = req.id || req.headers['x-request-id'] || 'unknown';
+  const requestId = (req.id as string) || (req.headers as Record<string, unknown>)?.['x-request-id'] as string || 'unknown';
 
   logger.info('Request received', {
     requestId,
     method: req.method,
     url: req.url,
-    userAgent: req.headers?.['user-agent'],
+    userAgent: (req.headers as Record<string, unknown>)?.['user-agent'],
     ip: req.ip,
   });
 
@@ -108,5 +114,7 @@ export const logRequest = (req: any, res: any, next?: () => void) => {
     });
   }
 
-  if (next) next();
+  if (next) {
+    next();
+  }
 };

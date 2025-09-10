@@ -6,13 +6,24 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${MCP_HTTP_PORT:-8080}:${MCP_HTTP_PORT:-8080}"
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
-      - MCP_TRANSPORT=http
-      - MCP_HTTP_PORT=8080
-      - OPEN_METEO_BASE_URL=https://api.open-meteo.com/v1
-      - GEOCODING_API_URL=https://geocoding-api.open-meteo.com/v1
-      - LOG_LEVEL=info
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+      # Override specific values for Docker deployment if needed
+      # These will override values from .env file
+      - NODE_ENV=${NODE_ENV:-production}
+      - MCP_TRANSPORT=${MCP_TRANSPORT:-http}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${MCP_HTTP_PORT:-8080}/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge

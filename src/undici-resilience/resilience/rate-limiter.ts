@@ -49,13 +49,13 @@ export class RateLimiter {
 
     if (currentRequests >= maxRequests) {
       this.totalRejected++;
-      logger.warn({
+      logger.warn('Rate limit exceeded', {
         rateLimiter: this.name,
         currentRequests,
         maxRequests,
         windowMs: this.config.windowMs,
         totalRejected: this.totalRejected
-      }, 'Rate limit exceeded');
+      });
       return false;
     }
 
@@ -70,11 +70,11 @@ export class RateLimiter {
     this.requestTimes.push(now);
     this.totalAllowed++;
 
-    logger.debug({
+    logger.debug('Request recorded', {
       rateLimiter: this.name,
       currentRequests: this.requestTimes.length,
       totalAllowed: this.totalAllowed
-    }, 'Request recorded');
+    });
   }
 
   /**
@@ -89,12 +89,12 @@ export class RateLimiter {
     // Calculate wait time
     const waitTime = this.getWaitTime();
 
-    logger.info({
+    logger.info('Waiting for rate limit slot', {
       rateLimiter: this.name,
       waitTime,
       currentRequests: this.requestTimes.length,
       maxRequests: this.config.requests + (this.config.burst || 0)
-    }, 'Waiting for rate limit slot');
+    });
 
     await this.sleep(waitTime);
     this.recordRequest();
@@ -175,11 +175,11 @@ export class RateLimiter {
       this.requestTimes = this.requestTimes.filter(time => time > cutoffTime);
 
       if (this.requestTimes.length !== initialLength) {
-        logger.debug({
+        logger.debug('Cleaned up old requests (sliding window)', {
           rateLimiter: this.name,
           removed: initialLength - this.requestTimes.length,
           remaining: this.requestTimes.length
-        }, 'Cleaned up old requests (sliding window)');
+        });
       }
     } else {
       // Fixed window: clear all requests at window boundary
@@ -191,12 +191,12 @@ export class RateLimiter {
         this.requestTimes = [];
 
         if (cleared > 0) {
-          logger.debug({
+          logger.debug('Cleared requests for new window (fixed window)', {
             rateLimiter: this.name,
             cleared,
             windowStart: new Date(windowStart).toISOString(),
             windowEnd: new Date(windowEnd).toISOString()
-          }, 'Cleared requests for new window (fixed window)');
+          });
         }
       }
     }
@@ -239,10 +239,10 @@ export class RateLimiter {
     this.validateConfig();
     this.config = updatedConfig;
 
-    logger.info({
+    logger.info('Rate limiter configuration updated', {
       rateLimiter: this.name,
       newConfig: updatedConfig
-    }, 'Rate limiter configuration updated');
+    });
   }
 
   /**
@@ -253,9 +253,9 @@ export class RateLimiter {
     this.totalAllowed = 0;
     this.totalRejected = 0;
 
-    logger.info({
+    logger.info('Rate limiter statistics reset', {
       rateLimiter: this.name
-    }, 'Rate limiter statistics reset');
+    });
   }
 }
 
@@ -297,12 +297,12 @@ export class TokenBucketRateLimiter {
       return true;
     } else {
       this.totalRejected++;
-      logger.warn({
+      logger.warn('Token bucket rate limit exceeded', {
         rateLimiter: this.name,
         tokens: this.tokens,
         capacity: this.capacity,
         totalRejected: this.totalRejected
-      }, 'Token bucket rate limit exceeded');
+      });
       return false;
     }
   }
@@ -318,11 +318,11 @@ export class TokenBucketRateLimiter {
     // Calculate wait time for next token
     const waitTime = (1 / this.refillRate) * 1000;
 
-    logger.info({
+    logger.info('Waiting for token', {
       rateLimiter: this.name,
       waitTime,
       tokens: this.tokens
-    }, 'Waiting for token');
+    });
 
     await this.sleep(waitTime);
     this.consume(); // Recursive call after waiting

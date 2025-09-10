@@ -41,21 +41,24 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy environment file template
-COPY .env.example .env
+# Copy environment file template (only if .env doesn't exist)
+# Note: In production, env vars should be passed via docker-compose or kubernetes
+COPY .env.example .env.example
 
 # Change ownership to non-root user
 RUN chown -R mcpweather:nodejs /app
 USER mcpweather
 
-# Expose port
-EXPOSE 8080
+# Expose HTTP port (recommended for Docker deployments)
+# Note: SSE transport (port 8081) is for development/remote Cline, not recommended for Docker
+EXPOSE ${MCP_HTTP_PORT:-8080}
 
-# Health check
+# Health check for HTTP transport (standard for Docker deployments)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/health', (res) => { \
-    process.exit(res.statusCode === 200 ? 0 : 1) \
-  }).on('error', () => process.exit(1))"
+  CMD node -e "const port = process.env.MCP_HTTP_PORT || 8080; \
+    require('http').get('http://localhost:' + port + '/health', (res) => { \
+      process.exit(res.statusCode === 200 ? 0 : 1) \
+    }).on('error', () => process.exit(1))"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

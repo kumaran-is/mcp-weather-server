@@ -32,6 +32,7 @@ The MCP Weather Server is built with a modern, production-ready technology stack
 | **Vitest** | `^2.1.8` | Next-generation testing framework | Fast, TypeScript-native, excellent developer experience |
 | **ESLint** | `^9.9.0` | Code linting and formatting | Industry standard, highly configurable, TypeScript support |
 | **TypeScript ESLint** | `^8.8.0` | TypeScript-specific linting | Enhanced type-aware linting rules |
+| **ESLint Flat Config** | Native | Modern configuration format | Better performance, cleaner configuration |
 
 ### Configuration & Environment
 
@@ -78,6 +79,8 @@ The MCP Weather Server is built with a modern, production-ready technology stack
   "@types/uuid": "^9.0.8",                     // UUID type definitions
   "concurrently": "^8.2.2",                    // Concurrent command execution
   "eslint": "^9.9.0",                          // Code linting
+  "eventsource": "^2.0.2",                     // SSE client for testing (added in v2.2.0)
+  "node-fetch": "^3.3.2",                      // HTTP client for testing (added in v2.2.0)
   "nodemon": "^3.1.7",                         // Development auto-restart
   "tsx": "^4.19.1",                            // TypeScript execution
   "typescript": "^5.8.0",                      // TypeScript compiler
@@ -156,6 +159,9 @@ npm run build
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
+    "stdio": "MCP_TRANSPORT=stdio tsx src/server.ts",
+    "http": "MCP_TRANSPORT=http tsx src/server.ts",
+    "sse": "MCP_TRANSPORT=sse tsx src/server.ts",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src/**/*.ts",
@@ -255,6 +261,80 @@ npm run build
 - **Request Overhead**: < 1ms per request
 - **Memory Footprint**: Minimal compared to Express
 - **Plugin Loading**: Sub-millisecond startup time
+
+## 🔄 Transport Architecture
+
+### Three-Transport Strategy
+
+The MCP Weather Server implements three distinct transport mechanisms, each optimized for specific use cases:
+
+#### 1. Stdio Transport
+**Technology**: Process I/O streams
+**Port**: None (process-based)
+**Use Case**: Local development with Cline in VS Code
+**Features**:
+- Zero network latency
+- Process isolation
+- Automatic lifecycle management
+- JSON-RPC over stdin/stdout
+
+#### 2. HTTP Transport
+**Technology**: Fastify with SSE streaming
+**Port**: 8080 (configurable via MCP_HTTP_PORT)
+**Use Case**: Production APIs,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, microservices
+**Features**:
+- Full HTTP/2 support
+- Session management with UUIDs
+- SSE for real-time notifications
+- CORS and security headers
+- Health check endpoint
+
+#### 3. SSE Transport (Added in v2.1.0, Fixed in v2.2.0)
+**Technology**: Server-Sent Events with MCP protocol compliance
+**Port**: 8081 (configurable via MCP_SSE_PORT)
+**Use Case**: Remote Cline connections
+**Features**:
+- MCP SSE protocol with `endpoint` event
+- GET for SSE stream, POST to unique endpoints
+- Automatic client ID in URL path
+- 30-second heartbeat for connection maintenance
+- Cross-origin support with CORS headers
+- Protocol version echo for compatibility
+
+### Transport Selection Logic
+
+```typescript
+// Transport configuration
+const transportConfig = {
+  transport: process.env.MCP_TRANSPORT || 'stdio',
+  httpPort: process.env.MCP_HTTP_PORT || 8080,
+  ssePort: process.env.MCP_SSE_PORT || 8081
+};
+
+// Transport initialization
+switch (transportConfig.transport) {
+  case 'stdio':
+    await initStdioTransport();
+    break;
+  case 'http':
+    await initHttpTransport(transportConfig.httpPort);
+    break;
+  case 'sse':
+    await initSSETransport(transportConfig.ssePort);
+    break;
+}
+```
+
+### Transport Comparison
+
+| Aspect | Stdio | HTTP | SSE |
+|--------|-------|------|-----|
+| **Latency** | <1ms | 5-20ms | ~30ms |
+| **Complexity** | Simple | Complex | Medium |
+| **Cline Support** | ✅ Local | ❌ | ✅ Remote |
+| **Session Mgmt** | No | Yes | Client ID only |
+| **Scalability** | Single | High | Medium |
+| **Best For** | Dev | Production | Remote Cline |
 
 ## 🔒 Security Considerations
 

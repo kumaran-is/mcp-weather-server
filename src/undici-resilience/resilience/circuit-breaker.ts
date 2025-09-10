@@ -48,11 +48,11 @@ export class CircuitBreaker {
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (!this.canExecute()) {
       const error = new Error(`Circuit breaker '${this.name}' is ${this.state}`);
-      logger.warn({
+      logger.warn('Circuit breaker blocking request', {
         circuitBreaker: this.name,
         state: this.state,
         nextAttemptTime: this.nextAttemptTime
-      }, 'Circuit breaker blocking request');
+      });
       throw error;
     }
 
@@ -79,11 +79,11 @@ export class CircuitBreaker {
       case CircuitState.OPEN:
         if (this.nextAttemptTime && now >= this.nextAttemptTime) {
           this.state = CircuitState.HALF_OPEN;
-          logger.info({
+          logger.info('Circuit breaker transitioning to half-open', {
             circuitBreaker: this.name,
             previousState: CircuitState.OPEN,
             newState: CircuitState.HALF_OPEN
-          }, 'Circuit breaker transitioning to half-open');
+          });
           return true;
         }
         return false;
@@ -107,12 +107,12 @@ export class CircuitBreaker {
     if (this.state === CircuitState.HALF_OPEN) {
       // Recovery successful, close the circuit
       this.reset();
-      logger.info({
+      logger.info('Circuit breaker recovered successfully', {
         circuitBreaker: this.name,
         previousState: CircuitState.HALF_OPEN,
         newState: CircuitState.CLOSED,
         successes: this.successes
-      }, 'Circuit breaker recovered successfully');
+      });
     }
   }
 
@@ -128,25 +128,25 @@ export class CircuitBreaker {
       // Recovery failed, open the circuit again
       this.state = CircuitState.OPEN;
       this.nextAttemptTime = now + this.recoveryTimeout;
-      logger.warn({
+      logger.warn('Circuit breaker recovery failed', {
         circuitBreaker: this.name,
         previousState: CircuitState.HALF_OPEN,
         newState: CircuitState.OPEN,
         failures: this.failures,
         nextAttemptTime: this.nextAttemptTime
-      }, 'Circuit breaker recovery failed');
+      });
     } else if (this.state === CircuitState.CLOSED && this.failures >= this.failureThreshold) {
       // Too many failures, open the circuit
       this.state = CircuitState.OPEN;
       this.nextAttemptTime = now + this.recoveryTimeout;
-      logger.warn({
+      logger.warn('Circuit breaker opened due to failures', {
         circuitBreaker: this.name,
         previousState: CircuitState.CLOSED,
         newState: CircuitState.OPEN,
         failures: this.failures,
         threshold: this.failureThreshold,
         nextAttemptTime: this.nextAttemptTime
-      }, 'Circuit breaker opened due to failures');
+      });
     }
   }
 
@@ -165,11 +165,11 @@ export class CircuitBreaker {
   forceOpen(): void {
     this.state = CircuitState.OPEN;
     this.nextAttemptTime = Date.now() + this.recoveryTimeout;
-    logger.warn({
+    logger.warn('Circuit breaker force opened', {
       circuitBreaker: this.name,
       forced: true,
       nextAttemptTime: this.nextAttemptTime
-    }, 'Circuit breaker force opened');
+    });
   }
 
   /**
@@ -177,10 +177,10 @@ export class CircuitBreaker {
    */
   forceClose(): void {
     this.reset();
-    logger.info({
+    logger.info('Circuit breaker force closed', {
       circuitBreaker: this.name,
       forced: true
-    }, 'Circuit breaker force closed');
+    });
   }
 
   /**

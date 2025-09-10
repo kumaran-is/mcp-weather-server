@@ -65,13 +65,13 @@ export class Bulkhead {
     // Check if queue has space
     if (this.operationQueue.length >= this.config.maxQueueSize) {
       this.rejectedOperations++;
-      logger.warn({
+      logger.warn('Bulkhead rejecting operation - queue full', {
         bulkhead: this.name,
         activeOperations: this.activeOperations,
         queuedOperations: this.operationQueue.length,
         maxConcurrent: this.config.maxConcurrent,
         maxQueueSize: this.config.maxQueueSize
-      }, 'Bulkhead rejecting operation - queue full');
+      });
       throw new Error(`Bulkhead '${this.name}' queue is full`);
     }
 
@@ -86,11 +86,11 @@ export class Bulkhead {
         }
 
         this.rejectedOperations++;
-        logger.warn({
+        logger.warn('Bulkhead operation timed out in queue', {
           bulkhead: this.name,
           queuedTime: Date.now() - queuedAt,
           queueTimeout: this.config.queueTimeout
-        }, 'Bulkhead operation timed out in queue');
+        });
 
         reject(new Error(`Bulkhead '${this.name}' operation timed out in queue`));
       }, this.config.queueTimeout);
@@ -103,11 +103,11 @@ export class Bulkhead {
         queuedAt
       });
 
-      logger.debug({
+      logger.debug('Operation queued in bulkhead', {
         bulkhead: this.name,
         activeOperations: this.activeOperations,
         queuedOperations: this.operationQueue.length
-      }, 'Operation queued in bulkhead');
+      });
     });
   }
 
@@ -119,11 +119,11 @@ export class Bulkhead {
     const startTime = Date.now();
 
     try {
-      logger.debug({
+      logger.debug('Starting bulkhead operation', {
         bulkhead: this.name,
         activeOperations: this.activeOperations,
         queuedOperations: this.operationQueue.length
-      }, 'Starting bulkhead operation');
+      });
 
       const result = await fn();
       const executionTime = Date.now() - startTime;
@@ -134,22 +134,22 @@ export class Bulkhead {
         this.executionTimes.shift(); // Keep only last 100 measurements
       }
 
-      logger.debug({
+      logger.debug('Bulkhead operation completed successfully', {
         bulkhead: this.name,
         executionTime,
         activeOperations: this.activeOperations
-      }, 'Bulkhead operation completed successfully');
+      });
 
       return result;
     } catch (error) {
       const executionTime = Date.now() - startTime;
 
-      logger.warn({
+      logger.warn('Bulkhead operation failed', {
         bulkhead: this.name,
         executionTime,
         error: (error as Error).message,
         activeOperations: this.activeOperations
-      }, 'Bulkhead operation failed');
+      });
 
       throw error;
     } finally {
@@ -221,10 +221,10 @@ export class Bulkhead {
     this.operationQueue = [];
     this.rejectedOperations += queueSize;
 
-    logger.info({
+    logger.info('Bulkhead queue cleared', {
       bulkhead: this.name,
       clearedOperations: queueSize
-    }, 'Bulkhead queue cleared');
+    });
   }
 
   /**
@@ -246,10 +246,10 @@ export class Bulkhead {
 
     this.config = updatedConfig;
 
-    logger.info({
+    logger.info('Bulkhead configuration updated', {
       bulkhead: this.name,
       newConfig: updatedConfig
-    }, 'Bulkhead configuration updated');
+    });
   }
 }
 

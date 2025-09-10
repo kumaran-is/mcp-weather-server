@@ -1,6 +1,6 @@
 # MCP Weather Server
 
-A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and designed for both local AI assistants (like Cline) and remote HTTP clients.
+A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **three-transport strategy** for maximum compatibility: stdio for local development, HTTP for production APIs, and SSE for remote Cline connections.
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
@@ -13,19 +13,26 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🛠️ Technology Stack](#️-technology-stack)
-  - [🏗️ Architecture](#️-architecture)
-    - [System Flow](#system-flow)
-      - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
-      - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
-    - [Component Interactions](#component-interactions)
   - [🚀 Quick Start](#-quick-start)
     - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Running the Server](#running-the-server)
-      - [Development Mode](#development-mode)
-      - [Production Mode](#production-mode)
-      - [Docker](#docker)
+    - [1️⃣ Installation](#1️⃣-installation)
+    - [2️⃣ AI Assistant Configurations](#2️⃣-ai-assistant-configurations)
+      - [Cline (VS Code)](#cline-vs-code)
+      - [Claude Desktop](#claude-desktop)
+      - [Cursor](#cursor)
+      - [GitHub Copilot (Future MCP Support)](#github-copilot-future-mcp-support)
+      - [Test with AI Assistant](#test-with-ai-assistant)
+  - [Directory Structure](#directory-structure)
+  - [🏗️ Architecture](#️-architecture)
+    - [Transport Strategy](#transport-strategy)
+      - [Transport Decision Matrix](#transport-decision-matrix)
+    - [System Flow](#system-flow)
+      - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
+      - [SSE Transport Sequence Diagram](#sse-transport-sequence-diagram)
+      - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
+    - [Component Interactions](#component-interactions)
   - [🔧 Configuration](#-configuration)
+    - [Key Configuration Options](#key-configuration-options)
   - [📡 API Usage](#-api-usage)
     - [MCP Protocol](#mcp-protocol)
       - [1. `get_current_weather`](#1-get_current_weather)
@@ -36,46 +43,47 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
     - [Quick Test Commands](#quick-test-commands)
       - [Unit Tests](#unit-tests)
       - [HTTP Transport Testing](#http-transport-testing)
+      - [SSE Transport Testing](#sse-transport-testing)
       - [Stdio Transport Testing](#stdio-transport-testing)
+      - [MCP Inspector Testing](#mcp-inspector-testing)
       - [Postman Testing](#postman-testing)
   - [🔌 Integration Examples](#-integration-examples)
-    - [Cline (Local AI Assistant)](#cline-local-ai-assistant)
-    - [HTTP Client](#http-client)
+    - [Cline (Local \& Remote AI Assistant)](#cline-local--remote-ai-assistant)
+      - [Configuration Files](#configuration-files)
   - [📊 Monitoring \& Observability](#-monitoring--observability)
     - [Logging](#logging)
     - [Health Checks](#health-checks)
     - [Metrics](#metrics)
-  - [🐳 Docker Deployment](#-docker-deployment)
-    - [Production Deployment](#production-deployment)
-    - [Docker Compose](#docker-compose)
   - [🔒 Security](#-security)
+  - [📊 Session Management (HTTP Transport)](#-session-management-http-transport)
+    - [Session Manager Components](#session-manager-components)
+      - [1. **Session Identification**](#1-session-identification)
+      - [2. **Client Connection Registry**](#2-client-connection-registry)
+      - [3. **Message Queue System**](#3-message-queue-system)
+      - [4. **Connection Lifecycle**](#4-connection-lifecycle)
+    - [Message Queueing Behavior](#message-queueing-behavior)
+    - [Session Recovery Flow](#session-recovery-flow)
+    - [Production Considerations](#production-considerations)
   - [🤝 Contributing](#-contributing)
-    - [Development Setup](#development-setup)
   - [📝 License](#-license)
   - [🙏 Acknowledgments](#-acknowledgments)
   - [📞 Support](#-support)
-  - [🧪 Postman Testing Guide](#-postman-testing-guide)
-    - [Setup](#setup)
-    - [Required Headers (Add to all requests)](#required-headers-add-to-all-requests)
-    - [Key Endpoints](#key-endpoints)
-      - [1. Initialize Connection](#1-initialize-connection)
-      - [2. List Tools](#2-list-tools)
-      - [3. Get Current Weather](#3-get-current-weather)
-      - [4. Get Weather Forecast](#4-get-weather-forecast)
-      - [5. Test Error Handling](#5-test-error-handling)
-    - [Postman Tips](#postman-tips)
 
 ## 🌟 Features
 
 - **🌤️ Real-time Weather**: Current weather conditions with temperature, humidity, wind speed
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
-- **🤖 AI Agent Support**: `retrieve_weather_context` tool for AI workflows
-- **🔒 Security First**: Input validation, Origin checks, CORS support
-- **📊 Observability**: Structured logging with Pino, performance metrics
-- **🚀 Production Ready**: Docker containerization, health checks, graceful shutdown
-- **🔄 Dual Transport**: Stdio for local AI assistants, HTTP for remote clients
-- **⚡ High Performance**: Connection pooling, request caching, timeout handling
-- **🧪 Well Tested**: 80%+ test coverage with Vitest
+- **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
+- **🔄 Three Transport Types**: 
+  - **Stdio**: Local development with Cline in VS Code
+  - **HTTP**: Production APIs, LangChain, microservices
+  - **SSE**: Remote Cline connections, lightweight clients
+- **🛡️ Resilience Patterns**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
+- **⚡ High Performance**: Undici-based HTTP client with connection pooling and streaming
+- **🔒 Security First**: Input validation, Origin checks, CORS support, session management
+- **📊 Observability**: Structured logging with Pino, real-time metrics, health monitoring
+- **🧪 Comprehensive Testing**: Unit tests, integration tests, chaos engineering, load testing
+- **🚀 Production Ready**: Docker containerization, graceful shutdown, error recovery
 
 ## 🛠️ Technology Stack
 
@@ -92,24 +100,207 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 | **uuid** | `~9.0.1` | RFC-compliant UUID generation | [GitHub](https://github.com/uuidjs/uuid) |
 | **Open-Meteo API** | N/A | Free weather data provider | [Homepage](https://open-meteo.com/) |
 
-> **Note**: Undici provides optimal performance for MCP servers with ~2-3x faster HTTP requests, excellent connection pooling, and streaming support essential for LLM communications.
+> **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
 
-## 🏗️ Architecture
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js 22.x** or later
+- **npm** or **yarn**
+
+### 1️⃣ Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/kumaran-is/mcp-weather-server.git
+cd mcp-weather-server
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+```
+
+### 2️⃣ AI Assistant Configurations
+
+#### Cline (VS Code)
+**Local Configuration** (`cline_mcp_settings.json`):
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": true,
+      "timeout": 30000,
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "tsx",
+        "src/server.ts"
+      ],
+      "cwd": "/path-to/mcp-weather-server",
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+**Remote Configuration** (for SSE):
+```json
+{
+  "mcpServers": {
+    "weather-remote": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": false,
+      "timeout": 30000,
+      "type": "sse",
+      "url": "http://localhost:8081/sse"
+    }
+  }
+}
+```
+
+#### Claude Desktop
+**Configuration** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "node",
+      "args": ["/path/to/mcp-weather-server/dist/server.js"],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+#### Cursor
+**Configuration** (`.cursor/mcp_config.json` in project root):
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+#### GitHub Copilot (Future MCP Support)
+```json
+{
+  "github.copilot.mcpServers": {
+    "weather": {
+      "command": "node",
+      "args": ["./dist/server.js"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+#### Test with AI Assistant
+Once configured, you can test with natural language:
+- "What's the weather in Paris?"
+- "Show me a 5-day forecast for New York"
+- "Is it going to rain in Seattle tomorrow?"
+
+## Directory Structure
 
 ```
 mcp-weather-server/
 ├── src/
-│   ├── config/           # Centralized configuration
-│   ├── transports/       # HTTP & stdio transport implementations
-│   ├── types.ts          # TypeScript type definitions
-│   ├── logger.ts         # Structured logging with Pino
-│   ├── weather-service.ts # Open-Meteo API integration
-│   ├── mcp-server.ts     # MCP protocol implementation
-│   └── server.ts         # Application entry point
-├── docs/                 # Documentation
-├── Dockerfile           # Containerization
-└── docker-compose.yml   # Orchestration
+│   ├── config/
+│   │   └── config.ts              # Centralized configuration management
+│   ├── transports/
+│   │   ├── http-transport.ts      # HTTP transport with SSE streaming
+│   │   ├── sse-transport.ts       # Simple SSE transport for Cline
+│   │   └── http-transport.spec.ts # Transport unit tests
+│   ├── undici-resilience/         # Advanced HTTP client with resilience patterns
+│   │   ├── config/
+│   │   │   └── pool-config.ts     # Connection pool configuration
+│   │   ├── http/
+│   │   │   └── pool-manager.ts    # HTTP connection pool management
+│   │   ├── resilience/
+│   │   │   ├── circuit-breaker.ts # Circuit breaker pattern
+│   │   │   ├── retry-strategy.ts  # Exponential backoff retry
+│   │   │   ├── rate-limiter.ts    # Request rate limiting
+│   │   │   └── bulkhead.ts        # Bulkhead isolation pattern
+│   │   ├── streaming/
+│   │   │   ├── streaming-pool-manager.ts  # SSE streaming support
+│   │   │   ├── backpressure-handler.ts    # Stream backpressure handling
+│   │   │   └── streaming-metrics.ts       # Streaming performance metrics
+│   │   ├── monitoring/
+│   │   │   └── metrics.ts         # Performance metrics collection
+│   │   ├── logger.ts              # Resilience layer logging
+│   │   ├── index.ts               # Package exports
+│   ├── types.ts                   # TypeScript type definitions
+│   ├── logger.ts                  # Structured logging with Pino
+│   ├── weather-service.ts         # Open-Meteo API integration
+│   ├── mcp-server.ts              # MCP protocol implementation
+│   ├── server.ts                  # Application entry point
+│   ├── *.spec.ts                  # Unit test files
+├── docs/
+├── memory-bank/                  # Cline Memory - Project context and documentation
+├── dist/                          # Compiled JavaScript output
+├── test-results/                  # Test execution reports
+├── .env.example                   # Environment variables template
+├── .env.production.example        # Production environment template
+├── package.json                   # Project dependencies
+├── tsconfig.json                  # TypeScript configuration
+├── vitest.config.ts               # Test framework configuration
+├── eslint.config.js               # Linting rules
+├── Dockerfile                     # Container image definition
+├── docker-compose.yml             # Development orchestration
+├── docker-compose.prod.yml        # Production orchestration
+├── README.md                      # Project documentation
+├── LICENSE                        # MIT license
+└── CHANGELOG.md                   # Version history
 ```
+
+## 🏗️ Architecture
+
+### Transport Strategy
+
+The MCP Weather Server implements a **three-transport strategy** for maximum compatibility:
+
+| Transport | Port | Best For | Protocol | Cline Support |
+|-----------|------|----------|----------|---------------|
+| **Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
+| **HTTP** | 8080 | Production APIs, LangChain | HTTP + SSE | ❌ No |
+| **SSE** | 8081 | Remote Cline, lightweight clients | Simple SSE | ✅ Remote |
+
+#### Transport Decision Matrix
+
+| Your Need | Recommended Transport | Start Command |
+|-----------|----------------------|---------------|
+| Local Cline in VS Code | **Stdio** | (auto-spawned) |
+| Remote Cline access | **SSE** | `npm run sse` |
+| Production API | **HTTP** | `npm run http` |
+| Docker deployment | **HTTP** or **SSE** | See docker-compose |
+| LangChain integration | **HTTP** | `npm run http` |
+| MCP Inspector testing | Any | See docs |
 
 ### System Flow
 
@@ -119,52 +310,110 @@ mcp-weather-server/
 sequenceDiagram
     participant Client
     participant Fastify
+    participant HTTPTransport
     participant WeatherMCPServer
     participant WeatherService
+    participant UndiciResilience
     participant OpenMeteoAPI
 
     %% Initialization Phase
     Client->>Fastify: POST /mcp (initialize)
-    Note over Client,Fastify: Headers: MCP-Protocol-Version, Content-Type
-    Fastify->>WeatherMCPServer: handleInitialize()
-    WeatherMCPServer-->>Fastify: Server capabilities & info
-    Fastify-->>Client: 200 OK (server info)
+    Note over Client,Fastify: Headers: MCP-Protocol-Version, Accept: application/json, text/event-stream
+    Fastify->>HTTPTransport: handleRequest()
+    HTTPTransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>HTTPTransport: Server capabilities & info
+    HTTPTransport-->>Fastify: Session UUID generated
+    Fastify-->>Client: 200 OK + Mcp-Session-Id header
+    Note over Fastify,Client: Returns server info + session ID
 
-    Client->>Fastify: POST /mcp (initialized notification)
-    Fastify->>WeatherMCPServer: handleInitialized()
-    WeatherMCPServer-->>Fastify: Acknowledged
+    Client->>Fastify: POST /mcp (notifications/initialized)
+    Note over Client,Fastify: Headers include Mcp-Session-Id
+    Fastify->>HTTPTransport: processMessage()
+    HTTPTransport->>WeatherMCPServer: handleInitialized()
+    WeatherMCPServer-->>HTTPTransport: Acknowledged
+    HTTPTransport-->>Fastify: 202 Accepted
+    Fastify-->>Client: 202 Accepted
 
     %% Tool Operations
     Client->>Fastify: POST /mcp (tools/list)
-    Fastify->>WeatherMCPServer: handleToolsList()
-    WeatherMCPServer-->>Fastify: Available tools
+    Note over Client,Fastify: Headers: Mcp-Session-Id
+    Fastify->>HTTPTransport: processMCPMessage()
+    HTTPTransport->>WeatherMCPServer: handleToolsList()
+    WeatherMCPServer-->>HTTPTransport: Available tools array
+    HTTPTransport-->>Fastify: JSON response
     Fastify-->>Client: 200 OK (tools array)
 
-    %% Weather Request Flow
+    %% Weather Request Flow with Resilience
     Client->>Fastify: POST /mcp (tools/call: get_current_weather)
-    Note over Client,Fastify: {"city": "London"}
-    Fastify->>WeatherMCPServer: handleToolsCall()
+    Note over Client,Fastify: {"name": "get_current_weather", "arguments": {"city": "London"}}
+    Fastify->>HTTPTransport: processMCPMessage()
+    HTTPTransport->>WeatherMCPServer: handleToolsCall()
     WeatherMCPServer->>WeatherService: getCurrentWeather("London")
 
-    %% Geocoding Phase
-    WeatherService->>OpenMeteoAPI: GET /geocoding-api/search?name=London
-    OpenMeteoAPI-->>WeatherService: Geocoding response
-    Note over WeatherService,OpenMeteoAPI: Returns lat/lng coordinates
+    %% Geocoding with Resilience Patterns
+    WeatherService->>UndiciResilience: Request with circuit breaker
+    UndiciResilience->>OpenMeteoAPI: GET /geocoding-api/v1/search?name=London
+    Note over UndiciResilience,OpenMeteoAPI: Circuit breaker monitors health
+    OpenMeteoAPI-->>UndiciResilience: Geocoding response
+    UndiciResilience-->>WeatherService: Coordinates (with retry if needed)
 
-    %% Weather Data Fetch
-    WeatherService->>OpenMeteoAPI: GET /forecast?lat=51.5&lng=-0.1&current=...
-    OpenMeteoAPI-->>WeatherService: Weather data
-    Note over WeatherService,OpenMeteoAPI: Temperature, humidity, wind, conditions
+    %% Weather Data Fetch with Resilience
+    WeatherService->>UndiciResilience: Request with rate limiting
+    UndiciResilience->>OpenMeteoAPI: GET /v1/forecast?latitude=51.5&longitude=-0.1
+    Note over UndiciResilience,OpenMeteoAPI: Rate limited, retries on failure
+    OpenMeteoAPI-->>UndiciResilience: Weather data
+    UndiciResilience-->>WeatherService: Weather response
 
     WeatherService-->>WeatherMCPServer: Formatted weather data
-    WeatherMCPServer-->>Fastify: JSON-RPC response
-    Fastify-->>Client: 200 OK (weather info)
+    WeatherMCPServer-->>HTTPTransport: Tool result
+    HTTPTransport-->>Fastify: JSON-RPC response
+    Fastify-->>Client: 200 OK (SSE format if streaming)
+    Note over Fastify,Client: data: {"jsonrpc":"2.0","result":...}
 
-    %% SSE Stream (for notifications)
+    %% SSE Stream for Real-time Updates
     Client->>Fastify: GET /mcp (SSE stream)
     Note over Client,Fastify: Accept: text/event-stream
+    Fastify->>HTTPTransport: handleGET()
+    HTTPTransport-->>Fastify: 200 OK + SSE headers
     Fastify-->>Client: SSE connection established
-    Note over Fastify,Client: Server can send notifications via SSE
+    Note over HTTPTransport,Client: Persistent connection for notifications
+```
+
+#### SSE Transport Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Cline
+    participant SSETransport
+    participant WeatherMCPServer
+    participant WeatherService
+    participant OpenMeteoAPI
+
+    %% Connection Establishment
+    Cline->>SSETransport: GET /sse (Accept: text/event-stream)
+    SSETransport-->>Cline: SSE stream opened
+    SSETransport-->>Cline: event: connected + clientId
+    
+    %% Bidirectional Communication
+    Cline->>SSETransport: POST /sse (initialize)
+    SSETransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>SSETransport: Server info
+    SSETransport-->>Cline: SSE event: response
+    
+    %% Tool Call
+    Cline->>SSETransport: POST /sse (tools/call)
+    SSETransport->>WeatherMCPServer: handleToolCall()
+    WeatherMCPServer->>WeatherService: getCurrentWeather(city)
+    WeatherService->>OpenMeteoAPI: GET /forecast
+    OpenMeteoAPI-->>WeatherService: Weather data
+    WeatherService-->>WeatherMCPServer: Formatted result
+    WeatherMCPServer-->>SSETransport: Tool response
+    SSETransport-->>Cline: SSE event: tool result
+    
+    %% Heartbeat
+    loop Every 30 seconds
+        SSETransport-->>Cline: event: heartbeat
+    end
 ```
 
 #### Stdio Transport Sequence Diagram
@@ -175,48 +424,59 @@ sequenceDiagram
     participant StdioTransport
     participant WeatherMCPServer
     participant WeatherService
+    participant UndiciResilience
     participant OpenMeteoAPI
 
     %% Connection Establishment
-    AI Assistant->>StdioTransport: Start MCP server process
-    StdioTransport->>WeatherMCPServer: Connect server
-    WeatherMCPServer-->>StdioTransport: Server ready
+    AI Assistant->>StdioTransport: Start MCP server process (npx tsx src/server.ts)
+    StdioTransport->>WeatherMCPServer: Initialize server
+    WeatherMCPServer-->>StdioTransport: Server ready on stdin/stdout
 
     %% MCP Protocol Handshake
-    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"initialize",...}
-    StdioTransport->>WeatherMCPServer: processMessage(initialize)
-    WeatherMCPServer-->>StdioTransport: Server capabilities
-    StdioTransport-->>AI Assistant: Server info response
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","id":"1","method":"initialize","params":{...}}
+    StdioTransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>StdioTransport: {"jsonrpc":"2.0","id":"1","result":{"capabilities":...}}
+    StdioTransport-->>AI Assistant: Server capabilities & protocol version
 
     AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"notifications/initialized"}
-    StdioTransport->>WeatherMCPServer: processMessage(initialized)
-    WeatherMCPServer-->>StdioTransport: Acknowledged
+    StdioTransport->>WeatherMCPServer: handleInitialized()
+    Note over WeatherMCPServer: Server fully initialized
 
     %% Tool Discovery
-    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"tools/list"}
-    StdioTransport->>WeatherMCPServer: processMessage(tools/list)
-    WeatherMCPServer-->>StdioTransport: Available tools
-    StdioTransport-->>AI Assistant: Tools array
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","id":"2","method":"tools/list"}
+    StdioTransport->>WeatherMCPServer: handleToolsList()
+    WeatherMCPServer-->>StdioTransport: {"tools":[...]}
+    StdioTransport-->>AI Assistant: 3 available tools
+    Note over AI Assistant: get_current_weather, get_weather_forecast, retrieve_weather_context
 
-    %% Weather Query Processing
-    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"Tokyo"}}}
-    StdioTransport->>WeatherMCPServer: processMessage(tools/call)
+    %% Weather Query Processing with Resilience
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","id":"3","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"Tokyo"}}}
+    StdioTransport->>WeatherMCPServer: handleToolsCall()
     WeatherMCPServer->>WeatherService: getCurrentWeather("Tokyo")
 
-    %% API Integration
-    WeatherService->>OpenMeteoAPI: Geocoding request
-    OpenMeteoAPI-->>WeatherService: Coordinates
-    WeatherService->>OpenMeteoAPI: Weather forecast request
-    OpenMeteoAPI-->>WeatherService: Weather data
+    %% API Integration with Resilience Patterns
+    WeatherService->>UndiciResilience: Request with circuit breaker
+    UndiciResilience->>OpenMeteoAPI: GET /geocoding-api/v1/search?name=Tokyo
+    Note over UndiciResilience: Monitor latency, apply retry logic
+    OpenMeteoAPI-->>UndiciResilience: {"results":[{"latitude":35.68,"longitude":139.69}]}
+    UndiciResilience-->>WeatherService: Coordinates (with backoff retry)
 
-    WeatherService-->>WeatherMCPServer: Formatted response
-    WeatherMCPServer-->>StdioTransport: JSON-RPC success response
-    StdioTransport-->>AI Assistant: Weather information
+    WeatherService->>UndiciResilience: Request with rate limiting
+    UndiciResilience->>OpenMeteoAPI: GET /v1/forecast?latitude=35.68&longitude=139.69
+    Note over UndiciResilience: Rate limit: 10 req/sec
+    OpenMeteoAPI-->>UndiciResilience: Weather data JSON
+    UndiciResilience-->>WeatherService: Parsed weather response
 
-    %% Error Handling
-    Note over AI Assistant,WeatherMCPServer: If API fails or invalid input
-    WeatherMCPServer-->>StdioTransport: JSON-RPC error response
-    StdioTransport-->>AI Assistant: Error details
+    WeatherService-->>WeatherMCPServer: Formatted weather object
+    WeatherMCPServer-->>StdioTransport: {"jsonrpc":"2.0","id":"3","result":{"content":[...]}}
+    StdioTransport-->>AI Assistant: Weather information via stdout
+
+    %% Error Handling with Circuit Breaker
+    Note over WeatherService,UndiciResilience: If circuit open or API fails
+    UndiciResilience-->>WeatherService: Circuit breaker open/API error
+    WeatherService-->>WeatherMCPServer: Error with details
+    WeatherMCPServer-->>StdioTransport: {"jsonrpc":"2.0","id":"3","error":{"code":-32603,"message":"..."}}
+    StdioTransport-->>AI Assistant: Error response
 ```
 
 ### Component Interactions
@@ -229,17 +489,25 @@ graph TB
     C --> D[WeatherMCPServer]
     D --> E[WeatherService]
 
-    E --> F[Open-Meteo Geocoding API]
-    E --> G[Open-Meteo Weather API]
+    E --> R[Undici Resilience Layer]
+    R --> F[Open-Meteo Geocoding API]
+    R --> G[Open-Meteo Weather API]
 
-    D --> H[Logger]
+    D --> H[Pino Logger]
     D --> I[Configuration]
 
-    B --> J[HTTP Transport]
-    B --> K[Stdio Transport]
+    B --> J[HTTP Transport<br/>StreamableHTTPTransport]
+    B --> K[Stdio Transport<br/>StdioServerTransport]
 
     J --> L[Fastify Server]
     J --> M[SSE Handler]
+    J --> S[Session Manager]
+
+    R --> CB[Circuit Breaker]
+    R --> RL[Rate Limiter]
+    R --> RT[Retry Strategy]
+    R --> BH[Bulkhead Pattern]
+    R --> PM[Pool Manager]
 
     subgraph "Core Components"
         D
@@ -251,111 +519,53 @@ graph TB
     subgraph "Transport Options"
         J
         K
+        L
+        M
+        S
+    end
+
+    subgraph "Resilience Patterns"
+        CB
+        RL
+        RT
+        BH
+        PM
     end
 
     subgraph "External APIs"
         F
         G
     end
-```
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Node.js 22.x** or later
-- **npm** or **yarn**
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/kumaran-is/mcp-weather-server.git
-   cd mcp-weather-server
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Build the project**
-   ```bash
-   npm run build
-   ```
-
-### Running the Server
-
-#### Development Mode
-
-**HTTP Transport** (recommended for development)
-```bash
-npm run http
-```
-
-**Stdio Transport** (for AI assistants)
-```bash
-npm run stdio
-```
-
-**Development with Auto-restart**
-```bash
-npm run dev
-```
-
-#### Production Mode
-
-**Build the Project**
-```bash
-npm run build
-```
-
-**Start Production Server**
-```bash
-npm start
-```
-
-#### Docker
-
-**Build Docker Image**
-```bash
-docker build -t mcp-weather-server .
-```
-
-**Run Docker Container**
-```bash
-docker run -p 8080:8080 mcp-weather-server
-```
-
-**Run with Docker Compose**
-```bash
-docker-compose up
+    style R fill:#f9f,stroke:#333,stroke-width:2px
+    style CB fill:#ffd,stroke:#333,stroke-width:1px
+    style RL fill:#ffd,stroke:#333,stroke-width:1px
+    style RT fill:#ffd,stroke:#333,stroke-width:1px
+    style BH fill:#ffd,stroke:#333,stroke-width:1px
+    style PM fill:#ffd,stroke:#333,stroke-width:1px
 ```
 
 ## 🔧 Configuration
 
-The server uses environment variables for configuration. Copy `.env` and modify as needed:
+The server uses environment variables for configuration. Copy `.env.example` to `.env` and modify as needed.
 
-```env
-# Server Configuration
-NODE_ENV=development
-MCP_TRANSPORT=http                    # 'stdio' or 'http'
-MCP_HTTP_PORT=8080
+### Key Configuration Options
 
-# Open-Meteo API
-OPEN_METEO_BASE_URL=https://api.open-meteo.com/v1
-GEOCODING_API_URL=https://geocoding-api.open-meteo.com/v1
+```bash
+# Transport selection (stdio, http, sse)
+MCP_TRANSPORT=stdio
 
-# Security
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+# Port configuration
+MCP_HTTP_PORT=8080  # For HTTP transport
+MCP_SSE_PORT=8081   # For SSE transport
 
 # Logging
-LOG_LEVEL=debug                       # 'fatal', 'error', 'warn', 'info', 'debug', 'trace'
-
-# Performance
-API_TIMEOUT=5000                      # milliseconds
-HTTP_TIMEOUT=30000
+LOG_LEVEL=info
 ```
+
+For complete configuration options, see:
+- [.env.example](.env.example) - Development configuration
+- [.env.production.example](.env.production.example) - Production configuration
 
 ## 📡 API Usage
 
@@ -451,7 +661,7 @@ When using HTTP transport, the server exposes endpoints:
 
 ## 🧪 Testing
 
-For comprehensive testing instructions, see **[TESTING.md](docs/TESTING.md)** - a complete guide covering both stdio and HTTP transport testing.
+For comprehensive testing instructions, see **[TESTING.md](docs/TESTING.md)** - a complete guide covering all three transports (stdio, HTTP, and SSE).
 
 ### Quick Test Commands
 
@@ -469,19 +679,47 @@ npm run test:coverage
 
 #### HTTP Transport Testing
 
-**Start Server and Run Full Test Suite**
+**Start HTTP Server**
 ```bash
-npm run http & sleep 2 && npm run client
+npm run http
 ```
 
-**Test Current Weather**
+**Test with curl**
 ```bash
-npm run client weather "London"
+# Initialize session
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl-test","version":"1.0.0"}}}'
+
+# Get current weather (use session ID from initialize response)
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":"2","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"London"}}}'
 ```
 
-**Test Weather Forecast**
+**Health Check**
 ```bash
-npm run client forecast "Tokyo" 3
+curl http://localhost:8080/health
+```
+
+#### SSE Transport Testing
+
+**Start SSE Server**
+```bash
+npm run sse
+```
+
+**Test with curl**
+```bash
+# Connect to SSE stream
+curl -N -H "Accept: text/event-stream" http://localhost:8081/sse
+
+# Send command (in another terminal)
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}'
 ```
 
 #### Stdio Transport Testing
@@ -491,117 +729,40 @@ npm run client forecast "Tokyo" 3
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 ```
 
-For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[TESTING.md](docs/TESTING.md)**.
+#### MCP Inspector Testing
+
+For comprehensive testing with the official MCP Inspector tool:
+- **[MCP Inspector Guide](docs/MCP-INSPECTOR-GUIDE.md)** - Step-by-step testing with visual interface
+- Supports all three transports (stdio, HTTP, SSE)
+- Interactive tool testing and protocol validation
+
+For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[docs/TESTING.md](docs/TESTING.md)**.
 
 #### Postman Testing
 
-**Quick Import (Recommended):**
+**Quick Import:**
 1. Start the server: `npm run http`
 2. Open Postman and click "Import"
-3. Copy and paste the contents of `MCP-Weather-Server.postman_collection.json`
+3. Import the file **[docs/mcp_weather.postman_collection.json](docs/mcp_weather.postman_collection.json)**
 4. All requests are pre-configured with proper headers and variables!
-
-**Or create manually:**
-1. Start the server: `npm run http`
-2. Create a new collection in Postman
-3. Use these key endpoints:
-
-**Initialize Connection:**
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "init-123",
-  "method": "initialize",
-  "params": {
-    "protocolVersion": "2025-06-18",
-    "capabilities": {"sampling": {}},
-    "clientInfo": {"name": "postman-test", "version": "1.0.0"}
-  }
-}
-```
-
-**Get Current Weather:**
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "weather-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_weather",
-    "arguments": {"city": "London"}
-  }
-}
-```
-
-For complete Postman setup with all endpoints, request examples, and collection templates, see the **[Postman Testing Guide](#postman-testing-guide)** below.
 
 ## 🔌 Integration Examples
 
-### Cline (Local AI Assistant)
+### Cline (Local & Remote AI Assistant)
 
-**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
+**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](docs/agent_mcp_setting/CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
 
-**Quick Configuration** (Stdio Transport):
-```json
-{
-  "mcpServers": {
-    "weather": {
-      "autoApprove": [
-        "get_current_weather",
-        "get_weather_forecast",
-        "retrieve_weather_context"
-      ],
-      "disabled": false,
-      "timeout": 30,
-      "type": "stdio",
-      "command": "node",
-      "args": ["/path/to/mcp-weather-server/dist/server.js"],
-      "env": {
-        "MCP_TRANSPORT": "stdio",
-        "LOG_LEVEL": "info"
-      }
-    }
-  }
-}
-```
+#### Configuration Files
 
-**Example Configuration Files**: See `cline_mcp_settings.json` and `cline_mcp_settings_http.json` for complete examples.
+| Use Case | Transport | Config File |
+|----------|-----------|-------------|
+| **Local Cline** | Stdio | [cline_mcp_settings.json](docs/agent_mcp_setting/cline_mcp_settings.json) |
+| **Remote Cline** | SSE | [cline_mcp_settings_sse.json](docs/agent_mcp_setting/cline_mcp_settings_sse.json) |
+| **Documentation Only** | HTTP | [cline_mcp_settings_http.json](docs/agent_mcp_setting/cline_mcp_settings_http.json) |
+
+**Note**: Cline does NOT support HTTP transport. Use Stdio for local or SSE for remote connections.
 
 **Usage**: Ask Cline natural language questions like "What's the weather in London?" or "Should I bring an umbrella to Paris?"
-
-### HTTP Client
-```javascript
-// Initialize connection
-const response = await fetch('http://localhost:8080/mcp', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'MCP-Protocol-Version': '2025-06-18',
-    'Accept': 'application/json, text/event-stream'
-  },
-  body: JSON.stringify({
-    jsonrpc: '2.0',
-    id: '123',
-    method: 'initialize',
-    params: {
-      protocolVersion: '2025-06-18',
-      capabilities: { sampling: {} },
-      clientInfo: { name: 'my-client', version: '1.0.0' }
-    }
-  })
-});
-```
 
 ## 📊 Monitoring & Observability
 
@@ -630,38 +791,6 @@ curl http://localhost:8080/health
 - Active connections
 - Error rates by endpoint
 
-## 🐳 Docker Deployment
-
-### Production Deployment
-
-**Build Docker Image**
-```bash
-docker build -t mcp-weather-server .
-```
-
-**Run Production Container**
-```bash
-docker run -d \
-  --name mcp-weather-server \
-  -p 8080:8080 \
-  -e NODE_ENV=production \
-  mcp-weather-server
-```
-
-### Docker Compose
-```yaml
-version: '3.8'
-services:
-  mcp-weather-server:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - NODE_ENV=production
-      - MCP_TRANSPORT=http
-    restart: unless-stopped
-```
-
 ## 🔒 Security
 
 - **Input Validation**: All inputs are validated and sanitized
@@ -670,6 +799,78 @@ services:
 - **HTTPS**: SSL/TLS support in production
 - **No API Keys**: Uses free Open-Meteo API (no credentials needed)
 
+## 📊 Session Management (HTTP Transport)
+
+The HTTP transport includes a sophisticated session management system for handling stateful connections over HTTP/SSE:
+
+### Session Manager Components
+
+#### 1. **Session Identification**
+- Generates unique UUID v4 session IDs for each client
+- Session ID transmitted via `Mcp-Session-Id` header
+- Sessions persist across multiple HTTP requests
+
+#### 2. **Client Connection Registry**
+```typescript
+private clients: Map<string, ClientConnection> = new Map();
+```
+- Maintains active SSE connections mapped by session ID
+- Tracks response objects for real-time message delivery
+- Enables targeted notifications to specific clients
+
+#### 3. **Message Queue System**
+```typescript
+private messageQueues: Map<string, unknown[]> = new Map();
+```
+- **In-memory message buffering** for disconnected clients
+- Messages queued when client temporarily offline
+- Automatic delivery when client reconnects with same session ID
+- Supports resumable connections via `Last-Event-Id` header
+
+#### 4. **Connection Lifecycle**
+- **Session Creation**: New UUID generated on first request without session ID
+- **Keep-Alive**: Maintains persistent SSE connections for real-time updates
+- **Graceful Disconnection**: Automatic cleanup on client disconnect
+- **Explicit Termination**: DELETE request ends session and clears queues
+
+### Message Queueing Behavior
+
+**When Messages are Queued:**
+- Client connection lost (network interruption)
+- Client not yet established SSE stream
+- Server needs to send notification to offline client
+
+**Queue Limitations:**
+⚠️ **Important**: Messages are stored in-memory only
+- Lost on server restart
+- No persistence to disk/database
+- Limited by available RAM
+- No built-in size limits or TTL
+
+**Queue Cleanup Triggers:**
+1. Client disconnects normally (SSE stream closes)
+2. Connection error occurs
+3. Session explicitly terminated (DELETE request)
+4. Server shutdown
+
+### Session Recovery Flow
+
+1. Client disconnects unexpectedly
+2. Server queues subsequent messages for that session
+3. Client reconnects with same `Mcp-Session-Id`
+4. Client provides `Last-Event-Id` header (optional)
+5. Server delivers all queued messages
+6. Normal SSE stream resumes
+
+### Production Considerations
+
+For production deployments, consider:
+- Adding Redis/database for persistent message storage
+- Implementing queue size limits and message TTL
+- Setting session timeout policies
+- Adding metrics for queue depths and session counts
+- Implementing distributed session storage for multi-server deployments
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -677,28 +878,6 @@ services:
 3. Commit changes: `git commit -m 'Add amazing feature'`
 4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
-
-### Development Setup
-
-**Install Dependencies**
-```bash
-npm install
-```
-
-**Run in Development Mode**
-```bash
-npm run dev
-```
-
-**Run Tests**
-```bash
-npm test
-```
-
-**Build for Production**
-```bash
-npm run build
-```
 
 ## 📝 License
 
@@ -716,121 +895,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Issues**: [GitHub Issues](https://github.com/kumaran-is/mcp-weather-server/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
-- **Cline Integration**: [CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md) - Complete Cline setup guide
-- **Phase 4 Plan**: [PHASE-4-PLAN.md](docs/PHASE-4-PLAN.md) - Chaos Engineering & Performance Benchmarking roadmap
-
-## 🧪 Postman Testing Guide
-
-### Setup
-1. **Start the server**: `npm run http`
-2. **Open Postman** and create a new collection
-3. **Set base URL**: `http://localhost:8080`
-
-### Required Headers (Add to all requests)
-```
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Accept: application/json,text/event-stream
-```
-
-### Key Endpoints
-
-#### 1. Initialize Connection
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "init-123",
-  "method": "initialize",
-  "params": {
-    "protocolVersion": "2025-06-18",
-    "capabilities": {"sampling": {}},
-    "clientInfo": {"name": "postman-test", "version": "1.0.0"}
-  }
-}
-```
-
-#### 2. List Tools
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "tools-123",
-  "method": "tools/list"
-}
-```
-
-#### 3. Get Current Weather
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "weather-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_weather",
-    "arguments": {"city": "London"}
-  }
-}
-```
-
-#### 4. Get Weather Forecast
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "forecast-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_weather_forecast",
-    "arguments": {"city": "Paris", "days": 3}
-  }
-}
-```
-
-#### 5. Test Error Handling
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "error-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_weather",
-    "arguments": {"city": ""}
-  }
-}
-```
-
-### Postman Tips
-- **Extract Session ID**: After initialize, save the `mcp-session-id` header value
-- **Environment Variables**: Create `session_id` variable in Postman environment
-- **Tests Tab**: Add scripts to automatically extract session IDs from responses
-
----
+- **Cline Integration**: [CLINE-INTEGRATION.md](docs/agent_mcp_setting/CLINE-INTEGRATION.md) - Complete Cline setup guide
 
 **Made with ❤️ for the AI assistant community**
