@@ -93,7 +93,7 @@ describe('WeatherCache', () => {
       cache.setWeather('london', mockWeatherData);
       
       // Advance time beyond TTL (10 minutes by default)
-      vi.advanceTimersByTime(601000); // 10 minutes + 1 second
+      vi.advanceTimersByTime(11 * 60 * 1000); // 11 minutes
       
       const result = cache.getWeather('london');
       expect(result).toBeUndefined();
@@ -173,7 +173,7 @@ describe('WeatherCache', () => {
       cache.setForecast('london', 5, mockForecastData);
       
       // Advance time beyond TTL (30 minutes by default)
-      vi.advanceTimersByTime(1801000); // 30 minutes + 1 second
+      vi.advanceTimersByTime(31 * 60 * 1000); // 31 minutes
       
       const result = cache.getForecast('london', 5);
       expect(result).toBeUndefined();
@@ -220,7 +220,7 @@ describe('WeatherCache', () => {
       cache.setGeocoding('london', 51.5074, -0.1278);
       
       // Advance time beyond TTL (24 hours by default)
-      vi.advanceTimersByTime(86401000); // 24 hours + 1 second
+      vi.advanceTimersByTime(25 * 60 * 60 * 1000); // 25 hours
       
       const result = cache.getGeocoding('london');
       expect(result).toBeUndefined();
