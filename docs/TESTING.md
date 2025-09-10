@@ -41,19 +41,12 @@ You should see:
 [INFO] HTTP server started on port 8080
 ```
 
-### Test with the Built-in Client
+### Test with curl or Postman
 
-```bash
-# Terminal 2: Run full test suite
-npm run client
-
-# Or run specific tests:
-npm run client init      # Initialize connection
-npm run client tools     # List available tools
-npm run client weather   # Get weather for London
-npm run client weather "New York"  # Get weather for specific city
-npm run client forecast "Tokyo" 3  # Get 3-day forecast
-```
+For testing the HTTP transport, you can use:
+1. **Postman** - Import the collection from `docs/mcp_weather.postman_collection.json`
+2. **curl** - Use the commands below
+3. **Custom client** - Create your own using the examples below
 
 ### Manual HTTP Testing with curl
 
@@ -311,7 +304,10 @@ This will:
 
 **Test Invalid City**
 ```bash
-npm run client weather ""
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":""}}}'
 ```
 
 **Test Invalid Protocol Version**
@@ -385,9 +381,13 @@ console.log('Response:', JSON.stringify(response, null, 2));
 
 ## 7. Quick Test Commands
 
-**Full HTTP Test Suite**
+**Start HTTP Server and Test**
 ```bash
-npm run http & sleep 2 && npm run client
+# Start server
+npm run http
+
+# In another terminal, test with curl
+curl http://localhost:8080/health
 ```
 
 **Quick Stdio Test**

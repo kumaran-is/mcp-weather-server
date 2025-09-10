@@ -525,9 +525,29 @@ npm run test:coverage
 
 #### HTTP Transport Testing
 
-**Start Server and Run Full Test Suite**
+**Start HTTP Server**
 ```bash
 npm run http
+```
+
+**Test with curl**
+```bash
+# Initialize session
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl-test","version":"1.0.0"}}}'
+
+# Get current weather (use session ID from initialize response)
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":"2","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"London"}}}'
+```
+
+**Health Check**
+```bash
+curl http://localhost:8080/health
 ```
 
 #### Stdio Transport Testing
