@@ -527,7 +527,7 @@ MCP_TRANSPORT=sse npm run dev
         "tsx",
         "src/server.ts"
       ],
-      "cwd": "/Users/kumaraniyyasamysrinivasan/mydrive/personal/mcp-weather-server",
+      "cwd": "/path-to/mcp-weather-server",
       "env": {
         "MCP_TRANSPORT": "stdio",
         "LOG_LEVEL": "info",

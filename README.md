@@ -13,20 +13,26 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🛠️ Technology Stack](#️-technology-stack)
-  - [Directory Structure](#directory-structure)
-  - [🏗️ Architecture](#️-architecture)
-    - [System Flow](#system-flow)
-      - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
-      - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
-    - [Component Interactions](#component-interactions)
   - [🚀 Quick Start](#-quick-start)
     - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Running the Server](#running-the-server)
-      - [Development Mode](#development-mode)
-      - [Production Mode](#production-mode)
-      - [Docker](#docker)
+    - [1️⃣ Installation](#1️⃣-installation)
+    - [2️⃣ AI Assistant Configurations](#2️⃣-ai-assistant-configurations)
+      - [Cline (VS Code)](#cline-vs-code)
+      - [Claude Desktop](#claude-desktop)
+      - [Cursor](#cursor)
+      - [GitHub Copilot (Future MCP Support)](#github-copilot-future-mcp-support)
+      - [Test with AI Assistant](#test-with-ai-assistant)
+  - [Directory Structure](#directory-structure)
+  - [🏗️ Architecture](#️-architecture)
+    - [Transport Strategy](#transport-strategy)
+      - [Transport Decision Matrix](#transport-decision-matrix)
+    - [System Flow](#system-flow)
+      - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
+      - [SSE Transport Sequence Diagram](#sse-transport-sequence-diagram)
+      - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
+    - [Component Interactions](#component-interactions)
   - [🔧 Configuration](#-configuration)
+    - [Key Configuration Options](#key-configuration-options)
   - [📡 API Usage](#-api-usage)
     - [MCP Protocol](#mcp-protocol)
       - [1. `get_current_weather`](#1-get_current_weather)
@@ -37,10 +43,13 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
     - [Quick Test Commands](#quick-test-commands)
       - [Unit Tests](#unit-tests)
       - [HTTP Transport Testing](#http-transport-testing)
+      - [SSE Transport Testing](#sse-transport-testing)
       - [Stdio Transport Testing](#stdio-transport-testing)
+      - [MCP Inspector Testing](#mcp-inspector-testing)
       - [Postman Testing](#postman-testing)
   - [🔌 Integration Examples](#-integration-examples)
-    - [Cline (Local AI Assistant)](#cline-local-ai-assistant)
+    - [Cline (Local \& Remote AI Assistant)](#cline-local--remote-ai-assistant)
+      - [Configuration Files](#configuration-files)
   - [📊 Monitoring \& Observability](#-monitoring--observability)
     - [Logging](#logging)
     - [Health Checks](#health-checks)
@@ -92,6 +101,130 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 | **Open-Meteo API** | N/A | Free weather data provider | [Homepage](https://open-meteo.com/) |
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js 22.x** or later
+- **npm** or **yarn**
+
+### 1️⃣ Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/kumaran-is/mcp-weather-server.git
+cd mcp-weather-server
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+```
+
+### 2️⃣ AI Assistant Configurations
+
+#### Cline (VS Code)
+**Local Configuration** (`cline_mcp_settings.json`):
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": true,
+      "timeout": 30000,
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "tsx",
+        "src/server.ts"
+      ],
+      "cwd": "/path-to/mcp-weather-server",
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+**Remote Configuration** (for SSE):
+```json
+{
+  "mcpServers": {
+    "weather-remote": {
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast",
+        "retrieve_weather_context"
+      ],
+      "disabled": false,
+      "timeout": 30000,
+      "type": "sse",
+      "url": "http://localhost:8081/sse"
+    }
+  }
+}
+```
+
+#### Claude Desktop
+**Configuration** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "node",
+      "args": ["/path/to/mcp-weather-server/dist/server.js"],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+#### Cursor
+**Configuration** (`.cursor/mcp_config.json` in project root):
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+#### GitHub Copilot (Future MCP Support)
+```json
+{
+  "github.copilot.mcpServers": {
+    "weather": {
+      "command": "node",
+      "args": ["./dist/server.js"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+#### Test with AI Assistant
+Once configured, you can test with natural language:
+- "What's the weather in Paris?"
+- "Show me a 5-day forecast for New York"
+- "Is it going to rain in Seattle tomorrow?"
 
 ## Directory Structure
 
@@ -411,74 +544,6 @@ graph TB
     style BH fill:#ffd,stroke:#333,stroke-width:1px
     style PM fill:#ffd,stroke:#333,stroke-width:1px
 ```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Node.js 22.x** or later
-- **npm** or **yarn**
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/kumaran-is/mcp-weather-server.git
-   cd mcp-weather-server
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Build the project**
-   ```bash
-   npm run build
-   ```
-
-### Running the Server
-
-#### Development Mode
-
-**Stdio Transport** (Local Cline in VS Code)
-```bash
-npm run stdio
-# Or let Cline auto-spawn the process
-```
-
-**HTTP Transport** (Production APIs, LangChain)
-```bash
-npm run http
-# Server runs on http://localhost:8080/mcp
-```
-
-**SSE Transport** (Remote Cline connections)
-```bash
-npm run sse
-# Server runs on http://localhost:8081/sse
-```
-
-**Development with Auto-restart**
-```bash
-# Uses transport from .env or MCP_TRANSPORT env var
-npm run dev
-```
-
-#### Production Mode
-
-**Build the Project**
-```bash
-npm run build
-```
-
-**Start Production Server**
-```bash
-npm start
-```
-
-#### Docker
-Refer **[DOCKER-DEPLOYMENT.md](docs/DOCKER-DEPLOYMENT.md)**
 
 ## 🔧 Configuration
 
