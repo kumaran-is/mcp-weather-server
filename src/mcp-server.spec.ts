@@ -216,6 +216,35 @@ describe('WeatherMCPServer', () => {
   });
 
   describe('MCP Protocol Message Processing', () => {
+    beforeEach(() => {
+      // Set up mock data for MCP message processing tests
+      mockWeatherService.getCurrentWeather.mockResolvedValue({
+        location: 'London',
+        temperature: 15.2,
+        description: 'Partly cloudy',
+        humidity: 72,
+        windSpeed: 8.5,
+        feelsLike: 14.8,
+        pressure: 1013.25,
+        timestamp: '2025-01-08T12:00'
+      });
+      mockWeatherService.getForecast.mockResolvedValue({
+        location: 'London',
+        forecasts: [
+          {
+            date: 'Wed Jan 08 2025',
+            temperature: 15.2,
+            temperatureMin: 12.1,
+            temperatureMax: 18.3,
+            description: 'Partly cloudy',
+            humidity: 72,
+            windSpeed: 8.5,
+            precipitation: 0.0
+          }
+        ]
+      });
+    });
+
     describe('processMessage method', () => {
       it('should handle initialize request', async () => {
         const message = {
@@ -296,11 +325,16 @@ describe('WeatherMCPServer', () => {
 
         const result = await server['processMessage'](message);
 
-        expect(result).toBeDefined();
-        expect(result.jsonrpc).toBe('2.0');
-        expect(result.id).toBe('999');
-        expect(result.result).toBeDefined();
-        expect(result.result.content).toBeDefined();
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: '999',
+          result: {
+            content: [{
+              type: 'text',
+              text: expect.stringContaining('London')
+            }]
+          }
+        });
       });
 
       it('should handle unknown method', async () => {
@@ -335,8 +369,11 @@ describe('WeatherMCPServer', () => {
           jsonrpc: '2.0',
           id: 'invalid-123',
           error: {
-            code: -32601,
-            message: 'Method \'undefined\' not found'
+            code: -32603,
+            message: 'Internal error',
+            data: {
+              details: 'Invalid JSON-RPC version'
+            }
           }
         });
       });
@@ -378,7 +415,7 @@ describe('WeatherMCPServer', () => {
         const result = await server['handleInitialize'](message);
 
         expect(result).toBeDefined();
-        expect(result.result.protocolVersion).toBe('2025-06-18'); // Should return current version
+        expect(result.result.protocolVersion).toBe('2025-03-26'); // Should echo back the client version
       });
 
       it('should reject unsupported protocol version', async () => {
@@ -419,8 +456,18 @@ describe('WeatherMCPServer', () => {
 
         const result = await server['handleInitialize'](message);
 
-        expect(result).toBeDefined();
-        expect(result.result).toBeDefined();
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'init-missing',
+          error: {
+            code: -32602,
+            message: 'Unsupported protocol version',
+            data: {
+              supported: ['2025-06-18', '2025-03-26'],
+              requested: undefined
+            }
+          }
+        });
       });
     });
 
@@ -539,9 +586,16 @@ describe('WeatherMCPServer', () => {
 
         const result = await server['handleToolsCall'](message);
 
-        expect(result).toBeDefined();
-        expect(result.result).toBeDefined();
-        expect(result.result.content).toBeDefined();
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tool-call-123',
+          result: {
+            content: [{
+              type: 'text',
+              text: expect.stringContaining('London')
+            }]
+          }
+        });
       });
 
       it('should handle get_weather_forecast tool call', async () => {
@@ -557,9 +611,16 @@ describe('WeatherMCPServer', () => {
 
         const result = await server['handleToolsCall'](message);
 
-        expect(result).toBeDefined();
-        expect(result.result).toBeDefined();
-        expect(result.result.content).toBeDefined();
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tool-call-456',
+          result: {
+            content: [{
+              type: 'text',
+              text: expect.stringContaining('Tokyo')
+            }]
+          }
+        });
       });
 
       it('should handle retrieve_weather_context tool call', async () => {
@@ -575,9 +636,16 @@ describe('WeatherMCPServer', () => {
 
         const result = await server['handleToolsCall'](message);
 
-        expect(result).toBeDefined();
-        expect(result.result).toBeDefined();
-        expect(result.result.content).toBeDefined();
+        expect(result).toEqual({
+          jsonrpc: '2.0',
+          id: 'tool-call-789',
+          result: {
+            content: [{
+              type: 'text',
+              text: expect.stringContaining('Paris')
+            }]
+          }
+        });
       });
 
       it('should handle unknown tool', async () => {
@@ -643,8 +711,8 @@ describe('WeatherMCPServer', () => {
           jsonrpc: '2.0',
           id: 'tool-call-missing-params',
           error: {
-            code: -32603,
-            message: 'Tool execution failed: Cannot read properties of undefined (reading \'name\')'
+            code: -32601,
+            message: 'Unknown tool: undefined'
           }
         });
       });
@@ -673,8 +741,7 @@ describe('WeatherMCPServer', () => {
         id: 'error-test-123',
         error: {
           code: -32603,
-          message: 'Internal error',
-          data: { details: 'Tool execution failed: Service unavailable' }
+          message: 'Tool execution failed: Service unavailable'
         }
       });
     });

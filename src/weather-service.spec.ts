@@ -1,10 +1,32 @@
 import { WeatherService } from './weather-service';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// Mock undici's request function
-const mockRequest = vi.fn();
-vi.mock('undici', () => ({
-  request: mockRequest
+// Mock the pool manager and other dependencies
+vi.mock('./undici-resilience/index.js', () => ({
+  poolManager: {
+    request: vi.fn()
+  }
+}));
+
+vi.mock('./logger-pino.js', () => ({
+  logger: {
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+    logError: vi.fn(),
+    logPerformance: vi.fn()
+  }
+}));
+
+vi.mock('./cache/weather-cache.js', () => ({
+  weatherCache: {
+    getWeather: vi.fn(),
+    setWeather: vi.fn(),
+    getForecast: vi.fn(),
+    setForecast: vi.fn(),
+    getGeocoding: vi.fn(),
+    setGeocoding: vi.fn()
+  }
 }));
 
 describe('WeatherService', () => {

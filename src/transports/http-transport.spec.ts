@@ -6,16 +6,24 @@ import { randomUUID } from 'node:crypto';
 // Mock dependencies
 vi.mock('http');
 vi.mock('../mcp-server');
-vi.mock('../config/config', () => ({
+vi.mock('../config/config.js', () => ({
   getConfig: () => ({
-    transport: { http: { port: 8080 } },
+    server: { transport: 'http', httpPort: 8080 },
     security: { allowedOrigins: ['http://localhost:3000'] },
+    logging: { level: 'info' },
+    performance: { apiTimeout: 5000 },
+    resilience: {
+      circuitBreaker: { threshold: 5, timeout: 60000 },
+      retry: { maxRetries: 3, baseDelay: 1000 },
+    },
   }),
   getTransportConfig: () => ({
-    http: { port: 8080 },
+    type: 'http',
+    port: 8080,
+    allowedOrigins: ['http://localhost:3000'],
   }),
 }));
-vi.mock('../logger', () => ({
+vi.mock('../logger-pino.js', () => ({
   logger: {
     logTransportEvent: vi.fn(),
     logError: vi.fn(),
@@ -23,6 +31,9 @@ vi.mock('../logger', () => ({
     logMCPRequest: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    logPerformance: vi.fn(),
   },
 }));
 

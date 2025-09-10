@@ -5,14 +5,37 @@ vi.mock('dotenv/config');
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js');
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js');
 vi.mock('./mcp-server.js');
-vi.mock('./logger.js');
-vi.mock('./config/config.js');
+vi.mock('./config/config.js', () => ({
+  getConfig: () => ({
+    server: { 
+      transport: 'stdio',
+      httpPort: 8080 
+    },
+    logging: { level: 'info' },
+    security: { allowedOrigins: ['http://localhost:3000'] },
+    performance: { apiTimeout: 5000 },
+    resilience: { 
+      circuitBreaker: { threshold: 5, timeout: 60000 },
+      retry: { maxRetries: 3, baseDelay: 1000 }
+    }
+  })
+}));
+
+vi.mock('./logger-pino.js', () => ({
+  logger: {
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    warn: vi.fn()
+  }
+}));
 vi.mock('fastify');
 vi.mock('node:crypto');
 vi.mock('@modelcontextprotocol/sdk/types.js');
 
 // Import after mocking
-import { logger } from './logger.js';
+import { logger } from './logger-pino.js';
 import Fastify from 'fastify';
 
 describe('Server Entry Point', () => {
