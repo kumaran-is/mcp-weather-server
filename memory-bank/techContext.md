@@ -61,13 +61,13 @@ The MCP Weather Server is built with a modern, production-ready technology stack
 
 ```json
 {
-  "@modelcontextprotocol/sdk": "^1.17.5",     // MCP protocol implementation
-  "dotenv": "~16.4.1",                        // Environment configuration
-  "fastify": "^5.6.0",                        // Web framework
-  "pino": "~8.15.0",                          // Structured logging
-  "undici": "^6.19.8",                        // HTTP client
-  "uuid": "~9.0.1",                           // Unique identifier generation
-  "zod": "^3.23.8"                            // Runtime validation
+  "@modelcontextprotocol/sdk": "~1.17.5",     // MCP protocol implementation
+  "dotenv": "~17.2.2",                        // Environment configuration
+  "fastify": "~5.6.0",                        // Web framework
+  "lru-cache": "~11.2.1",                     // LRU caching (added in v2.3.0)
+  "pino": "~9.9.4",                           // Structured logging (upgraded in v2.3.0)
+  "undici": "~7.16.0",                        // HTTP client
+  "uuid": "~13.0.0"                          // Unique identifier generation
 }
 ```
 
@@ -75,16 +75,17 @@ The MCP Weather Server is built with a modern, production-ready technology stack
 
 ```json
 {
-  "@types/node": "^22.7.4",                    // Node.js type definitions
-  "@types/uuid": "^9.0.8",                     // UUID type definitions
-  "concurrently": "^8.2.2",                    // Concurrent command execution
-  "eslint": "^9.9.0",                          // Code linting
-  "eventsource": "^2.0.2",                     // SSE client for testing (added in v2.2.0)
-  "node-fetch": "^3.3.2",                      // HTTP client for testing (added in v2.2.0)
-  "nodemon": "^3.1.7",                         // Development auto-restart
-  "tsx": "^4.19.1",                            // TypeScript execution
-  "typescript": "^5.8.0",                      // TypeScript compiler
-  "typescript-eslint": "^8.8.0",               // TypeScript ESLint rules
+  "@types/lru-cache": "~7.10.9",               // LRU cache type definitions (added in v2.3.0)
+  "@types/node": "~22.0.0",                    // Node.js type definitions
+  "@types/uuid": "~10.0.0",                    // UUID type definitions
+  "@typescript-eslint/eslint-plugin": "~8.43.0", // TypeScript ESLint plugin
+  "@typescript-eslint/parser": "~8.43.0",      // TypeScript ESLint parser
+  "@vitest/coverage-v8": "~3.2.4",             // Test coverage
+  "eslint": "~9.35.0",                         // Code linting
+  "pino-pretty": "~13.1.1",                   // Pretty printing for development (added in v2.3.0)
+  "tsx": "~4.20.5",                            // TypeScript execution
+  "typescript": "~5.9.2",                      // TypeScript compiler
+  "vitest": "~3.2.4"                           // Testing framework
   "vitest": "^2.1.8"                           // Testing framework
 }
 ```

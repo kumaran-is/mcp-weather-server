@@ -3,7 +3,7 @@
  * Prevents cascading failures by limiting concurrent operations per resource
  */
 
-import { logger } from '../../logger.js';
+import { logger } from '../../logger-pino.js';
 import { DEFAULT_BULKHEAD_CONFIG } from '../config/pool-config.js';
 
 export interface BulkheadConfig {

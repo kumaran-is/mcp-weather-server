@@ -10,7 +10,7 @@ import Fastify from 'fastify';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { WeatherMCPServer } from './mcp-server.js';
-import { logger } from './logger.js';
+import { logger } from './logger-pino.js';
 import { getConfig } from './config/config.js';
 import { randomUUID } from 'node:crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';

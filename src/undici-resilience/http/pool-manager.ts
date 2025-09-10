@@ -12,7 +12,7 @@ import {
   GEOCODING_POOL_CONFIG,
   DEFAULT_RESILIENCE_CONFIG
 } from '../config/pool-config.js';
-import { logger } from '../logger.js';
+import { logger } from '../../logger-pino.js';
 import { getAPIConfig } from '../../config/config.js';
 
 export interface PoolStats {

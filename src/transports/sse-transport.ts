@@ -1,6 +1,6 @@
 /**
  * Simple SSE Transport for MCP Server
- * 
+ *
  * This transport implements a lightweight Server-Sent Events (SSE) protocol
  * designed for compatibility with Cline and other simple SSE clients.
  * Unlike the Streamable HTTP transport, this uses a single SSE endpoint
@@ -8,8 +8,10 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { URL } from 'url';
+import { setInterval, clearInterval } from 'timers';
 import { WeatherMCPServer } from '../mcp-server.js';
-import { logger } from '../logger.js';
+import { logger } from '../logger-pino.js';
 import { getConfig } from '../config/config.js';
 
 interface SSEClient {
@@ -53,7 +55,7 @@ export class SimpleSSETransport {
    */
   private async handleRequest(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
-    
+
     // CORS headers for browser clients
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -69,11 +71,11 @@ export class SimpleSSETransport {
     // Health check endpoint
     if (url.pathname === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        status: 'healthy', 
+      res.end(JSON.stringify({
+        status: 'healthy',
         transport: 'sse',
         port: this.port,
-        clients: this.clients.size
+        clients: this.clients.size,
       }));
       return;
     }
@@ -159,7 +161,7 @@ export class SimpleSSETransport {
    */
   private async handleSSEMessage(req: IncomingMessage, res: ServerResponse) {
     let body = '';
-    
+
     req.on('data', (chunk) => {
       body += chunk.toString();
     });
@@ -167,11 +169,11 @@ export class SimpleSSETransport {
     req.on('end', async () => {
       try {
         const message = JSON.parse(body);
-        
+
         // Extract client ID from URL path
         const urlParts = req.url?.split('/') || [];
         const clientId = urlParts[urlParts.length - 1];
-        
+
         if (!clientId || !this.clients.has(clientId)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Client not found' }));
@@ -180,7 +182,7 @@ export class SimpleSSETransport {
 
         // Process MCP message
         const response = await this.processMCPMessage(message, clientId);
-        
+
         // Send response via SSE to the client
         const client = this.clients.get(clientId);
         if (client) {
@@ -190,7 +192,7 @@ export class SimpleSSETransport {
         // Send empty HTTP response (per MCP spec)
         res.writeHead(202, { 'Content-Type': 'application/json' });
         res.end('{}');
-        
+
       } catch (error) {
         logger.error('Error processing SSE message', { error: (error as Error).message });
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -208,12 +210,12 @@ export class SimpleSSETransport {
       // which handles all MCP protocol messages through the SDK
       return await this.weatherServer.processMessage(message);
     } catch (error) {
-      logger.error('Error processing MCP message', { 
-        error: (error as Error).message, 
+      logger.error('Error processing MCP message', {
+        error: (error as Error).message,
         method: message.method,
-        clientId 
+        clientId,
       });
-      
+
       return {
         jsonrpc: '2.0',
         error: {
@@ -275,7 +277,7 @@ export class SimpleSSETransport {
         logger.error('Error closing client', { clientId, error: (error as Error).message });
       }
     }
-    
+
     this.clients.clear();
 
     // Close HTTP server
@@ -298,3 +300,4 @@ export class SimpleSSETransport {
     };
   }
 }
+
