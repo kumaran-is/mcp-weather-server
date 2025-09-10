@@ -531,21 +531,6 @@ npm test
 npm run test:coverage
 ```
 
-**Run Chaos Engineering Tests** (Safe load testing with system monitoring)
-```bash
-npm run test:chaos
-```
-
-**Run Resilience Validation** (Validates all resilience patterns)
-```bash
-npm run test:resilience
-```
-
-**Run Safe Load Test** (Capacity-aware performance testing)
-```bash
-npm run test:load
-```
-
 #### HTTP Transport Testing
 
 **Start Server and Run Full Test Suite**
@@ -749,6 +734,78 @@ services:
 - **Rate Limiting**: Built-in request throttling
 - **HTTPS**: SSL/TLS support in production
 - **No API Keys**: Uses free Open-Meteo API (no credentials needed)
+
+## 📊 Session Management (HTTP Transport)
+
+The HTTP transport includes a sophisticated session management system for handling stateful connections over HTTP/SSE:
+
+### Session Manager Components
+
+#### 1. **Session Identification**
+- Generates unique UUID v4 session IDs for each client
+- Session ID transmitted via `Mcp-Session-Id` header
+- Sessions persist across multiple HTTP requests
+
+#### 2. **Client Connection Registry**
+```typescript
+private clients: Map<string, ClientConnection> = new Map();
+```
+- Maintains active SSE connections mapped by session ID
+- Tracks response objects for real-time message delivery
+- Enables targeted notifications to specific clients
+
+#### 3. **Message Queue System**
+```typescript
+private messageQueues: Map<string, unknown[]> = new Map();
+```
+- **In-memory message buffering** for disconnected clients
+- Messages queued when client temporarily offline
+- Automatic delivery when client reconnects with same session ID
+- Supports resumable connections via `Last-Event-Id` header
+
+#### 4. **Connection Lifecycle**
+- **Session Creation**: New UUID generated on first request without session ID
+- **Keep-Alive**: Maintains persistent SSE connections for real-time updates
+- **Graceful Disconnection**: Automatic cleanup on client disconnect
+- **Explicit Termination**: DELETE request ends session and clears queues
+
+### Message Queueing Behavior
+
+**When Messages are Queued:**
+- Client connection lost (network interruption)
+- Client not yet established SSE stream
+- Server needs to send notification to offline client
+
+**Queue Limitations:**
+⚠️ **Important**: Messages are stored in-memory only
+- Lost on server restart
+- No persistence to disk/database
+- Limited by available RAM
+- No built-in size limits or TTL
+
+**Queue Cleanup Triggers:**
+1. Client disconnects normally (SSE stream closes)
+2. Connection error occurs
+3. Session explicitly terminated (DELETE request)
+4. Server shutdown
+
+### Session Recovery Flow
+
+1. Client disconnects unexpectedly
+2. Server queues subsequent messages for that session
+3. Client reconnects with same `Mcp-Session-Id`
+4. Client provides `Last-Event-Id` header (optional)
+5. Server delivers all queued messages
+6. Normal SSE stream resumes
+
+### Production Considerations
+
+For production deployments, consider:
+- Adding Redis/database for persistent message storage
+- Implementing queue size limits and message TTL
+- Setting session timeout policies
+- Adding metrics for queue depths and session counts
+- Implementing distributed session storage for multi-server deployments
 
 ## 🤝 Contributing
 
