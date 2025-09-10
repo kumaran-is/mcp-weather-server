@@ -116,7 +116,7 @@ export async function main() {
       });
 
       // Add health check endpoint
-      fastify.get('/health', async (request, reply) => {
+      fastify.get('/health', async (_request, reply) => {
         return reply.send({
           status: 'healthy',
           timestamp: new Date().toISOString(),
@@ -138,16 +138,42 @@ export async function main() {
       // Graceful shutdown
       const shutdown = async () => {
         logger.info('Shutting down gracefully');
-        await fastify.close();
+        
+        // Stop metrics collection
+        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics.js');
+        streamingMetricsCollector.cleanup();
+        
         // Close all transports
         for (const transport of Object.values(transports)) {
           await transport.close();
         }
-        process.exit(0);
+        
+        // Close Fastify server
+        await fastify.close();
+        
+        // Give a moment for cleanup
+        setTimeout(() => {
+          logger.info('Shutdown complete');
+          process.exit(0);
+        }, 100);
       };
 
       process.on('SIGTERM', shutdown);
       process.on('SIGINT', shutdown);
+      
+      // Prevent multiple shutdown attempts
+      let shutdownInProgress = false;
+      const safeShutdown = async () => {
+        if (!shutdownInProgress) {
+          shutdownInProgress = true;
+          await shutdown();
+        }
+      };
+      
+      process.removeAllListeners('SIGTERM');
+      process.removeAllListeners('SIGINT');
+      process.on('SIGTERM', safeShutdown);
+      process.on('SIGINT', safeShutdown);
 
     } else {
       logger.info('Using stdio transport');
@@ -170,7 +196,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   logger.fatal('Unhandled rejection in main process', { reason: (reason as Error).message });
   process.exit(1);
 });

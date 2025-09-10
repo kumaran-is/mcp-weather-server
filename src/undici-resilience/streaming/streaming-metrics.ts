@@ -91,6 +91,7 @@ export class StreamingMetricsCollector extends EventEmitter {
   private alertConfig: AlertConfig;
   private lastAlertTime = 0;
   private alertCooldown = 60000; // 1 minute
+  private metricsInterval: NodeJS.Timeout | null = null;
 
   constructor(alertConfig: AlertConfig = {
     enabled: true,
@@ -562,7 +563,7 @@ export class StreamingMetricsCollector extends EventEmitter {
    * Start periodic metrics collection
    */
   private startMetricsCollection(): void {
-    setInterval(() => {
+    this.metricsInterval = setInterval(() => {
       const memUsage = process.memoryUsage();
       this.updateResourceMetrics(
         (memUsage.heapUsed / memUsage.heapTotal) * 100,
@@ -570,6 +571,17 @@ export class StreamingMetricsCollector extends EventEmitter {
         0  // Queue length would come from streaming handlers
       );
     }, 30000); // Update every 30 seconds
+  }
+
+  /**
+   * Stop metrics collection and cleanup
+   */
+  public cleanup(): void {
+    if (this.metricsInterval) {
+      clearInterval(this.metricsInterval);
+      this.metricsInterval = null;
+    }
+    this.removeAllListeners();
   }
 }
 

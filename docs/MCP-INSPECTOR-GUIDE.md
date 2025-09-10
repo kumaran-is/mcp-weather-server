@@ -57,14 +57,19 @@ npx @modelcontextprotocol/inspector --version
 **Step-by-Step Instructions:**
 
 1. **No server to start** (Inspector will spawn the process)
-2. **Open terminal** in project directory
-3. **Run Inspector:**
-   ```bash
-   cd /path/to/mcp-weather-server
-   npx @modelcontextprotocol/inspector stdio "npx tsx src/server.ts"
-   ```
-4. **Browser opens** automatically at `http://localhost:5173`
-5. **Connection is automatic** (no connect button needed)
+2. **Open MCP Inspector** in your browser
+3. **Configure the connection:**
+   - ✅ **Transport Type**: Select `Stdio` (not SSE or HTTP)
+   - ✅ **Command**: Enter `npx`
+   - ✅ **Arguments**: Add `tsx` and `src/server.ts` (each on separate line)
+   - ✅ **Working Directory**: `/path/to/mcp-weather-server`
+   - ✅ **Environment Variables** (optional): `MCP_TRANSPORT=stdio`
+
+![MCP Inspector Stdio Configuration](mcp-inspector-stdio.png)
+*MCP Inspector configuration for stdio transport*
+
+4. **Click "Connect"** button
+5. **Connection is automatic** (server process spawns)
 6. **Test tools** immediately available
 
 ### Stdio vs HTTP Transport Comparison
@@ -121,20 +126,26 @@ npx @modelcontextprotocol/inspector stdio "npx tsx src/server.ts"
 MCP_TRANSPORT=stdio LOG_LEVEL=debug mcp-inspector stdio "npx tsx src/server.ts"
 ```
 
-**Method 2 - Using Inspector UI:**
+**Method 2 - Using Inspector UI (Recommended):**
 
-1. Open MCP Inspector in browser (`http://localhost:5173`)
-2. Click "New Connection"
+1. Open MCP Inspector in browser (`http://localhost:5173` or `http://localhost:6274`)
+2. Click "New Connection" or use the connection form
 3. Configure stdio connection:
-   - **Transport Type**: Select `Stdio`
-   - **Command**: `npx tsx src/server.ts`
+   - **Transport Type**: Select `Stdio` ⚠️ (NOT "SSE" or "HTTP")
+   - **Command**: `npx`
+   - **Arguments**: 
+     ```
+     tsx
+     src/server.ts
+     ```
+     (Enter each argument on a separate line)
    - **Working Directory**: `/path/to/mcp-weather-server`
    - **Environment Variables** (optional):
      ```
      MCP_TRANSPORT=stdio
      LOG_LEVEL=debug
      ```
-   - Click "Connect"
+4. Click "Connect" button
 
 ### Step 3: Inspector Interface for Stdio
 
