@@ -198,7 +198,7 @@ You should see:
 
 ### Step 3: Launch MCP Inspector for HTTP
 
-In a new terminal:
+**Method 1 - Using Command Line:**
 
 ```bash
 # Using MCP Inspector with HTTP endpoint
@@ -206,33 +206,63 @@ mcp-inspector http http://localhost:8080/mcp
 
 # Or with npx
 npx @modelcontextprotocol/inspector http http://localhost:8080/mcp
+```
 
-# With custom headers if needed
-mcp-inspector http http://localhost:8080/mcp \
-  --header "Authorization: Bearer token" \
-  --header "X-Custom-Header: value"
+**Method 2 - Using Inspector UI (Recommended):**
+
+1. Open MCP Inspector in your browser (`http://localhost:5173`)
+2. Click "New Connection" or "Connect"
+3. Configure the connection settings:
+   - **Transport Type**: Select `Streamable HTTP` ⚠️ (NOT plain "HTTP")
+   - **URL**: Enter exactly `http://localhost:8080/mcp` (must include `/mcp` path)
+   - Click the "Connect" button
+
+![MCP Inspector Configuration](mcp-inspector.png)
+*MCP Inspector showing correct Streamable HTTP transport configuration*
+
+**Critical Configuration:**
+```
+✅ Transport Type: Streamable HTTP (supports SSE streaming)
+✅ URL: http://localhost:8080/mcp (include /mcp path)
+❌ NOT: HTTP (lacks streaming support)
+❌ NOT: http://localhost:8080 (missing /mcp endpoint)
 ```
 
 ### Step 4: Inspector Interface for HTTP
 
-Open browser to `http://localhost:5173`
+Once connected successfully, you'll see:
+- **Connection Status**: "Connected" with green indicator
+- **Transport**: Shows "Streamable HTTP"
+- **Session ID**: Auto-generated UUID (managed by Inspector)
+- **Tools Available**: All 3 weather tools listed
+- **SSE Stream**: Active for real-time notifications
 
-The interface will show:
-- Connection status
-- Session ID (automatically managed)
-- SSE stream status
+### Step 5: Verify Successful Connection
 
-### Step 5: Test HTTP Transport Features
+After connecting with `Streamable HTTP` transport, verify:
 
-1. **Initialize Session:**
-   - Click "Initialize"
-   - Note the Session ID in response headers
-   - Verify SSE stream establishes
+1. **Tools Tab Shows 3 Tools:**
+   - `get_current_weather` - Get current weather for a city
+   - `get_weather_forecast` - Get weather forecast (1-7 days)  
+   - `retrieve_weather_context` - Get weather info with AI context
 
-2. **Test Tools:** (Same as stdio)
-   - List tools
-   - Execute weather queries
-   - Verify responses
+2. **Connection Indicator:**
+   - Green "Connected" status
+   - Transport shows "Streamable HTTP"
+   - URL shows `http://localhost:8080/mcp`
+
+### Step 6: Test HTTP Transport Features
+
+1. **Test Current Weather:**
+   - Click on `get_current_weather` tool
+   - Enter parameters: `{"city": "London"}`
+   - Click "Execute"
+   - Verify weather data is returned
+
+2. **Test Forecast:**
+   - Click on `get_weather_forecast` tool
+   - Enter parameters: `{"city": "Tokyo", "days": 3}`
+   - Execute and verify forecast data
 
 3. **Test Session Persistence:**
    - Note current session ID

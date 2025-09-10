@@ -22,6 +22,13 @@ This guide provides complete instructions for integrating and using the MCP Weat
 
 ## Configuration
 
+### ⚠️ IMPORTANT: Transport Limitations
+
+**Cline ONLY supports stdio transport.** HTTP/SSE transport is NOT supported by Cline.
+
+- ✅ **Use**: `cline_mcp_settings.json` (stdio transport)
+- ❌ **DON'T Use**: `cline_mcp_settings_http.json` (HTTP not supported by Cline)
+
 ### Step 1: Locate Cline MCP Settings
 
 The Cline MCP settings file is located at:
@@ -31,14 +38,9 @@ The Cline MCP settings file is located at:
 
 ### Step 2: Add Weather Server Configuration
 
-**Option 1: Copy from Example Files**
+**Use ONLY the stdio configuration:**
 
-We've provided example configuration files in the `docs/agent_mcp_setting/` directory:
-
-- **`cline_mcp_settings.json`** - Stdio transport (recommended for local development)
-- **`cline_mcp_settings_http.json`** - HTTP/SSE transport (for remote connections)
-
-Copy the contents of the appropriate file to your VS Code settings.
+Copy from `docs/agent_mcp_setting/cline_mcp_settings.json` to your VS Code settings.
 
 **Option 2: Manual Configuration**
 
