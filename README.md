@@ -118,7 +118,6 @@ mcp-weather-server/
 │   │   │   └── metrics.ts         # Performance metrics collection
 │   │   ├── logger.ts              # Resilience layer logging
 │   │   ├── index.ts               # Package exports
-│   │   └── README.md              # Resilience documentation
 │   ├── types.ts                   # TypeScript type definitions
 │   ├── logger.ts                  # Structured logging with Pino
 │   ├── weather-service.ts         # Open-Meteo API integration
@@ -126,30 +125,12 @@ mcp-weather-server/
 │   ├── server.ts                  # Application entry point
 │   ├── *.spec.ts                  # Unit test files
 ├── docs/
-│   ├── agent_mcp_setting/         # AI agent configuration
-│   │   ├── cline_mcp_settings.json      # Cline stdio config
-│   │   ├── cline_mcp_settings_http.json # Cline HTTP config
-│   │   ├── CLINE-INTEGRATION.md         # Cline setup guide
-│   │   └── README.md                    # Configuration documentation
-│   ├── TESTING.md                 # Comprehensive testing guide
-│   ├── DOCKER-DEPLOYMENT.md       # Docker deployment guide
-│   ├── SEQUENCE-DIAGRAM-VALIDATION.md   # Architecture diagrams
-│   └── mcp_weather.postman_collection.json # Postman collection
-├── memory-bank/                   # Project context and documentation
-│   ├── projectbrief.md           # Project overview
-│   ├── techContext.md            # Technical context
-│   ├── systemPatterns.md         # Design patterns
-│   ├── productContext.md         # Product requirements
-│   ├── progress.md               # Development progress
-│   └── activeContext.md          # Current context
+├── memory-bank/                  # Cline Memory - Project context and documentation
 ├── dist/                          # Compiled JavaScript output
 ├── test-results/                  # Test execution reports
-├── node_modules/                  # Dependencies
 ├── .env.example                   # Environment variables template
 ├── .env.production.example        # Production environment template
-├── .gitignore                     # Git ignore rules
 ├── package.json                   # Project dependencies
-├── package-lock.json              # Dependency lock file
 ├── tsconfig.json                  # TypeScript configuration
 ├── vitest.config.ts               # Test framework configuration
 ├── eslint.config.js               # Linting rules
