@@ -44,7 +44,7 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
     - [Logging](#logging)
     - [Health Checks](#health-checks)
     - [Metrics](#metrics)
-  - [� Security](#-security)
+  - [🔒 Security](#-security)
   - [📊 Session Management (HTTP Transport)](#-session-management-http-transport)
     - [Session Manager Components](#session-manager-components)
       - [1. **Session Identification**](#1-session-identification)
@@ -374,21 +374,7 @@ npm start
 ```
 
 #### Docker
-
-**Build Docker Image**
-```bash
-docker build -t mcp-weather-server .
-```
-
-**Run Docker Container**
-```bash
-docker run -p 8080:8080 mcp-weather-server
-```
-
-**Run with Docker Compose**
-```bash
-docker-compose up
-```
+Refer **[DOCKER-DEPLOYMENT.md](docs/DOCKER-DEPLOYMENT.md)**
 
 ## 🔧 Configuration
 
