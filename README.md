@@ -504,14 +504,14 @@ npm run http
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 ```
 
-For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **docs/[TESTING.md](docs/TESTING.md)**.
+For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[docs/TESTING.md](docs/TESTING.md)**.
 
 #### Postman Testing
 
 **Quick Import:**
 1. Start the server: `npm run http`
 2. Open Postman and click "Import"
-3. Import the file `docs/mcp_weather.postman_collection.json`
+3. Import the file **[docs/mcp_weather.postman_collection.json](docs/mcp_weather.postman_collection.json)**
 4. All requests are pre-configured with proper headers and variables!
 
 ## 🔌 Integration Examples
