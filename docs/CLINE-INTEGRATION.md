@@ -33,10 +33,10 @@ The Cline MCP settings file is located at:
 
 **Option 1: Copy from Example Files**
 
-We've provided example configuration files for both transport methods:
+We've provided example configuration files in the `docs/agent_mcp_setting/` directory:
 
-- **`cline_mcp_settings.json`** - Stdio transport (recommended for development)
-- **`cline_mcp_settings_http.json`** - HTTP transport (recommended for production)
+- **`cline_mcp_settings.json`** - Stdio transport (recommended for local development)
+- **`cline_mcp_settings_http.json`** - HTTP/SSE transport (for remote connections)
 
 Copy the contents of the appropriate file to your VS Code settings.
 
@@ -54,12 +54,14 @@ Add the following configuration to your `cline_mcp_settings.json`:
         "retrieve_weather_context"
       ],
       "disabled": false,
-      "timeout": 30,
+      "timeout": 30000,
       "type": "stdio",
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/PATH/TO/YOUR/mcp-weather-server/dist/server.js"
+        "tsx",
+        "src/server.ts"
       ],
+      "cwd": "/PATH/TO/YOUR/mcp-weather-server",
       "env": {
         "MCP_TRANSPORT": "stdio",
         "LOG_LEVEL": "info"
@@ -99,8 +101,8 @@ For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use thi
         "retrieve_weather_context"
       ],
       "disabled": false,
-      "timeout": 30,
-      "type": "streamableHttp",
+      "timeout": 30000,
+      "type": "sse",
       "url": "http://localhost:8080/mcp",
       "headers": {
         "Content-Type": "application/json",
@@ -123,8 +125,8 @@ For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use thi
         "retrieve_weather_context"
       ],
       "disabled": false,
-      "timeout": 30,
-      "type": "streamableHttp",
+      "timeout": 30000,
+      "type": "sse",
       "url": "https://your-remote-server.com:8080/mcp",
       "headers": {
         "Content-Type": "application/json",
@@ -160,18 +162,19 @@ For **HTTP transport** (requires Cline with StreamableHTTP MCP support), use thi
 - ✅ **Production-ready**: Better for long-running deployments
 - ✅ **Monitoring**: Built-in health checks and metrics
 
-### Step 5: Verify Server Build
+### Step 5: Verify Server Setup
 
-Ensure the MCP Weather Server is built:
+Ensure the MCP Weather Server dependencies are installed:
 
 ```bash
 cd /path/to/mcp-weather-server
-npm run build
+npm install
+# The server will run directly from TypeScript using tsx
 ```
 
 ## Installation & Setup
 
-### Build the Server
+### Setup the Server
 
 ```bash
 # Navigate to your MCP Weather Server directory
@@ -180,18 +183,16 @@ cd /path/to/mcp-weather-server
 # Install dependencies
 npm install
 
-# Build the project
-npm run build
+# For TypeScript execution (no build needed)
+# The server will run directly from TypeScript files
 ```
 
 ### Update Configuration Path
 
-In your `cline_mcp_settings.json`, update the `args` path:
+In your `cline_mcp_settings.json`, update the `cwd` path:
 
 ```json
-"args": [
-  "/Users/yourusername/path/to/mcp-weather-server/dist/server.js"
-]
+"cwd": "/Users/yourusername/path/to/mcp-weather-server"
 ```
 
 ### Restart Cline
@@ -375,10 +376,11 @@ echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 #### Verify Configuration
 ```bash
 # Check if server file exists
-ls -la /path/to/mcp-weather-server/dist/server.js
+ls -la /path/to/mcp-weather-server/src/server.ts
 
 # Test server startup
-node /path/to/mcp-weather-server/dist/server.js
+cd /path/to/mcp-weather-server
+npx tsx src/server.ts
 ```
 
 #### Cline Debug Mode
@@ -452,7 +454,7 @@ Run alongside other MCP servers:
 ### Cline Settings
 ```json
 {
-  "timeout": 20,  // Shorter timeout for faster responses
+  "timeout": 20000,  // 20 seconds for faster responses
   "autoApprove": ["get_current_weather"] // Quick current weather
 }
 ```
@@ -478,6 +480,8 @@ I'm considering a trip to Vancouver in March. What's the typical weather like?
 
 - **Issues**: [GitHub Issues](https://github.com/kumaran-is/mcp-weather-server/issues)
 - **Documentation**: [TESTING.md](TESTING.md) for detailed testing
+- **Test Results**: [MCP-TEST-RESULTS.md](MCP-TEST-RESULTS.md) for validation results
+- **Example Configs**: See `docs/agent_mcp_setting/` directory
 - **Configuration**: Check Cline MCP settings format
 - **Logs**: Enable debug logging for troubleshooting
 

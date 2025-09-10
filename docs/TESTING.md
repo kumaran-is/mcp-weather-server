@@ -18,9 +18,9 @@ This guide provides comprehensive instructions for testing the MCP Weather Serve
 
 **One-Click Setup:**
 1. Start the server: `npm run http`
-2. Open Postman → Import → Raw Text
-3. Copy and paste the entire contents of `MCP-Weather-Server.postman_collection.json`
-4. All 12 requests are pre-configured with proper headers, variables, and test scripts!
+2. Open Postman → Import → File
+3. Select `docs/mcp_weather.postman_collection.json`
+4. All requests are pre-configured with proper headers, variables, and test scripts!
 
 ### Manual Setup
 
@@ -227,7 +227,7 @@ npm run test:coverage
 
 **Run Specific Test File**
 ```bash
-npm test -- mcp-server.test.ts
+npm test -- mcp-server.spec.ts
 ```
 
 **Run Tests in Watch Mode**
@@ -237,8 +237,11 @@ npm run test:watch
 
 ### Test Files Available
 
-- `src/__tests__/mcp-server.test.ts` - MCP server functionality
-- `src/__tests__/weather-service.test.ts` - Weather API integration
+- `src/mcp-server.spec.ts` - MCP server functionality tests
+- `src/weather-service.spec.ts` - Weather API integration tests
+- `src/server.spec.ts` - Server initialization tests
+- `src/transports/http-transport.spec.ts` - HTTP transport tests
+- `src/logger.spec.ts` - Logging functionality tests
 
 ## 4. Environment Variables for Testing
 
@@ -292,12 +295,17 @@ LOG_PRETTY=true npm run http
 npm run http
 ```
 
-**Run Multiple Clients (in separate terminals)**
+**Run Safe Load Test (Capacity-Aware)**
 ```bash
-for i in {1..3}; do
-  npm run client &
-done
+npm run test:load
 ```
+
+This will:
+- Check system capacity before testing
+- Automatically adjust load to safe limits
+- Monitor system resources during tests
+- Stop if system becomes overloaded
+- Generate detailed performance metrics
 
 ### Error Testing
 
@@ -350,9 +358,20 @@ curl -X DELETE http://localhost:8080/mcp \
 LOG_LEVEL=debug npm run http
 ```
 
-**Check Server Stats**
+**Check Server Health**
 ```bash
-curl http://localhost:8080/stats
+curl http://localhost:8080/health
+```
+
+Response:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-09-10T00:00:00.000Z",
+  "version": "1.0.0",
+  "transport": "http",
+  "activeSessions": 0
+}
 ```
 
 ### Client Debugging
@@ -381,6 +400,30 @@ echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 curl -f http://localhost:8080/health || echo "Server not responding"
 ```
 
+**Chaos Engineering Tests** (Safe load testing)
+```bash
+npm run test:chaos
+```
+
+**Resilience Pattern Validation**
+```bash
+npm run test:resilience
+```
+
+**Performance Load Testing**
+```bash
+npm run test:load
+```
+
+**Run MCP Protocol Tests**
+```bash
+# Test HTTP transport
+npx tsx src/test/test-mcp-http.ts
+
+# Test stdio transport
+npx tsx src/test/test-mcp-stdio.ts
+```
+
 ## Available Tools
 
 The MCP Weather Server provides three main tools:
@@ -406,7 +449,9 @@ The MCP Weather Server provides three main tools:
 1. **Port already in use**: Change `MCP_HTTP_PORT` environment variable
 2. **CORS errors**: Add your origin to `ALLOWED_ORIGINS`
 3. **Connection refused**: Ensure server is running
-4. **Invalid responses**: Check MCP protocol version and JSON-RPC format
+4. **Invalid responses**: Check MCP protocol version (2025-06-18) and JSON-RPC format
+5. **Session errors**: Server returns SSE format, ensure Accept header includes `text/event-stream`
+6. **TypeScript errors**: Ensure Node.js 22+ and tsx are installed
 
 ### Debug Mode
 
@@ -415,4 +460,27 @@ The MCP Weather Server provides three main tools:
 LOG_LEVEL=trace MCP_TRANSPORT=http npm run dev
 ```
 
-This comprehensive testing setup allows you to verify both transport mechanisms work correctly and handle various scenarios including error conditions, session management, and concurrent clients.
+## Test Results Documentation
+
+For comprehensive test validation results, see:
+- **[MCP-TEST-RESULTS.md](MCP-TEST-RESULTS.md)** - Complete protocol validation results
+- **[PHASE-4-IMPLEMENTATION.md](PHASE-4-IMPLEMENTATION.md)** - Chaos engineering test results
+
+## Advanced Testing Features
+
+### Resilience Pattern Testing
+The server includes advanced resilience patterns that are validated:
+- **Circuit Breaker**: Opens after failures, prevents cascades
+- **Retry Strategy**: Exponential backoff with jitter
+- **Rate Limiting**: Request throttling
+- **Bulkhead**: Pool isolation
+- **Backpressure**: Memory-bounded streaming
+
+### System Capacity Monitoring
+All load tests include:
+- Real-time CPU and memory monitoring
+- Automatic load reduction when system under pressure
+- Safe thresholds (< 70% CPU, < 80% memory)
+- Emergency stop on critical conditions
+
+This comprehensive testing setup ensures both transport mechanisms work correctly, resilience patterns function as designed, and the system maintains stability under various load conditions.

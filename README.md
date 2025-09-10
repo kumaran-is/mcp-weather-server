@@ -69,13 +69,14 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 
 - **🌤️ Real-time Weather**: Current weather conditions with temperature, humidity, wind speed
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
-- **🤖 AI Agent Support**: `retrieve_weather_context` tool for AI workflows
-- **🔒 Security First**: Input validation, Origin checks, CORS support
-- **📊 Observability**: Structured logging with Pino, performance metrics
-- **🚀 Production Ready**: Docker containerization, health checks, graceful shutdown
-- **🔄 Dual Transport**: Stdio for local AI assistants, HTTP for remote clients
-- **⚡ High Performance**: Connection pooling, request caching, timeout handling
-- **🧪 Well Tested**: 80%+ test coverage with Vitest
+- **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
+- **🔄 Dual Transport**: Stdio for local AI assistants, HTTP/SSE for remote clients
+- **🛡️ Resilience Patterns**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
+- **⚡ High Performance**: Undici-based HTTP client with connection pooling and streaming
+- **🔒 Security First**: Input validation, Origin checks, CORS support, session management
+- **📊 Observability**: Structured logging with Pino, real-time metrics, health monitoring
+- **🧪 Comprehensive Testing**: Unit tests, integration tests, chaos engineering, load testing
+- **🚀 Production Ready**: Docker containerization, graceful shutdown, error recovery
 
 ## 🛠️ Technology Stack
 
@@ -92,23 +93,32 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 | **uuid** | `~9.0.1` | RFC-compliant UUID generation | [GitHub](https://github.com/uuidjs/uuid) |
 | **Open-Meteo API** | N/A | Free weather data provider | [Homepage](https://open-meteo.com/) |
 
-> **Note**: Undici provides optimal performance for MCP servers with ~2-3x faster HTTP requests, excellent connection pooling, and streaming support essential for LLM communications.
+> **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
 
 ## 🏗️ Architecture
 
 ```
 mcp-weather-server/
 ├── src/
-│   ├── config/           # Centralized configuration
-│   ├── transports/       # HTTP & stdio transport implementations
-│   ├── types.ts          # TypeScript type definitions
-│   ├── logger.ts         # Structured logging with Pino
-│   ├── weather-service.ts # Open-Meteo API integration
-│   ├── mcp-server.ts     # MCP protocol implementation
-│   └── server.ts         # Application entry point
-├── docs/                 # Documentation
-├── Dockerfile           # Containerization
-└── docker-compose.yml   # Orchestration
+│   ├── config/              # Centralized configuration
+│   ├── transports/          # HTTP & stdio transport implementations
+│   ├── undici-resilience/   # Advanced HTTP client with resilience patterns
+│   ├── chaos/               # Chaos engineering & fault injection
+│   ├── benchmarks/          # Performance testing framework
+│   ├── test/                # MCP protocol test clients
+│   ├── types.ts             # TypeScript type definitions
+│   ├── logger.ts            # Structured logging with Pino
+│   ├── weather-service.ts   # Open-Meteo API integration
+│   ├── mcp-server.ts        # MCP protocol implementation
+│   └── server.ts            # Application entry point
+├── docs/
+│   ├── agent_mcp_setting/   # Cline configuration examples
+│   ├── TESTING.md           # Comprehensive testing guide
+│   ├── CLINE-INTEGRATION.md # Cline setup instructions
+│   └── PHASE-4-IMPLEMENTATION.md # Chaos testing documentation
+├── test-results/            # Test execution reports
+├── Dockerfile               # Containerization
+└── docker-compose.yml       # Orchestration
 ```
 
 ### System Flow
@@ -467,6 +477,21 @@ npm test
 npm run test:coverage
 ```
 
+**Run Chaos Engineering Tests** (Safe load testing with system monitoring)
+```bash
+npm run test:chaos
+```
+
+**Run Resilience Validation** (Validates all resilience patterns)
+```bash
+npm run test:resilience
+```
+
+**Run Safe Load Test** (Capacity-aware performance testing)
+```bash
+npm run test:load
+```
+
 #### HTTP Transport Testing
 
 **Start Server and Run Full Test Suite**
@@ -498,7 +523,7 @@ For detailed testing scenarios including manual curl commands, environment confi
 **Quick Import (Recommended):**
 1. Start the server: `npm run http`
 2. Open Postman and click "Import"
-3. Copy and paste the contents of `MCP-Weather-Server.postman_collection.json`
+3. Import the file `docs/mcp_weather.postman_collection.json`
 4. All requests are pre-configured with proper headers and variables!
 
 **Or create manually:**
@@ -563,10 +588,11 @@ For complete Postman setup with all endpoints, request examples, and collection 
         "retrieve_weather_context"
       ],
       "disabled": false,
-      "timeout": 30,
+      "timeout": 30000,
       "type": "stdio",
-      "command": "node",
-      "args": ["/path/to/mcp-weather-server/dist/server.js"],
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"],
+      "cwd": "/path/to/mcp-weather-server",
       "env": {
         "MCP_TRANSPORT": "stdio",
         "LOG_LEVEL": "info"
@@ -576,7 +602,7 @@ For complete Postman setup with all endpoints, request examples, and collection 
 }
 ```
 
-**Example Configuration Files**: See `cline_mcp_settings.json` and `cline_mcp_settings_http.json` for complete examples.
+**Example Configuration Files**: See `docs/agent_mcp_setting/` directory for complete Cline configuration examples for both stdio and HTTP transports.
 
 **Usage**: Ask Cline natural language questions like "What's the weather in London?" or "Should I bring an umbrella to Paris?"
 
@@ -717,7 +743,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
 - **Cline Integration**: [CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md) - Complete Cline setup guide
-- **Phase 4 Plan**: [PHASE-4-PLAN.md](docs/PHASE-4-PLAN.md) - Chaos Engineering & Performance Benchmarking roadmap
+- **Phase 4 Implementation**: [PHASE-4-IMPLEMENTATION.md](docs/PHASE-4-IMPLEMENTATION.md) - Chaos Engineering & Performance Testing (Complete)
+- **MCP Test Results**: [MCP-TEST-RESULTS.md](docs/MCP-TEST-RESULTS.md) - Comprehensive test validation results
 
 ## 🧪 Postman Testing Guide
 

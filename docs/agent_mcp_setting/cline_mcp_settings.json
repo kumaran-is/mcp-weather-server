@@ -1,22 +1,28 @@
 {
   "mcpServers": {
     "weather": {
-      "autoApprove": [
-        "get_current_weather",
-        "get_weather_forecast",
-        "retrieve_weather_context"
-      ],
-      "disabled": false,
-      "timeout": 30,
-      "type": "stdio",
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/PATH/TO/YOUR/mcp-weather-server/dist/server.js"
+        "tsx",
+        "src/server.ts"
       ],
+      "cwd": "/Users/kumaraniyyasamysrinivasan/mydrive/personal/mcp-weather-server",
       "env": {
         "MCP_TRANSPORT": "stdio",
-        "LOG_LEVEL": "info"
-      }
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      },
+      "type": "stdio",
+      "disabled": false,
+      "autoApprove": [
+        "get_current_weather",
+        "get_weather_forecast", 
+        "retrieve_weather_context"
+      ],
+      "alwaysAllow": [
+        "tools/list"
+      ],
+      "timeout": 30000
     }
   }
 }

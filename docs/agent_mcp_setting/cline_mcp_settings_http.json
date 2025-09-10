@@ -1,20 +1,23 @@
 {
   "mcpServers": {
-    "weather": {
+    "weather-http": {
+      "url": "http://localhost:8080/mcp",
+      "type": "sse",
+      "transport": {
+        "type": "sse",
+        "baseUrl": "http://localhost:8080",
+        "endpoint": "/mcp"
+      },
+      "disabled": false,
       "autoApprove": [
         "get_current_weather",
         "get_weather_forecast",
         "retrieve_weather_context"
       ],
-      "disabled": false,
-      "timeout": 30,
-      "type": "streamableHttp",
-      "url": "http://localhost:8080/mcp",
-      "headers": {
-        "Content-Type": "application/json",
-        "MCP-Protocol-Version": "2025-06-18",
-        "Accept": "application/json, text/event-stream"
-      }
+      "alwaysAllow": [
+        "tools/list"
+      ],
+      "timeout": 30000
     }
   }
 }
