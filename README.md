@@ -103,9 +103,6 @@ mcp-weather-server/
 │   ├── config/              # Centralized configuration
 │   ├── transports/          # HTTP & stdio transport implementations
 │   ├── undici-resilience/   # Advanced HTTP client with resilience patterns
-│   ├── chaos/               # Chaos engineering & fault injection
-│   ├── benchmarks/          # Performance testing framework
-│   ├── test/                # MCP protocol test clients
 │   ├── types.ts             # TypeScript type definitions
 │   ├── logger.ts            # Structured logging with Pino
 │   ├── weather-service.ts   # Open-Meteo API integration
@@ -114,8 +111,7 @@ mcp-weather-server/
 ├── docs/
 │   ├── agent_mcp_setting/   # Cline configuration examples
 │   ├── TESTING.md           # Comprehensive testing guide
-│   ├── CLINE-INTEGRATION.md # Cline setup instructions
-│   └── PHASE-4-IMPLEMENTATION.md # Chaos testing documentation
+│   └── CLINE-INTEGRATION.md.md # Cline setup instructions
 ├── test-results/            # Test execution reports
 ├── Dockerfile               # Containerization
 └── docker-compose.yml       # Orchestration
