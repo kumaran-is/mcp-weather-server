@@ -52,6 +52,35 @@ npx @modelcontextprotocol/inspector --version
 
 ## Testing Stdio Transport
 
+### Quick Start for Stdio Testing
+
+**Step-by-Step Instructions:**
+
+1. **No server to start** (Inspector will spawn the process)
+2. **Open terminal** in project directory
+3. **Run Inspector:**
+   ```bash
+   cd /path/to/mcp-weather-server
+   npx @modelcontextprotocol/inspector stdio "npx tsx src/server.ts"
+   ```
+4. **Browser opens** automatically at `http://localhost:5173`
+5. **Connection is automatic** (no connect button needed)
+6. **Test tools** immediately available
+
+### Stdio vs HTTP Transport Comparison
+
+| Feature | Stdio Transport | HTTP Transport |
+|---------|----------------|----------------|
+| **Server Start** | Inspector spawns it | Must start manually first |
+| **Transport Type** | Select "Stdio" | Select "Streamable HTTP" |
+| **Command** | `npx tsx src/server.ts` | Not needed |
+| **URL** | Not needed | `http://localhost:8080/mcp` |
+| **Process** | Managed by Inspector | Independent process |
+| **Connection** | Automatic | Click "Connect" |
+| **Best For** | Local development | Remote/production |
+
+## Testing Stdio Transport
+
 ### Step 1: Prepare the Server
 
 1. **Navigate to project directory:**
@@ -76,8 +105,13 @@ grep MCP_TRANSPORT .env
 
 ### Step 2: Launch MCP Inspector for Stdio
 
+**Method 1 - Command Line with Full Path:**
+
 ```bash
-# Using global installation
+# Navigate to your project directory
+cd /path/to/mcp-weather-server
+
+# Launch with stdio transport
 mcp-inspector stdio "npx tsx src/server.ts"
 
 # Or using npx directly
@@ -87,15 +121,35 @@ npx @modelcontextprotocol/inspector stdio "npx tsx src/server.ts"
 MCP_TRANSPORT=stdio LOG_LEVEL=debug mcp-inspector stdio "npx tsx src/server.ts"
 ```
 
+**Method 2 - Using Inspector UI:**
+
+1. Open MCP Inspector in browser (`http://localhost:5173`)
+2. Click "New Connection"
+3. Configure stdio connection:
+   - **Transport Type**: Select `Stdio`
+   - **Command**: `npx tsx src/server.ts`
+   - **Working Directory**: `/path/to/mcp-weather-server`
+   - **Environment Variables** (optional):
+     ```
+     MCP_TRANSPORT=stdio
+     LOG_LEVEL=debug
+     ```
+   - Click "Connect"
+
 ### Step 3: Inspector Interface for Stdio
 
 Once launched, you'll see:
 ```
 🔍 MCP Inspector running on http://localhost:5173
 📡 Stdio server process started
+✅ Process spawned successfully
 ```
 
-Open your browser to `http://localhost:5173`
+**Visual Indicators:**
+- Transport shows: `Stdio`
+- Status: `Connected` (green)
+- Process: Shows PID of the server process
+- No URL field (unlike HTTP transport)
 
 ### Step 4: Test Stdio Transport Features
 
