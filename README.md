@@ -13,6 +13,7 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🛠️ Technology Stack](#️-technology-stack)
+  - [Directory Structure](#directory-structure)
   - [🏗️ Architecture](#️-architecture)
     - [System Flow](#system-flow)
       - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
@@ -89,7 +90,7 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
 
-## 🏗️ Architecture
+## Directory Structure
 
 ```
 mcp-weather-server/
@@ -110,6 +111,8 @@ mcp-weather-server/
 ├── Dockerfile               # Containerization
 └── docker-compose.yml       # Orchestration
 ```
+
+## 🏗️ Architecture
 
 ### System Flow
 
