@@ -79,6 +79,8 @@ The MCP Weather Server is built with a modern, production-ready technology stack
   "@types/uuid": "^9.0.8",                     // UUID type definitions
   "concurrently": "^8.2.2",                    // Concurrent command execution
   "eslint": "^9.9.0",                          // Code linting
+  "eventsource": "^2.0.2",                     // SSE client for testing (added in v2.2.0)
+  "node-fetch": "^3.3.2",                      // HTTP client for testing (added in v2.2.0)
   "nodemon": "^3.1.7",                         // Development auto-restart
   "tsx": "^4.19.1",                            // TypeScript execution
   "typescript": "^5.8.0",                      // TypeScript compiler
@@ -287,16 +289,17 @@ The MCP Weather Server implements three distinct transport mechanisms, each opti
 - CORS and security headers
 - Health check endpoint
 
-#### 3. SSE Transport
-**Technology**: Server-Sent Events
+#### 3. SSE Transport (Added in v2.1.0, Fixed in v2.2.0)
+**Technology**: Server-Sent Events with MCP protocol compliance
 **Port**: 8081 (configurable via MCP_SSE_PORT)
 **Use Case**: Remote Cline connections
 **Features**:
-- Lightweight bidirectional communication
-- GET for SSE stream, POST for commands
-- Automatic client ID assignment
+- MCP SSE protocol with `endpoint` event
+- GET for SSE stream, POST to unique endpoints
+- Automatic client ID in URL path
 - 30-second heartbeat for connection maintenance
-- Cross-origin support
+- Cross-origin support with CORS headers
+- Protocol version echo for compatibility
 
 ### Transport Selection Logic
 

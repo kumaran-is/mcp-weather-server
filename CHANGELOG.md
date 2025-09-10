@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-09-10
+
+### 🚀 **MINOR RELEASE: SSE Transport Protocol Fix & Docker HTTP Improvements**
+
+This release fixes critical issues with the SSE transport to ensure full Cline compatibility and improves Docker HTTP transport configuration.
+
+### Added
+- **📚 Documentation Enhancements**:
+  - Table of Contents added to `docs/TRANSPORT-STRATEGY.md`
+  - Table of Contents added to `docs/RESILIENCE_PATTERN.md`
+  - Clear warnings that SSE transport is not supported by MCP Inspector
+  - Transport compatibility matrix in MCP Inspector guide
+
+### Changed
+- **🔧 SSE Transport Protocol Compliance**:
+  - Implemented proper MCP SSE protocol with `endpoint` event
+  - Server now sends endpoint URL for client message posting
+  - Client ID extracted from URL path instead of headers
+  - Response codes updated to match MCP specification (202 for accepted)
+  - Protocol version echoed back to match client's version
+- **🐳 Docker HTTP Transport**:
+  - Fixed Fastify binding to all interfaces (0.0.0.0) for Docker containers
+  - Health endpoint now properly accessible at `/health`
+  - Docker compose configuration verified and tested
+
+### Fixed
+- **🐛 SSE Transport Bugs**:
+  - Fixed `processMessage is not a function` error
+  - Fixed incorrect type casting of Server to WeatherMCPServer
+  - Fixed client connection lifecycle management
+  - Fixed protocol version mismatch with Cline (now supports 2025-03-26)
+- **🔌 Cline Compatibility**:
+  - SSE transport now fully compatible with Cline remote connections
+  - Proper endpoint URL generation for message posting
+  - Correct event format for MCP SSE protocol
+
+### Tested
+- ✅ SSE transport successfully tested with Cline
+- ✅ HTTP transport successfully tested with MCP Inspector via Docker
+- ✅ All three transports (stdio, HTTP, SSE) verified working
+
 ## [2.1.0] - 2025-09-09
 
 ### 🚀 **MINOR RELEASE: Three-Transport Strategy with SSE Support**
