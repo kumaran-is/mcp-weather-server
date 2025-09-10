@@ -557,6 +557,13 @@ curl http://localhost:8080/health
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 ```
 
+#### MCP Inspector Testing
+
+For comprehensive testing with the official MCP Inspector tool:
+- **[MCP Inspector Guide](docs/MCP-INSPECTOR-GUIDE.md)** - Step-by-step testing with visual interface
+- Supports both stdio and HTTP transports
+- Interactive tool testing and protocol validation
+
 For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[docs/TESTING.md](docs/TESTING.md)**.
 
 #### Postman Testing
