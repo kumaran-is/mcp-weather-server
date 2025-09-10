@@ -399,9 +399,25 @@ After connecting with `Streamable HTTP` transport, verify:
 
 ## Testing SSE Transport
 
+### ⚠️ Important: SSE Transport Not Supported by MCP Inspector
+
+The Simple SSE (Server-Sent Events) transport is designed specifically for remote Cline connections and is **NOT supported by MCP Inspector**. MCP Inspector only supports:
+- **Stdio Transport**: Local process communication
+- **Streamable HTTP Transport**: Full HTTP with SSE streaming (different from our Simple SSE)
+
+To test the SSE transport, use Cline with the configuration from `docs/agent_mcp_setting/cline_mcp_settings_sse.json`.
+
+### Transport Compatibility Matrix
+
+| Transport | MCP Inspector | Cline (Local) | Cline (Remote) | LangChain |
+|-----------|--------------|---------------|----------------|-----------|
+| **Stdio** | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| **HTTP** | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **SSE** | ❌ No | ❌ No | ✅ Yes | ❌ No |
+
 ### Overview
 
-The Simple SSE (Server-Sent Events) transport is designed specifically for remote Cline connections. Unlike the HTTP transport's full-featured SSE streaming, this is a simpler implementation that's compatible with Cline's remote server support.
+The Simple SSE transport is a lightweight implementation designed exclusively for remote Cline connections. Unlike the HTTP transport's full-featured SSE streaming, this is a simpler protocol that Cline understands for remote server communication.
 
 ### Step 1: Configure for SSE
 
@@ -435,81 +451,32 @@ You should see:
 [INFO] SSE endpoint: http://localhost:8081/sse
 ```
 
-### Step 3: Launch MCP Inspector for SSE
+### Step 3: Testing SSE Transport
 
-**Method 1 - Using Command Line:**
+Since MCP Inspector doesn't support the Simple SSE transport, you have two options for testing:
+
+#### Option A: Test with Cline (Recommended)
+
+1. Configure Cline with `cline_mcp_settings_sse.json`
+2. Set URL to `http://localhost:8081/sse` (or your server IP)
+3. Test with weather queries in Cline chat
+
+#### Option B: Manual Testing with curl
 
 ```bash
-# Using MCP Inspector with SSE endpoint
-mcp-inspector sse http://localhost:8081/sse
+# Terminal 1: Connect to SSE stream
+curl -N -H "Accept: text/event-stream" http://localhost:8081/sse
 
-# Or with npx
-npx @modelcontextprotocol/inspector sse http://localhost:8081/sse
+# Terminal 2: Send test command (use client ID from Terminal 1)
+curl -X POST http://localhost:8081/sse \
+  -H "Content-Type: application/json" \
+  -H "X-SSE-Client-Id: YOUR_CLIENT_ID_HERE" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "tools/list"
+  }'
 ```
-
-**Method 2 - Using Inspector UI:**
-
-1. Open MCP Inspector in your browser
-2. Click "New Connection" or "Connect"
-3. Configure the connection settings:
-   - **Transport Type**: Select `SSE` (Simple SSE)
-   - **URL**: Enter `http://localhost:8081/sse`
-   - Click the "Connect" button
-
-### Step 4: Verify SSE Connection
-
-After connecting with SSE transport, verify:
-
-1. **Connection Status:**
-   - Green "Connected" status
-   - Transport shows "SSE"
-   - URL shows `http://localhost:8081/sse`
-
-2. **Tools Available:**
-   - `get_current_weather` - Get current weather for a city
-   - `get_weather_forecast` - Get weather forecast (1-7 days)  
-   - `retrieve_weather_context` - Get weather info with AI context
-
-3. **Bidirectional Communication:**
-   - Send commands via POST to same endpoint
-   - Receive responses via SSE stream
-   - Client ID automatically assigned
-
-### Step 5: Test SSE Transport Features
-
-1. **Test Current Weather:**
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "get_current_weather",
-       "arguments": {
-         "city": "London"
-       }
-     },
-     "id": 1
-   }
-   ```
-
-2. **Test Forecast:**
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "get_weather_forecast",
-       "arguments": {
-         "city": "Tokyo",
-         "days": 3
-       }
-     },
-     "id": 2
-   }
-   ```
-
-3. **Test Connection Stability:**
-   - Leave connection open for extended period
-   - Verify heartbeat messages keep connection alive
-   - Check automatic reconnection on disconnect
 
 ### SSE vs HTTP Transport Comparison
 
@@ -804,7 +771,7 @@ mcp-inspector test stdio "npx tsx src/server.ts" --test-file tests.json
 
 ## Summary
 
-The MCP Inspector provides comprehensive testing capabilities for both stdio and HTTP transports:
+The MCP Inspector provides comprehensive testing capabilities for stdio and HTTP transports:
 
 1. **Visual Interface** - Easy to use, no coding required
 2. **Protocol Validation** - Ensures MCP compliance
@@ -812,7 +779,15 @@ The MCP Inspector provides comprehensive testing capabilities for both stdio and
 4. **Session Management** - Automatic for HTTP
 5. **Tool Testing** - Interactive parameter input
 
-Use this guide to thoroughly test your MCP Weather Server and ensure it works correctly with any MCP-compatible client.
+### Transport Support Summary
+
+| Transport | MCP Inspector Support | Testing Method |
+|-----------|----------------------|----------------|
+| **Stdio** | ✅ Full Support | Use Inspector with process spawn |
+| **HTTP** | ✅ Full Support | Use Inspector with Streamable HTTP |
+| **SSE** | ❌ Not Supported | Test with Cline or curl |
+
+**Note**: The Simple SSE transport is specifically designed for Cline remote connections and is not compatible with MCP Inspector. Use Cline or manual curl testing for SSE transport validation.
 
 ## Resources
 

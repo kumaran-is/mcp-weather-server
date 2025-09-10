@@ -139,6 +139,17 @@ curl -X POST http://localhost:8080/mcp \
 
 ## 2. Testing with SSE Transport
 
+### ⚠️ Important: SSE Transport Not Supported by MCP Inspector
+
+The Simple SSE transport is **NOT supported by MCP Inspector**. MCP Inspector only supports:
+- **Stdio Transport**: Local process communication
+- **Streamable HTTP Transport**: Full HTTP with SSE streaming (different from our Simple SSE)
+
+To test the SSE transport, you must use:
+1. **Cline**: Configure with `docs/agent_mcp_setting/cline_mcp_settings_sse.json`
+2. **curl**: Manual testing with command-line tools
+3. **Custom clients**: Any client that supports our Simple SSE protocol
+
 ### Overview
 
 The Simple SSE (Server-Sent Events) transport is designed specifically for remote Cline connections. It provides a lightweight, bidirectional communication channel that's compatible with Cline's remote server support.

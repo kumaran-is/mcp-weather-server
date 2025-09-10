@@ -34,7 +34,29 @@ export async function main() {
     const server = weatherServer.getServer();
 
     // Choose transport based on configuration
-    if (config.server.transport === 'http') {
+    if (config.server.transport === 'sse') {
+      // Simple SSE Transport for Cline remote compatibility
+      const ssePort = config.server.ssePort || 8081;
+      logger.info('Using Simple SSE transport', { port: ssePort });
+      
+      const { SimpleSSETransport } = await import('./transports/sse-transport.js');
+      const sseTransport = new SimpleSSETransport(weatherServer);
+      await sseTransport.start();
+      
+      logger.info(`Simple SSE server started on port ${ssePort}`);
+      logger.info('Connect Cline remotely with URL: http://your-server:8081/sse');
+      
+      // Graceful shutdown
+      const shutdown = async () => {
+        logger.info('Shutting down SSE server gracefully');
+        await sseTransport.close();
+        process.exit(0);
+      };
+      
+      process.on('SIGTERM', shutdown);
+      process.on('SIGINT', shutdown);
+      
+    } else if (config.server.transport === 'http') {
       const port = config.server.httpPort;
       logger.info('Using HTTP transport', { port });
 
