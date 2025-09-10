@@ -5,6 +5,7 @@
 
 import { logger } from '../logger-pino.js';
 import { ValidationError, MCPProtocolError } from '../errors/weather-errors.js';
+import { setInterval } from 'timers';
 
 /**
  * JSON-RPC 2.0 request structure
@@ -23,6 +24,7 @@ export interface ValidationRule {
   field: string;
   required: boolean;
   type?: string;
+  // eslint-disable-next-line no-unused-vars
   validator?: (value: any) => boolean;
   message?: string;
 }
@@ -140,21 +142,21 @@ export function validateToolCallRequest(params: any): void {
 
   // Tool-specific validation
   switch (params.name) {
-    case 'get_current_weather':
-      validateWeatherToolParams(params.arguments);
-      break;
-    case 'get_forecast':
-      validateForecastToolParams(params.arguments);
-      break;
-    case 'analyze_weather_query':
-      validateAnalyzeQueryParams(params.arguments);
-      break;
-    default:
-      throw new ValidationError(
-        `Unknown tool: ${params.name}`,
-        'name',
-        params.name,
-      );
+  case 'get_current_weather':
+    validateWeatherToolParams(params.arguments);
+    break;
+  case 'get_forecast':
+    validateForecastToolParams(params.arguments);
+    break;
+  case 'analyze_weather_query':
+    validateAnalyzeQueryParams(params.arguments);
+    break;
+  default:
+    throw new ValidationError(
+      `Unknown tool: ${params.name}`,
+      'name',
+      params.name,
+    );
   }
 
   logger.debug('Tool call request validated', {
@@ -206,7 +208,7 @@ function validateForecastToolParams(args: any): void {
   // Validate days parameter if present
   if ('days' in args) {
     const days = args.days;
-    
+
     if (typeof days !== 'number') {
       throw new ValidationError(
         'Days must be a number',
@@ -283,17 +285,18 @@ export function validateHTTPHeaders(headers: any): void {
  * Sanitize user input to prevent injection attacks
  */
 export function sanitizeInput(input: string): string {
-  // Remove control characters
-  let sanitized = input.replace(/[\x00-\x1F\x7F]/g, '');
-  
+  // Remove control characters - using Unicode categories instead
+  // eslint-disable-next-line no-control-regex
+  let sanitized = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
   // Trim whitespace
   sanitized = sanitized.trim();
-  
+
   // Limit length
   if (sanitized.length > 1000) {
     sanitized = sanitized.substring(0, 1000);
   }
-  
+
   return sanitized;
 }
 
@@ -314,27 +317,27 @@ export function createValidationMiddleware(transport: 'stdio' | 'http' | 'sse') 
 
       // Method-specific validation
       switch (request.method) {
-        case 'initialize':
-          validateInitializeRequest(request.params);
-          break;
-        case 'tools/call':
-          validateToolCallRequest(request.params);
-          break;
-        case 'tools/list':
-          // No additional validation needed
-          break;
-        case 'notifications/initialized':
-          // Notification, no validation needed
-          break;
-        case 'shutdown':
-          // No additional validation needed
-          break;
-        default:
-          // Unknown methods are allowed per MCP spec, just log
-          logger.warn('Unknown method received', {
-            method: request.method,
-            ...validationContext,
-          });
+      case 'initialize':
+        validateInitializeRequest(request.params);
+        break;
+      case 'tools/call':
+        validateToolCallRequest(request.params);
+        break;
+      case 'tools/list':
+        // No additional validation needed
+        break;
+      case 'notifications/initialized':
+        // Notification, no validation needed
+        break;
+      case 'shutdown':
+        // No additional validation needed
+        break;
+      default:
+        // Unknown methods are allowed per MCP spec, just log
+        logger.warn('Unknown method received', {
+          method: request.method,
+          ...validationContext,
+        });
       }
 
       logger.debug('Request validation passed', {
@@ -382,7 +385,7 @@ export class RateLimitValidator {
     }
 
     clientData.count++;
-    
+
     if (clientData.count > this.maxRequests) {
       logger.warn('Rate limit exceeded', {
         clientId,
@@ -413,3 +416,4 @@ export const rateLimiter = new RateLimitValidator();
 
 // Cleanup interval
 setInterval(() => rateLimiter.cleanup(), 60000);
+

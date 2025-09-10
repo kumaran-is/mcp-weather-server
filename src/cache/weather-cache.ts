@@ -53,7 +53,7 @@ export class WeatherCache {
   private forecastCache: LRUCache<string, ForecastData>;
   private geocodingCache: LRUCache<string, { latitude: number; longitude: number }>;
   private config: CacheConfig;
-  
+
   // Statistics
   private stats = {
     weather: { hits: 0, misses: 0, sets: 0, deletes: 0 },
@@ -128,7 +128,7 @@ export class WeatherCache {
     try {
       const key = this.getWeatherKey(city);
       const data = this.weatherCache.get(key);
-      
+
       if (data) {
         this.stats.weather.hits++;
         logger.debug('Weather cache hit', { city, key });
@@ -136,7 +136,7 @@ export class WeatherCache {
         this.stats.weather.misses++;
         logger.debug('Weather cache miss', { city, key });
       }
-      
+
       return data;
     } catch (error) {
       logger.error('Error getting weather from cache', { city, error });
@@ -166,7 +166,7 @@ export class WeatherCache {
     try {
       const key = this.getForecastKey(city, days);
       const data = this.forecastCache.get(key);
-      
+
       if (data) {
         this.stats.forecast.hits++;
         logger.debug('Forecast cache hit', { city, days, key });
@@ -174,7 +174,7 @@ export class WeatherCache {
         this.stats.forecast.misses++;
         logger.debug('Forecast cache miss', { city, days, key });
       }
-      
+
       return data;
     } catch (error) {
       logger.error('Error getting forecast from cache', { city, days, error });
@@ -204,7 +204,7 @@ export class WeatherCache {
     try {
       const key = this.getGeocodingKey(city);
       const data = this.geocodingCache.get(key);
-      
+
       if (data) {
         this.stats.geocoding.hits++;
         logger.debug('Geocoding cache hit', { city, key });
@@ -212,7 +212,7 @@ export class WeatherCache {
         this.stats.geocoding.misses++;
         logger.debug('Geocoding cache miss', { city, key });
       }
-      
+
       return data;
     } catch (error) {
       logger.error('Error getting geocoding from cache', { city, error });
@@ -257,7 +257,7 @@ export class WeatherCache {
     const weatherPurged = this.weatherCache.purgeStale();
     const forecastPurged = this.forecastCache.purgeStale();
     const geocodingPurged = this.geocodingCache.purgeStale();
-    
+
     logger.info('Purged stale cache entries', {
       weather: weatherPurged,
       forecast: forecastPurged,
@@ -336,28 +336,29 @@ export const cacheUtils = {
     const weatherKey = `weather:${city.toLowerCase().trim()}`;
     const forecastKeyPattern = `forecast:${city.toLowerCase().trim()}`;
     const geoKey = `geo:${city.toLowerCase().trim()}`;
-    
+
     // Note: LRUCache doesn't support pattern deletion, so we need to check all keys
     weatherCache['weatherCache'].delete(weatherKey);
-    
+
     // Delete all forecast entries for this city
     for (const key of weatherCache['forecastCache'].keys()) {
       if (key.startsWith(forecastKeyPattern)) {
         weatherCache['forecastCache'].delete(key);
       }
     }
-    
+
     weatherCache['geocodingCache'].delete(geoKey);
-    
+
     logger.info('Cache invalidated for city', { city });
   },
 
   /**
    * Warm up cache with common cities
    */
+  // eslint-disable-next-line no-unused-vars
   async warmUp(cities: string[], fetchWeather: (city: string) => Promise<WeatherData>): Promise<void> {
     logger.info('Warming up cache', { cities: cities.length });
-    
+
     const promises = cities.map(async (city) => {
       try {
         const cached = weatherCache.getWeather(city);
@@ -369,8 +370,9 @@ export const cacheUtils = {
         logger.warn('Failed to warm up cache for city', { city, error });
       }
     });
-    
+
     await Promise.all(promises);
     logger.info('Cache warm-up complete');
   },
 };
+
