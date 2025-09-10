@@ -599,6 +599,45 @@ describe('WeatherMCPServer', () => {
       });
 
       it('should handle get_weather_forecast tool call', async () => {
+        // Mock forecast data specific to Tokyo
+        const tokyoForecastData = {
+          location: 'Tokyo',
+          forecasts: [
+            {
+              date: 'Wed Jan 08 2025',
+              temperature: 10.5,
+              temperatureMin: 7.2,
+              temperatureMax: 14.1,
+              description: 'Clear sky',
+              humidity: 65,
+              windSpeed: 3.2,
+              precipitation: 0.0
+            },
+            {
+              date: 'Thu Jan 09 2025',
+              temperature: 11.2,
+              temperatureMin: 8.1,
+              temperatureMax: 15.3,
+              description: 'Partly cloudy',
+              humidity: 68,
+              windSpeed: 4.1,
+              precipitation: 0.1
+            },
+            {
+              date: 'Fri Jan 10 2025',
+              temperature: 9.8,
+              temperatureMin: 6.5,
+              temperatureMax: 13.2,
+              description: 'Light rain',
+              humidity: 78,
+              windSpeed: 5.5,
+              precipitation: 2.3
+            }
+          ]
+        };
+
+        mockWeatherService.getForecast.mockResolvedValueOnce(tokyoForecastData);
+
         const message = {
           jsonrpc: '2.0',
           id: 'tool-call-456',
@@ -621,6 +660,9 @@ describe('WeatherMCPServer', () => {
             }]
           }
         });
+
+        // Verify the service was called with correct parameters
+        expect(mockWeatherService.getForecast).toHaveBeenCalledWith('Tokyo', 3);
       });
 
       it('should handle retrieve_weather_context tool call', async () => {

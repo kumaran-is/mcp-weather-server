@@ -29,8 +29,20 @@ vi.mock('./cache/weather-cache.js', () => ({
   }
 }));
 
+// Import mocked modules to access mocks
+import { poolManager } from './undici-resilience/index.js';
+import { weatherCache } from './cache/weather-cache.js';
+import { logger } from './logger-pino.js';
+
 describe('WeatherService', () => {
   let weatherService: WeatherService;
+  const mockRequest = poolManager.request as any;
+  const mockGetWeather = weatherCache.getWeather as any;
+  const mockSetWeather = weatherCache.setWeather as any;
+  const mockGetForecast = weatherCache.getForecast as any;
+  const mockSetForecast = weatherCache.setForecast as any;
+  const mockGetGeocoding = weatherCache.getGeocoding as any;
+  const mockSetGeocoding = weatherCache.setGeocoding as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -177,25 +189,13 @@ describe('WeatherService', () => {
     };
 
     beforeEach(() => {
-      mockRequest.mockImplementation((url: string) => {
-        if (url.includes('geocoding-api')) {
-          return Promise.resolve({
-            statusCode: 200,
-            headers: {},
-            body: {
-              json: () => Promise.resolve(mockGeocodingResponse)
-            }
-          });
-        } else if (url.includes('forecast')) {
-          return Promise.resolve({
-            statusCode: 200,
-            headers: {},
-            body: {
-              json: () => Promise.resolve(mockWeatherResponse)
-            }
-          });
+      mockRequest.mockImplementation((poolName: string, options: any) => {
+        if (poolName === 'geocoding' || options.path?.includes('geocoding')) {
+          return Promise.resolve(mockGeocodingResponse);
+        } else if (poolName === 'weather' || options.path?.includes('forecast')) {
+          return Promise.resolve(mockWeatherResponse);
         }
-        return Promise.reject(new Error('Unknown URL'));
+        return Promise.reject(new Error('Unknown request'));
       });
     });
 
