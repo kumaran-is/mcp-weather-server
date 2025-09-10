@@ -40,30 +40,24 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
       - [Postman Testing](#postman-testing)
   - [🔌 Integration Examples](#-integration-examples)
     - [Cline (Local AI Assistant)](#cline-local-ai-assistant)
-    - [HTTP Client](#http-client)
   - [📊 Monitoring \& Observability](#-monitoring--observability)
     - [Logging](#logging)
     - [Health Checks](#health-checks)
     - [Metrics](#metrics)
-  - [🐳 Docker Deployment](#-docker-deployment)
-    - [Production Deployment](#production-deployment)
-    - [Docker Compose](#docker-compose)
-  - [🔒 Security](#-security)
+  - [� Security](#-security)
+  - [📊 Session Management (HTTP Transport)](#-session-management-http-transport)
+    - [Session Manager Components](#session-manager-components)
+      - [1. **Session Identification**](#1-session-identification)
+      - [2. **Client Connection Registry**](#2-client-connection-registry)
+      - [3. **Message Queue System**](#3-message-queue-system)
+      - [4. **Connection Lifecycle**](#4-connection-lifecycle)
+    - [Message Queueing Behavior](#message-queueing-behavior)
+    - [Session Recovery Flow](#session-recovery-flow)
+    - [Production Considerations](#production-considerations)
   - [🤝 Contributing](#-contributing)
-    - [Development Setup](#development-setup)
   - [📝 License](#-license)
   - [🙏 Acknowledgments](#-acknowledgments)
   - [📞 Support](#-support)
-  - [🧪 Postman Testing Guide](#-postman-testing-guide)
-    - [Setup](#setup)
-    - [Required Headers (Add to all requests)](#required-headers-add-to-all-requests)
-    - [Key Endpoints](#key-endpoints)
-      - [1. Initialize Connection](#1-initialize-connection)
-      - [2. List Tools](#2-list-tools)
-      - [3. Get Current Weather](#3-get-current-weather)
-      - [4. Get Weather Forecast](#4-get-weather-forecast)
-      - [5. Test Error Handling](#5-test-error-handling)
-    - [Postman Tips](#postman-tips)
 
 ## 🌟 Features
 
@@ -398,28 +392,7 @@ docker-compose up
 
 ## 🔧 Configuration
 
-The server uses environment variables for configuration. Copy `.env` and modify as needed:
-
-```env
-# Server Configuration
-NODE_ENV=development
-MCP_TRANSPORT=http                    # 'stdio' or 'http'
-MCP_HTTP_PORT=8080
-
-# Open-Meteo API
-OPEN_METEO_BASE_URL=https://api.open-meteo.com/v1
-GEOCODING_API_URL=https://geocoding-api.open-meteo.com/v1
-
-# Security
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
-
-# Logging
-LOG_LEVEL=debug                       # 'fatal', 'error', 'warn', 'info', 'debug', 'trace'
-
-# Performance
-API_TIMEOUT=5000                      # milliseconds
-HTTP_TIMEOUT=30000
-```
+The server uses environment variables for configuration. Copy `.env.example` to `.env` and modify as needed:
 
 ## 📡 API Usage
 
@@ -535,17 +508,7 @@ npm run test:coverage
 
 **Start Server and Run Full Test Suite**
 ```bash
-npm run http & sleep 2 && npm run client
-```
-
-**Test Current Weather**
-```bash
-npm run client weather "London"
-```
-
-**Test Weather Forecast**
-```bash
-npm run client forecast "Tokyo" 3
+npm run http
 ```
 
 #### Stdio Transport Testing
@@ -555,118 +518,29 @@ npm run client forecast "Tokyo" 3
 echo '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' | npm run stdio
 ```
 
-For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **[TESTING.md](docs/TESTING.md)**.
+For detailed testing scenarios including manual curl commands, environment configuration, load testing, and troubleshooting, refer to **docs/[TESTING.md](docs/TESTING.md)**.
 
 #### Postman Testing
 
-**Quick Import (Recommended):**
+**Quick Import:**
 1. Start the server: `npm run http`
 2. Open Postman and click "Import"
 3. Import the file `docs/mcp_weather.postman_collection.json`
 4. All requests are pre-configured with proper headers and variables!
 
-**Or create manually:**
-1. Start the server: `npm run http`
-2. Create a new collection in Postman
-3. Use these key endpoints:
-
-**Initialize Connection:**
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "init-123",
-  "method": "initialize",
-  "params": {
-    "protocolVersion": "2025-06-18",
-    "capabilities": {"sampling": {}},
-    "clientInfo": {"name": "postman-test", "version": "1.0.0"}
-  }
-}
-```
-
-**Get Current Weather:**
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "weather-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_weather",
-    "arguments": {"city": "London"}
-  }
-}
-```
-
-For complete Postman setup with all endpoints, request examples, and collection templates, see the **[Postman Testing Guide](#postman-testing-guide)** below.
-
 ## 🔌 Integration Examples
 
 ### Cline (Local AI Assistant)
 
-**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
+**Complete Setup Guide**: See **[CLINE-INTEGRATION.md](docs/agent_mcp_setting/CLINE-INTEGRATION.md)** for detailed Cline integration instructions.
 
 **Quick Configuration** (Stdio Transport):
-```json
-{
-  "mcpServers": {
-    "weather": {
-      "autoApprove": [
-        "get_current_weather",
-        "get_weather_forecast",
-        "retrieve_weather_context"
-      ],
-      "disabled": false,
-      "timeout": 30000,
-      "type": "stdio",
-      "command": "npx",
-      "args": ["tsx", "src/server.ts"],
-      "cwd": "/path/to/mcp-weather-server",
-      "env": {
-        "MCP_TRANSPORT": "stdio",
-        "LOG_LEVEL": "info"
-      }
-    }
-  }
-}
-```
+Refer **[cline_mcp_settings.json](docs/agent_mcp_setting/cline_mcp_settings.json)**
 
-**Example Configuration Files**: See `docs/agent_mcp_setting/` directory for complete Cline configuration examples for both stdio and HTTP transports.
+**Quick Configuration** (HTTP Streamable Transport):
+Refer **[cline_mcp_settings_http.json](docs/agent_mcp_setting/cline_mcp_settings_http.json)**
 
 **Usage**: Ask Cline natural language questions like "What's the weather in London?" or "Should I bring an umbrella to Paris?"
-
-### HTTP Client
-```javascript
-// Initialize connection
-const response = await fetch('http://localhost:8080/mcp', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'MCP-Protocol-Version': '2025-06-18',
-    'Accept': 'application/json, text/event-stream'
-  },
-  body: JSON.stringify({
-    jsonrpc: '2.0',
-    id: '123',
-    method: 'initialize',
-    params: {
-      protocolVersion: '2025-06-18',
-      capabilities: { sampling: {} },
-      clientInfo: { name: 'my-client', version: '1.0.0' }
-    }
-  })
-});
-```
 
 ## 📊 Monitoring & Observability
 
@@ -694,38 +568,6 @@ curl http://localhost:8080/health
 - API call success rates
 - Active connections
 - Error rates by endpoint
-
-## 🐳 Docker Deployment
-
-### Production Deployment
-
-**Build Docker Image**
-```bash
-docker build -t mcp-weather-server .
-```
-
-**Run Production Container**
-```bash
-docker run -d \
-  --name mcp-weather-server \
-  -p 8080:8080 \
-  -e NODE_ENV=production \
-  mcp-weather-server
-```
-
-### Docker Compose
-```yaml
-version: '3.8'
-services:
-  mcp-weather-server:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - NODE_ENV=production
-      - MCP_TRANSPORT=http
-    restart: unless-stopped
-```
 
 ## 🔒 Security
 
@@ -815,28 +657,6 @@ For production deployments, consider:
 4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-### Development Setup
-
-**Install Dependencies**
-```bash
-npm install
-```
-
-**Run in Development Mode**
-```bash
-npm run dev
-```
-
-**Run Tests**
-```bash
-npm test
-```
-
-**Build for Production**
-```bash
-npm run build
-```
-
 ## 📝 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
@@ -853,122 +673,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Issues**: [GitHub Issues](https://github.com/kumaran-is/mcp-weather-server/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/mcp-weather-server/discussions)
 - **Documentation**: See `docs/` directory
-- **Cline Integration**: [CLINE-INTEGRATION.md](docs/CLINE-INTEGRATION.md) - Complete Cline setup guide
-- **Phase 4 Implementation**: [PHASE-4-IMPLEMENTATION.md](docs/PHASE-4-IMPLEMENTATION.md) - Chaos Engineering & Performance Testing (Complete)
-- **MCP Test Results**: [MCP-TEST-RESULTS.md](docs/MCP-TEST-RESULTS.md) - Comprehensive test validation results
-
-## 🧪 Postman Testing Guide
-
-### Setup
-1. **Start the server**: `npm run http`
-2. **Open Postman** and create a new collection
-3. **Set base URL**: `http://localhost:8080`
-
-### Required Headers (Add to all requests)
-```
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Accept: application/json,text/event-stream
-```
-
-### Key Endpoints
-
-#### 1. Initialize Connection
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "init-123",
-  "method": "initialize",
-  "params": {
-    "protocolVersion": "2025-06-18",
-    "capabilities": {"sampling": {}},
-    "clientInfo": {"name": "postman-test", "version": "1.0.0"}
-  }
-}
-```
-
-#### 2. List Tools
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "tools-123",
-  "method": "tools/list"
-}
-```
-
-#### 3. Get Current Weather
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "weather-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_weather",
-    "arguments": {"city": "London"}
-  }
-}
-```
-
-#### 4. Get Weather Forecast
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "forecast-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_weather_forecast",
-    "arguments": {"city": "Paris", "days": 3}
-  }
-}
-```
-
-#### 5. Test Error Handling
-```http
-POST http://localhost:8080/mcp
-Content-Type: application/json
-MCP-Protocol-Version: 2025-06-18
-Mcp-Session-Id: YOUR_SESSION_ID
-Accept: application/json, text/event-stream
-
-{
-  "jsonrpc": "2.0",
-  "id": "error-123",
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_weather",
-    "arguments": {"city": ""}
-  }
-}
-```
-
-### Postman Tips
-- **Extract Session ID**: After initialize, save the `mcp-session-id` header value
-- **Environment Variables**: Create `session_id` variable in Postman environment
-- **Tests Tab**: Add scripts to automatically extract session IDs from responses
-
----
+- **Cline Integration**: [CLINE-INTEGRATION.md](docs/agent_mcp_setting/CLINE-INTEGRATION.md) - Complete Cline setup guide
 
 **Made with ❤️ for the AI assistant community**

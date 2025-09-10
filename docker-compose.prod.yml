@@ -1,0 +1,107 @@
+# Production Docker Compose Configuration
+# This file extends docker-compose.yml with production-specific settings
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  mcp-weather-server:
+    image: mcp-weather-server:latest
+    container_name: mcp-weather-server-prod
+    ports:
+      - "${MCP_HTTP_PORT:-8080}:${MCP_HTTP_PORT:-8080}"
+    env_file:
+      - .env.production  # Use production environment file
+    environment:
+      # Production overrides
+      - NODE_ENV=production
+      - MCP_TRANSPORT=${MCP_TRANSPORT:-http}
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+      # Security settings for production
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      # Performance settings
+      - POOL_CONNECTIONS=${POOL_CONNECTIONS:-100}
+      - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-200}
+      - SESSION_TIMEOUT=${SESSION_TIMEOUT:-3600000}
+      - MAX_SESSIONS=${MAX_SESSIONS:-1000}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=mcp-weather-server"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${MCP_HTTP_PORT:-8080}/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - mcp-network
+    volumes:
+      # Mount logs directory for persistent logging
+      - ./logs:/app/logs:rw
+      # Mount custom configuration if needed
+      - ./config:/app/config:ro
+
+  # Optional: Add Redis for session persistence in production
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: always
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Optional: Add nginx reverse proxy for SSL termination
+  nginx:
+    image: nginx:alpine
+    container_name: mcp-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      - mcp-weather-server
+    restart: always
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  mcp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+    driver: local
+  nginx-cache:
+    driver: local

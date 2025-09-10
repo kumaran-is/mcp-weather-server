@@ -10,7 +10,6 @@
     "dev": "tsx src/server.ts",
     "stdio": "MCP_TRANSPORT=stdio tsx src/server.ts",
     "http": "MCP_TRANSPORT=http tsx src/server.ts",
-    "client": "tsx src/client-example.ts",
     "test": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
