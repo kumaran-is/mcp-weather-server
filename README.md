@@ -95,21 +95,70 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 ```
 mcp-weather-server/
 ├── src/
-│   ├── config/              # Centralized configuration
-│   ├── transports/          # HTTP & stdio transport implementations
-│   ├── undici-resilience/   # Advanced HTTP client with resilience patterns
-│   ├── types.ts             # TypeScript type definitions
-│   ├── logger.ts            # Structured logging with Pino
-│   ├── weather-service.ts   # Open-Meteo API integration
-│   ├── mcp-server.ts        # MCP protocol implementation
-│   └── server.ts            # Application entry point
+│   ├── config/
+│   │   └── config.ts              # Centralized configuration management
+│   ├── transports/
+│   │   ├── http-transport.ts      # HTTP/SSE transport implementation
+│   │   └── http-transport.spec.ts # Transport unit tests
+│   ├── undici-resilience/         # Advanced HTTP client with resilience patterns
+│   │   ├── config/
+│   │   │   └── pool-config.ts     # Connection pool configuration
+│   │   ├── http/
+│   │   │   └── pool-manager.ts    # HTTP connection pool management
+│   │   ├── resilience/
+│   │   │   ├── circuit-breaker.ts # Circuit breaker pattern
+│   │   │   ├── retry-strategy.ts  # Exponential backoff retry
+│   │   │   ├── rate-limiter.ts    # Request rate limiting
+│   │   │   └── bulkhead.ts        # Bulkhead isolation pattern
+│   │   ├── streaming/
+│   │   │   ├── streaming-pool-manager.ts  # SSE streaming support
+│   │   │   ├── backpressure-handler.ts    # Stream backpressure handling
+│   │   │   └── streaming-metrics.ts       # Streaming performance metrics
+│   │   ├── monitoring/
+│   │   │   └── metrics.ts         # Performance metrics collection
+│   │   ├── logger.ts              # Resilience layer logging
+│   │   ├── index.ts               # Package exports
+│   │   └── README.md              # Resilience documentation
+│   ├── types.ts                   # TypeScript type definitions
+│   ├── logger.ts                  # Structured logging with Pino
+│   ├── weather-service.ts         # Open-Meteo API integration
+│   ├── mcp-server.ts              # MCP protocol implementation
+│   ├── server.ts                  # Application entry point
+│   ├── *.spec.ts                  # Unit test files
 ├── docs/
-│   ├── agent_mcp_setting/   # Cline configuration examples
-│   ├── TESTING.md           # Comprehensive testing guide
-│   └── CLINE-INTEGRATION.md.md # Cline setup instructions
-├── test-results/            # Test execution reports
-├── Dockerfile               # Containerization
-└── docker-compose.yml       # Orchestration
+│   ├── agent_mcp_setting/         # AI agent configuration
+│   │   ├── cline_mcp_settings.json      # Cline stdio config
+│   │   ├── cline_mcp_settings_http.json # Cline HTTP config
+│   │   ├── CLINE-INTEGRATION.md         # Cline setup guide
+│   │   └── README.md                    # Configuration documentation
+│   ├── TESTING.md                 # Comprehensive testing guide
+│   ├── DOCKER-DEPLOYMENT.md       # Docker deployment guide
+│   ├── SEQUENCE-DIAGRAM-VALIDATION.md   # Architecture diagrams
+│   └── mcp_weather.postman_collection.json # Postman collection
+├── memory-bank/                   # Project context and documentation
+│   ├── projectbrief.md           # Project overview
+│   ├── techContext.md            # Technical context
+│   ├── systemPatterns.md         # Design patterns
+│   ├── productContext.md         # Product requirements
+│   ├── progress.md               # Development progress
+│   └── activeContext.md          # Current context
+├── dist/                          # Compiled JavaScript output
+├── test-results/                  # Test execution reports
+├── node_modules/                  # Dependencies
+├── .env.example                   # Environment variables template
+├── .env.production.example        # Production environment template
+├── .gitignore                     # Git ignore rules
+├── package.json                   # Project dependencies
+├── package-lock.json              # Dependency lock file
+├── tsconfig.json                  # TypeScript configuration
+├── vitest.config.ts               # Test framework configuration
+├── eslint.config.js               # Linting rules
+├── Dockerfile                     # Container image definition
+├── docker-compose.yml             # Development orchestration
+├── docker-compose.prod.yml        # Production orchestration
+├── README.md                      # Project documentation
+├── LICENSE                        # MIT license
+└── CHANGELOG.md                   # Version history
 ```
 
 ## 🏗️ Architecture
