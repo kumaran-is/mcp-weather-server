@@ -1,43 +1,15 @@
 {
   "mcpServers": {
     "weather-remote": {
-      "url": "http://localhost:8081/sse",
-      "transport": {
-        "type": "sse"
-      },
-      "disabled": false,
       "autoApprove": [
         "get_current_weather",
         "get_weather_forecast",
         "retrieve_weather_context"
       ],
-      "alwaysAllow": [
-        "tools/list"
-      ],
+      "disabled": false,
       "timeout": 30000,
-      "description": "Remote MCP Weather Server via Simple SSE Transport",
-      "notes": {
-        "usage": "For remote Cline connections to MCP Weather Server",
-        "requirement": "Server must be running with MCP_TRANSPORT=sse",
-        "port": "Default SSE port is 8081, configurable via MCP_SSE_PORT",
-        "production": "Replace localhost with your server's IP or domain",
-        "example_urls": [
-          "http://192.168.1.100:8081/sse",
-          "https://weather.example.com/sse",
-          "http://docker-host:8081/sse"
-        ]
-      }
-    }
-  },
-  "_configuration_guide": {
-    "1_start_server": "Run 'npm run sse' or 'MCP_TRANSPORT=sse npm run dev' on the server",
-    "2_update_url": "Change 'localhost' to your server's IP address or domain",
-    "3_copy_to_cline": "Copy this configuration to your Cline MCP settings",
-    "4_test_connection": "Ask Cline: 'What's the weather in London?'",
-    "5_troubleshooting": {
-      "connection_failed": "Check firewall allows port 8081",
-      "timeout_errors": "Increase timeout value or check network latency",
-      "cors_issues": "Server automatically handles CORS for all origins"
+      "type": "sse",
+      "url": "http://localhost:8081/sse"
     }
   }
 }
