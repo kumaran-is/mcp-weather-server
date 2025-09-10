@@ -129,52 +129,73 @@ mcp-weather-server/
 sequenceDiagram
     participant Client
     participant Fastify
+    participant HTTPTransport
     participant WeatherMCPServer
     participant WeatherService
+    participant UndiciResilience
     participant OpenMeteoAPI
 
     %% Initialization Phase
     Client->>Fastify: POST /mcp (initialize)
-    Note over Client,Fastify: Headers: MCP-Protocol-Version, Content-Type
-    Fastify->>WeatherMCPServer: handleInitialize()
-    WeatherMCPServer-->>Fastify: Server capabilities & info
-    Fastify-->>Client: 200 OK (server info)
+    Note over Client,Fastify: Headers: MCP-Protocol-Version, Accept: application/json, text/event-stream
+    Fastify->>HTTPTransport: handleRequest()
+    HTTPTransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>HTTPTransport: Server capabilities & info
+    HTTPTransport-->>Fastify: Session UUID generated
+    Fastify-->>Client: 200 OK + Mcp-Session-Id header
+    Note over Fastify,Client: Returns server info + session ID
 
-    Client->>Fastify: POST /mcp (initialized notification)
-    Fastify->>WeatherMCPServer: handleInitialized()
-    WeatherMCPServer-->>Fastify: Acknowledged
+    Client->>Fastify: POST /mcp (notifications/initialized)
+    Note over Client,Fastify: Headers include Mcp-Session-Id
+    Fastify->>HTTPTransport: processMessage()
+    HTTPTransport->>WeatherMCPServer: handleInitialized()
+    WeatherMCPServer-->>HTTPTransport: Acknowledged
+    HTTPTransport-->>Fastify: 202 Accepted
+    Fastify-->>Client: 202 Accepted
 
     %% Tool Operations
     Client->>Fastify: POST /mcp (tools/list)
-    Fastify->>WeatherMCPServer: handleToolsList()
-    WeatherMCPServer-->>Fastify: Available tools
+    Note over Client,Fastify: Headers: Mcp-Session-Id
+    Fastify->>HTTPTransport: processMCPMessage()
+    HTTPTransport->>WeatherMCPServer: handleToolsList()
+    WeatherMCPServer-->>HTTPTransport: Available tools array
+    HTTPTransport-->>Fastify: JSON response
     Fastify-->>Client: 200 OK (tools array)
 
-    %% Weather Request Flow
+    %% Weather Request Flow with Resilience
     Client->>Fastify: POST /mcp (tools/call: get_current_weather)
-    Note over Client,Fastify: {"city": "London"}
-    Fastify->>WeatherMCPServer: handleToolsCall()
+    Note over Client,Fastify: {"name": "get_current_weather", "arguments": {"city": "London"}}
+    Fastify->>HTTPTransport: processMCPMessage()
+    HTTPTransport->>WeatherMCPServer: handleToolsCall()
     WeatherMCPServer->>WeatherService: getCurrentWeather("London")
 
-    %% Geocoding Phase
-    WeatherService->>OpenMeteoAPI: GET /geocoding-api/search?name=London
-    OpenMeteoAPI-->>WeatherService: Geocoding response
-    Note over WeatherService,OpenMeteoAPI: Returns lat/lng coordinates
+    %% Geocoding with Resilience Patterns
+    WeatherService->>UndiciResilience: Request with circuit breaker
+    UndiciResilience->>OpenMeteoAPI: GET /geocoding-api/v1/search?name=London
+    Note over UndiciResilience,OpenMeteoAPI: Circuit breaker monitors health
+    OpenMeteoAPI-->>UndiciResilience: Geocoding response
+    UndiciResilience-->>WeatherService: Coordinates (with retry if needed)
 
-    %% Weather Data Fetch
-    WeatherService->>OpenMeteoAPI: GET /forecast?lat=51.5&lng=-0.1&current=...
-    OpenMeteoAPI-->>WeatherService: Weather data
-    Note over WeatherService,OpenMeteoAPI: Temperature, humidity, wind, conditions
+    %% Weather Data Fetch with Resilience
+    WeatherService->>UndiciResilience: Request with rate limiting
+    UndiciResilience->>OpenMeteoAPI: GET /v1/forecast?latitude=51.5&longitude=-0.1
+    Note over UndiciResilience,OpenMeteoAPI: Rate limited, retries on failure
+    OpenMeteoAPI-->>UndiciResilience: Weather data
+    UndiciResilience-->>WeatherService: Weather response
 
     WeatherService-->>WeatherMCPServer: Formatted weather data
-    WeatherMCPServer-->>Fastify: JSON-RPC response
-    Fastify-->>Client: 200 OK (weather info)
+    WeatherMCPServer-->>HTTPTransport: Tool result
+    HTTPTransport-->>Fastify: JSON-RPC response
+    Fastify-->>Client: 200 OK (SSE format if streaming)
+    Note over Fastify,Client: data: {"jsonrpc":"2.0","result":...}
 
-    %% SSE Stream (for notifications)
+    %% SSE Stream for Real-time Updates
     Client->>Fastify: GET /mcp (SSE stream)
     Note over Client,Fastify: Accept: text/event-stream
+    Fastify->>HTTPTransport: handleGET()
+    HTTPTransport-->>Fastify: 200 OK + SSE headers
     Fastify-->>Client: SSE connection established
-    Note over Fastify,Client: Server can send notifications via SSE
+    Note over HTTPTransport,Client: Persistent connection for notifications
 ```
 
 #### Stdio Transport Sequence Diagram
@@ -185,48 +206,59 @@ sequenceDiagram
     participant StdioTransport
     participant WeatherMCPServer
     participant WeatherService
+    participant UndiciResilience
     participant OpenMeteoAPI
 
     %% Connection Establishment
-    AI Assistant->>StdioTransport: Start MCP server process
-    StdioTransport->>WeatherMCPServer: Connect server
-    WeatherMCPServer-->>StdioTransport: Server ready
+    AI Assistant->>StdioTransport: Start MCP server process (npx tsx src/server.ts)
+    StdioTransport->>WeatherMCPServer: Initialize server
+    WeatherMCPServer-->>StdioTransport: Server ready on stdin/stdout
 
     %% MCP Protocol Handshake
-    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"initialize",...}
-    StdioTransport->>WeatherMCPServer: processMessage(initialize)
-    WeatherMCPServer-->>StdioTransport: Server capabilities
-    StdioTransport-->>AI Assistant: Server info response
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","id":"1","method":"initialize","params":{...}}
+    StdioTransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>StdioTransport: {"jsonrpc":"2.0","id":"1","result":{"capabilities":...}}
+    StdioTransport-->>AI Assistant: Server capabilities & protocol version
 
     AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"notifications/initialized"}
-    StdioTransport->>WeatherMCPServer: processMessage(initialized)
-    WeatherMCPServer-->>StdioTransport: Acknowledged
+    StdioTransport->>WeatherMCPServer: handleInitialized()
+    Note over WeatherMCPServer: Server fully initialized
 
     %% Tool Discovery
-    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"tools/list"}
-    StdioTransport->>WeatherMCPServer: processMessage(tools/list)
-    WeatherMCPServer-->>StdioTransport: Available tools
-    StdioTransport-->>AI Assistant: Tools array
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","id":"2","method":"tools/list"}
+    StdioTransport->>WeatherMCPServer: handleToolsList()
+    WeatherMCPServer-->>StdioTransport: {"tools":[...]}
+    StdioTransport-->>AI Assistant: 3 available tools
+    Note over AI Assistant: get_current_weather, get_weather_forecast, retrieve_weather_context
 
-    %% Weather Query Processing
-    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"Tokyo"}}}
-    StdioTransport->>WeatherMCPServer: processMessage(tools/call)
+    %% Weather Query Processing with Resilience
+    AI Assistant->>StdioTransport: {"jsonrpc":"2.0","id":"3","method":"tools/call","params":{"name":"get_current_weather","arguments":{"city":"Tokyo"}}}
+    StdioTransport->>WeatherMCPServer: handleToolsCall()
     WeatherMCPServer->>WeatherService: getCurrentWeather("Tokyo")
 
-    %% API Integration
-    WeatherService->>OpenMeteoAPI: Geocoding request
-    OpenMeteoAPI-->>WeatherService: Coordinates
-    WeatherService->>OpenMeteoAPI: Weather forecast request
-    OpenMeteoAPI-->>WeatherService: Weather data
+    %% API Integration with Resilience Patterns
+    WeatherService->>UndiciResilience: Request with circuit breaker
+    UndiciResilience->>OpenMeteoAPI: GET /geocoding-api/v1/search?name=Tokyo
+    Note over UndiciResilience: Monitor latency, apply retry logic
+    OpenMeteoAPI-->>UndiciResilience: {"results":[{"latitude":35.68,"longitude":139.69}]}
+    UndiciResilience-->>WeatherService: Coordinates (with backoff retry)
 
-    WeatherService-->>WeatherMCPServer: Formatted response
-    WeatherMCPServer-->>StdioTransport: JSON-RPC success response
-    StdioTransport-->>AI Assistant: Weather information
+    WeatherService->>UndiciResilience: Request with rate limiting
+    UndiciResilience->>OpenMeteoAPI: GET /v1/forecast?latitude=35.68&longitude=139.69
+    Note over UndiciResilience: Rate limit: 10 req/sec
+    OpenMeteoAPI-->>UndiciResilience: Weather data JSON
+    UndiciResilience-->>WeatherService: Parsed weather response
 
-    %% Error Handling
-    Note over AI Assistant,WeatherMCPServer: If API fails or invalid input
-    WeatherMCPServer-->>StdioTransport: JSON-RPC error response
-    StdioTransport-->>AI Assistant: Error details
+    WeatherService-->>WeatherMCPServer: Formatted weather object
+    WeatherMCPServer-->>StdioTransport: {"jsonrpc":"2.0","id":"3","result":{"content":[...]}}
+    StdioTransport-->>AI Assistant: Weather information via stdout
+
+    %% Error Handling with Circuit Breaker
+    Note over WeatherService,UndiciResilience: If circuit open or API fails
+    UndiciResilience-->>WeatherService: Circuit breaker open/API error
+    WeatherService-->>WeatherMCPServer: Error with details
+    WeatherMCPServer-->>StdioTransport: {"jsonrpc":"2.0","id":"3","error":{"code":-32603,"message":"..."}}
+    StdioTransport-->>AI Assistant: Error response
 ```
 
 ### Component Interactions
@@ -239,17 +271,25 @@ graph TB
     C --> D[WeatherMCPServer]
     D --> E[WeatherService]
 
-    E --> F[Open-Meteo Geocoding API]
-    E --> G[Open-Meteo Weather API]
+    E --> R[Undici Resilience Layer]
+    R --> F[Open-Meteo Geocoding API]
+    R --> G[Open-Meteo Weather API]
 
-    D --> H[Logger]
+    D --> H[Pino Logger]
     D --> I[Configuration]
 
-    B --> J[HTTP Transport]
-    B --> K[Stdio Transport]
+    B --> J[HTTP Transport<br/>StreamableHTTPTransport]
+    B --> K[Stdio Transport<br/>StdioServerTransport]
 
     J --> L[Fastify Server]
     J --> M[SSE Handler]
+    J --> S[Session Manager]
+
+    R --> CB[Circuit Breaker]
+    R --> RL[Rate Limiter]
+    R --> RT[Retry Strategy]
+    R --> BH[Bulkhead Pattern]
+    R --> PM[Pool Manager]
 
     subgraph "Core Components"
         D
@@ -261,12 +301,30 @@ graph TB
     subgraph "Transport Options"
         J
         K
+        L
+        M
+        S
+    end
+
+    subgraph "Resilience Patterns"
+        CB
+        RL
+        RT
+        BH
+        PM
     end
 
     subgraph "External APIs"
         F
         G
     end
+
+    style R fill:#f9f,stroke:#333,stroke-width:2px
+    style CB fill:#ffd,stroke:#333,stroke-width:1px
+    style RL fill:#ffd,stroke:#333,stroke-width:1px
+    style RT fill:#ffd,stroke:#333,stroke-width:1px
+    style BH fill:#ffd,stroke:#333,stroke-width:1px
+    style PM fill:#ffd,stroke:#333,stroke-width:1px
 ```
 
 ## 🚀 Quick Start
