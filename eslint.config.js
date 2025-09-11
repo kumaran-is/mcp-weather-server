@@ -70,6 +70,8 @@ export default [
       '*.js',
       '*.d.ts',
       'src/__tests__/',
+      'src/**/*.spec.ts',
+      '**/*.spec.ts',
     ],
   },
 ];

@@ -41,9 +41,11 @@ export class StreamableHTTPTransport {
       logger.logError(error as Error, { operation: 'HTTP server' });
     });
 
-    // Graceful shutdown
-    process.on('SIGTERM', () => this.close());
-    process.on('SIGINT', () => this.close());
+    // Graceful shutdown (skip in test environment)
+    if (process.env.NODE_ENV !== 'test') {
+      process.on('SIGTERM', () => this.close());
+      process.on('SIGINT', () => this.close());
+    }
   }
 
   /**

@@ -212,19 +212,22 @@ export async function main() {
   }
 }
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.fatal('Uncaught exception in main process', { error: (error as Error).message });
-  process.exit(1);
-});
+// Only run main if this is the entry point (not imported as a module)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    logger.fatal('Uncaught exception in main process', { error: (error as Error).message });
+    process.exit(1);
+  });
 
-process.on('unhandledRejection', (reason, _promise) => {
-  logger.fatal('Unhandled rejection in main process', { reason: (reason as Error).message });
-  process.exit(1);
-});
+  process.on('unhandledRejection', (reason, _promise) => {
+    logger.fatal('Unhandled rejection in main process', { reason: (reason as Error).message });
+    process.exit(1);
+  });
 
-// Start the server
-main().catch((error) => {
-  logger.fatal('Fatal error during server startup', { error: (error as Error).message });
-  process.exit(1);
-});
+  // Start the server
+  main().catch((error) => {
+    logger.fatal('Fatal error during server startup', { error: (error as Error).message });
+    process.exit(1);
+  });
+}

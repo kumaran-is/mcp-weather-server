@@ -87,16 +87,16 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 
 ## 🛠️ Technology Stack
 
-| Technology | Version | Purpose | Links |
-|------------|---------|---------|-------|
-| **Node.js** | `>=22.0.0` | JavaScript runtime environment | [Homepage](https://nodejs.org/) |
-| **TypeScript** | `~5.9.0` | Type-safe JavaScript development | [Homepage](https://www.typescriptlang.org/) \| [GitHub](https://github.com/microsoft/TypeScript) |
-| **Fastify** | `~5.6.0` | High-performance web framework for HTTP transport (replaces Express.js) | [Homepage](https://fastify.dev/) \| [GitHub](https://github.com/fastify/fastify) |
-| **@modelcontextprotocol/sdk** | `~1.17.5` | MCP protocol implementation | [GitHub](https://github.com/modelcontextprotocol/typescript-sdk) |
-| **Pino** | `~9.9.0` | High-performance structured logging | [Homepage](https://getpino.io/) \| [GitHub](https://github.com/pinojs/pino) |
-| **Vitest** | `~3.2.0` | Next-generation testing framework | [Homepage](https://vitest.dev/) \| [GitHub](https://github.com/vitest-dev/vitest) |
-| **undici** | `~7.16.0` | High-performance HTTP client with connection pooling | [GitHub](https://github.com/nodejs/undici) |
-| **Open-Meteo API** | N/A | Free weather data provider | [Homepage](https://open-meteo.com/) |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| [**Node.js**](https://nodejs.org/) | `>=22.0.0` | JavaScript runtime environment |
+| [**TypeScript**](https://github.com/microsoft/TypeScript) | `~5.9.0` | Type-safe JavaScript development | 
+| [**Fastify**](https://fastify.dev/) | `~5.6.0` | High-performance web framework for HTTP transport (replaces Express.js) |
+| [**@modelcontextprotocol/sdk**](https://github.com/modelcontextprotocol/typescript-sdk) | `~1.17.5` | MCP protocol implementation |
+| [**Pino**](https://github.com/pinojs/pino) | `~9.9.0` | High-performance structured logging |
+| [**Vitest**](https://github.com/vitest-dev/vitest)| `~3.2.0` | Next-generation testing framework |
+| [**undici**](https://github.com/nodejs/undici) | `~7.16.0` | High-performance HTTP client with connection pooling |
+| [**Open-Meteo API**](https://open-meteo.com/) | N/A | Free weather data provider |
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
 

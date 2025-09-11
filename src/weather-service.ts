@@ -16,12 +16,13 @@ export class WeatherService {
   async getCurrentWeather(city: string): Promise<WeatherData> {
     const startTime = Date.now();
 
+    // Input validation (outside try-catch to preserve validation errors)
+    if (!city || typeof city !== 'string' || city.trim() === '') {
+      logger.error('Invalid city parameter for current weather', { city });
+      throw new Error('Invalid city parameter: city must be a non-empty string');
+    }
+
     try {
-      // Input validation
-      if (!city || typeof city !== 'string' || city.trim() === '') {
-        logger.error('Invalid city parameter for current weather', { city });
-        throw new Error('Invalid city parameter: city must be a non-empty string');
-      }
 
       const trimmedCity = city.trim();
 
@@ -91,17 +92,18 @@ export class WeatherService {
   async getForecast(city: string, days: number = 5): Promise<ForecastData> {
     const startTime = Date.now();
 
-    try {
-      // Input validation
-      if (!city || typeof city !== 'string' || city.trim() === '') {
-        logger.error('Invalid city parameter for forecast', { city });
-        throw new Error('Invalid city parameter: city must be a non-empty string');
-      }
+    // Input validation (outside try-catch to preserve validation errors)
+    if (!city || typeof city !== 'string' || city.trim() === '') {
+      logger.error('Invalid city parameter for forecast', { city });
+      throw new Error('Invalid city parameter: city must be a non-empty string');
+    }
 
-      if (days < 1 || days > 7) {
-        logger.error('Invalid days parameter for forecast', { days });
-        throw new Error('Days must be between 1 and 7');
-      }
+    if (days < 1 || days > 7) {
+      logger.error('Invalid days parameter for forecast', { days });
+      throw new Error('Days must be between 1 and 7');
+    }
+
+    try {
 
       const trimmedCity = city.trim();
 

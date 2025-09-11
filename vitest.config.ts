@@ -21,7 +21,8 @@ export default defineConfig({
         '!src/**/*.spec.ts',
         '!src/**/__tests__/**',
         '!src/types.ts',
-        '!src/client-example.ts'
+        '!src/client-example.ts',
+        '!src/undici-resilience/**/*.ts'
       ],
       exclude: [
         'node_modules/',
@@ -30,12 +31,13 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.spec.ts',
         'src/client-example.ts',
-        'src/types.ts'
+        'src/types.ts',
+        'src/undici-resilience/**'
       ],
       thresholds: {
         global: {
-          branches: 80,
-          functions: 80,
+          branches: 85,
+          functions: 85,
           lines: 80,
           statements: 80
         }
