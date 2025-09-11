@@ -170,7 +170,7 @@ src/
 flowchart TD
     A["🤖 AI Assistant Request:<br/>\"What's the weather in London?\""] --> B["📡 Transport Layer<br/>(HTTP/SSE/stdio)"]
     B --> C["🔧 MCP Protocol Handler<br/>tools/call → get_current_weather"]
-    C --> D["🗺️ Geocoding Service<br/>\"London\" → {lat: 51.5, lon: -0.1}"]
+    C --> D["🗺️ Geocoding Service<br/> London → {lat: 51.5, lon: -0.1}"]
     D --> E["🗄️ Cache Check"]
     
     E --> F["✅ Cache Hit<br/>Return cached data"]
