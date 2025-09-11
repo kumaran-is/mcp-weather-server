@@ -15,6 +15,7 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🛠️ Technology Stack](#️-technology-stack)
+  - [📊 Data Flow](#-data-flow)
   - [🏗️ MCP Weather Server - Overview](#️-mcp-weather-server---overview)
   - [🚀 Quick Start](#-quick-start)
     - [Prerequisites](#prerequisites)
@@ -103,6 +104,40 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
 | [**Open-Meteo API**](https://open-meteo.com/) | N/A | Free weather data provider |
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
+
+## 📊 Data Flow
+
+```mermaid
+flowchart TD
+    A[🤖 AI Assistant Request:<br/> What's the weather in London?] --> B["📡 Transport Layer<br/>(HTTP/SSE/stdio)"]
+    B --> C["🔧 MCP Protocol Handler<br/>tools/call → get_current_weather"]
+    C --> D["🗺️ Geocoding Service<br/> London → {lat: 51.5, lon: -0.1}"]
+    D --> E["🗄️ Cache Check"]
+    
+    E --> F["✅ Cache Hit<br/>Return cached data"]
+    E --> G["❌ Cache Miss<br/>Continue to API"]
+    
+    G --> H["🌐 Weather API Request<br/>/forecast?latitude=51.5&longitude=-0.1"]
+    H --> I["🛡️ Undici Resilience Client<br/>(circuit breaker, retry)"]
+    I --> J["☁️ Open-Meteo API"]
+    J --> K["🔄 Data Transformation<br/>& Caching (TTL: 10min)"]
+    
+    K --> L[📤 Response to AI Assistant<br/> Temperature: 15.2°C, Partly cloudy...]
+    F --> L
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#e8f5e8
+    style G fill:#ffebee
+    style H fill:#f1f8e9
+    style I fill:#e3f2fd
+    style J fill:#e0f2f1
+    style K fill:#fff8e1
+    style L fill:#e8f5e8
+```
 
 ## 🏗️ MCP Weather Server - Overview
 
