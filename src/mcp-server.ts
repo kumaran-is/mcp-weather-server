@@ -537,6 +537,12 @@ export class WeatherMCPServer {
    * Set up error handling
    */
   private setupErrorHandling(): void {
+    // Skip setting up process event handlers in test environment
+    // to avoid MaxListenersExceededWarning
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     // Handle uncaught exceptions in tool handlers
     process.on('uncaughtException', (error) => {
       logger.logError(error, { type: 'uncaughtException' });

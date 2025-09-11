@@ -57,7 +57,7 @@ describe('StreamableHTTPTransport', () => {
     // Mock HTTP server
     mockHttpServer = {
       listen: vi.fn(),
-      close: vi.fn(),
+      close: vi.fn((callback) => callback && callback()),
       on: vi.fn(),
     };
 

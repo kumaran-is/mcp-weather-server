@@ -42,17 +42,24 @@ const envSchema = z.object({
 });
 
 // Parse and validate environment variables
-let envConfig: z.infer<typeof envSchema>;
-
-try {
-  envConfig = envSchema.parse(process.env);
-  // Note: Using console here to avoid circular dependency with logger
-  console.log('Configuration loaded successfully');
-} catch (error) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('FATAL: Configuration validation failed:', errorMessage);
-  process.exit(1);
+function parseEnvConfig(): z.infer<typeof envSchema> {
+  try {
+    const config = envSchema.parse(process.env);
+    // Note: Using console here to avoid circular dependency with logger
+    // Only log in non-test environments to reduce noise
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Configuration loaded successfully');
+    }
+    return config;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('FATAL: Configuration validation failed:', errorMessage);
+    process.exit(1);
+  }
 }
+
+// Initial parse to ensure valid config at startup
+let envConfig = parseEnvConfig();
 
 // Configuration interfaces
 export interface ServerConfig {
@@ -114,62 +121,88 @@ export interface AppConfig {
   streaming: StreamingConfig;
 }
 
-// Build configuration object
-export const config: AppConfig = {
-  server: {
-    nodeEnv: envConfig.NODE_ENV,
-    transport: envConfig.MCP_TRANSPORT,
-    httpPort: envConfig.MCP_HTTP_PORT,
-    ssePort: envConfig.MCP_SSE_PORT,
-  },
-  api: {
-    baseUrl: envConfig.OPEN_METEO_BASE_URL,
-    geocodingUrl: envConfig.GEOCODING_API_URL,
-    timeout: envConfig.API_TIMEOUT,
-    retries: envConfig.MAX_RETRIES,
-    retryDelay: envConfig.BASE_RETRY_DELAY,
-  },
-  security: {
-    allowedOrigins: envConfig.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
-  },
-  logging: {
-    level: envConfig.LOG_LEVEL,
-  },
-  performance: {
-    apiTimeout: envConfig.API_TIMEOUT,
-    httpTimeout: envConfig.HTTP_TIMEOUT,
-    requestTimeout: envConfig.REQUEST_TIMEOUT,
-  },
-  resilience: {
-    circuitBreaker: {
-      threshold: envConfig.CIRCUIT_BREAKER_THRESHOLD,
-      timeout: envConfig.CIRCUIT_BREAKER_TIMEOUT,
+// Build configuration object dynamically
+function buildConfig(): AppConfig {
+  // Re-parse env config in test environment to pick up changes
+  if (process.env.NODE_ENV === 'test') {
+    try {
+      envConfig = envSchema.parse(process.env);
+    } catch {
+      envConfig = envSchema.parse({});
+    }
+  }
+
+  return {
+    server: {
+      nodeEnv: envConfig.NODE_ENV,
+      transport: envConfig.MCP_TRANSPORT,
+      httpPort: envConfig.MCP_HTTP_PORT,
+      ssePort: envConfig.MCP_SSE_PORT,
     },
-    retry: {
-      maxRetries: envConfig.MAX_RETRIES,
-      baseDelay: envConfig.BASE_RETRY_DELAY,
+    api: {
+      baseUrl: envConfig.OPEN_METEO_BASE_URL,
+      geocodingUrl: envConfig.GEOCODING_API_URL,
+      timeout: envConfig.API_TIMEOUT,
+      retries: envConfig.MAX_RETRIES,
+      retryDelay: envConfig.BASE_RETRY_DELAY,
     },
-  },
-  streaming: {
-    maxConcurrentStreams: envConfig.MAX_CONCURRENT_STREAMS,
-    streamTimeout: envConfig.STREAM_TIMEOUT,
-    backpressure: {
-      highWaterMark: envConfig.BACKPRESSURE_HIGH_WATER_MARK,
-      lowWaterMark: envConfig.BACKPRESSURE_LOW_WATER_MARK,
+    security: {
+      allowedOrigins: envConfig.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
     },
-  },
-};
+    logging: {
+      level: envConfig.LOG_LEVEL,
+    },
+    performance: {
+      apiTimeout: envConfig.API_TIMEOUT,
+      httpTimeout: envConfig.HTTP_TIMEOUT,
+      requestTimeout: envConfig.REQUEST_TIMEOUT,
+    },
+    resilience: {
+      circuitBreaker: {
+        threshold: envConfig.CIRCUIT_BREAKER_THRESHOLD,
+        timeout: envConfig.CIRCUIT_BREAKER_TIMEOUT,
+      },
+      retry: {
+        maxRetries: envConfig.MAX_RETRIES,
+        baseDelay: envConfig.BASE_RETRY_DELAY,
+      },
+    },
+    streaming: {
+      maxConcurrentStreams: envConfig.MAX_CONCURRENT_STREAMS,
+      streamTimeout: envConfig.STREAM_TIMEOUT,
+      backpressure: {
+        highWaterMark: envConfig.BACKPRESSURE_HIGH_WATER_MARK,
+        lowWaterMark: envConfig.BACKPRESSURE_LOW_WATER_MARK,
+      },
+    },
+  };
+}
+
+// Cache the config for non-test environments
+let cachedConfig: AppConfig | null = null;
+export const config: AppConfig = buildConfig();
 
 // Export individual configuration getters for backward compatibility
-export const getConfig = (): AppConfig => config;
+export const getConfig = (): AppConfig => {
+  // In test environment, always rebuild config to pick up env changes
+  if (process.env.NODE_ENV === 'test') {
+    return buildConfig();
+  }
 
-export const getServerConfig = (): ServerConfig => config.server;
-export const getAPIConfig = (): APIConfig => config.api;
-export const getSecurityConfig = (): SecurityConfig => config.security;
-export const getLoggingConfig = (): LoggingConfig => config.logging;
-export const getPerformanceConfig = (): PerformanceConfig => config.performance;
-export const getResilienceConfig = (): ResilienceConfig => config.resilience;
-export const getStreamingConfig = (): StreamingConfig => config.streaming;
+  // In production/development, cache the config
+  if (!cachedConfig) {
+    cachedConfig = buildConfig();
+  }
+  return cachedConfig;
+};
+
+export const getServerConfig = (): ServerConfig => getConfig().server;
+export const getAPIConfig = (): APIConfig => getConfig().api;
+export const getSecurityConfig = (): SecurityConfig => getConfig().security;
+export const getLoggingConfig = (): LoggingConfig => getConfig().logging;
+export const getPerformanceConfig = (): PerformanceConfig => getConfig().performance;
+export const getResilienceConfig = (): ResilienceConfig => getConfig().resilience;
+export const getStreamingConfig = (): StreamingConfig => getConfig().streaming;
 
 // Transport-specific configuration
 export const getTransportConfig = () => ({
@@ -209,14 +242,17 @@ export const validateConfig = (): boolean => {
 };
 
 // Configuration summary for logging
-export const getConfigSummary = () => ({
-  environment: config.server.nodeEnv,
-  transport: config.server.transport,
-  port: config.server.httpPort,
-  logLevel: config.logging.level,
-  apiTimeout: config.performance.apiTimeout,
-  circuitBreakerThreshold: config.resilience.circuitBreaker.threshold,
-  maxRetries: config.resilience.retry.maxRetries,
-});
+export const getConfigSummary = () => {
+  const currentConfig = getConfig();
+  return {
+    environment: currentConfig.server.nodeEnv,
+    transport: currentConfig.server.transport,
+    port: currentConfig.server.httpPort,
+    logLevel: currentConfig.logging.level,
+    apiTimeout: currentConfig.performance.apiTimeout,
+    circuitBreakerThreshold: currentConfig.resilience.circuitBreaker.threshold,
+    maxRetries: currentConfig.resilience.retry.maxRetries,
+  };
+};
 
 // Configuration summary available via getConfigSummary() function

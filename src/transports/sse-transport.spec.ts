@@ -281,6 +281,13 @@ describe('SimpleSSETransport', () => {
     });
 
     describe('Messages endpoint', () => {
+      let handler: any;
+      
+      beforeEach(async () => {
+        await transport.start();
+        handler = (http.createServer as any).mock.calls[0][0];
+      });
+      
       it('should handle POST to messages endpoint', async () => {
         // First establish SSE connection
         mockRequest.url = '/sse';
@@ -319,7 +326,7 @@ describe('SimpleSSETransport', () => {
         messageReq.emit('data', Buffer.from(messageData));
         messageReq.emit('end');
         
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.runAllTimersAsync();
         
         expect(mockWeatherServer.processMessage).toHaveBeenCalledWith({
           jsonrpc: '2.0',
@@ -349,7 +356,7 @@ describe('SimpleSSETransport', () => {
         messageReq.emit('data', Buffer.from('{"test": "data"}'));
         messageReq.emit('end');
         
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.runAllTimersAsync();
         
         expect(messageRes.writeHead).toHaveBeenCalledWith(404, { 'Content-Type': 'application/json' });
         expect(messageRes.end).toHaveBeenCalledWith(JSON.stringify({ error: 'Client not found' }));
@@ -380,7 +387,7 @@ describe('SimpleSSETransport', () => {
         messageReq.emit('data', Buffer.from('invalid json'));
         messageReq.emit('end');
         
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.runAllTimersAsync();
         
         expect(messageRes.writeHead).toHaveBeenCalledWith(500, { 'Content-Type': 'application/json' });
         expect(messageRes.end).toHaveBeenCalledWith(JSON.stringify({ error: 'Internal server error' }));
@@ -429,7 +436,7 @@ describe('SimpleSSETransport', () => {
         messageReq.emit('data', Buffer.from(messageData));
         messageReq.emit('end');
         
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.runAllTimersAsync();
         
         expect(mockResponse.write).toHaveBeenCalledWith('id: 123\n');
         expect(mockResponse.write).toHaveBeenCalledWith('event: message\n');
@@ -463,7 +470,7 @@ describe('SimpleSSETransport', () => {
         messageReq.emit('data', Buffer.from('{"method": "test", "id": 1}'));
         messageReq.emit('end');
         
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.runAllTimersAsync();
         
         expect(mockResponse.write).toHaveBeenCalledWith(expect.stringContaining('"error"'));
         expect(mockResponse.write).toHaveBeenCalledWith(expect.stringContaining('"code":-32603'));
