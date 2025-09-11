@@ -2,6 +2,8 @@
 
 A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **three-transport strategy** for maximum compatibility: stdio for local development, HTTP for production APIs, and SSE for remote Cline connections.
 
+This MCP Weather Server is a production-ready example of how to build robust, scalable MCP servers with proper error handling, resilience patterns, and clean architecture. The codebase demonstrates best practices for TypeScript development, async programming, and API integration.
+
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2025--06--18-orange)](https://modelcontextprotocol.io/)
@@ -13,6 +15,7 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🛠️ Technology Stack](#️-technology-stack)
+  - [🏗️ MCP Weather Server - Overview](#️-mcp-weather-server---overview)
   - [🚀 Quick Start](#-quick-start)
     - [Prerequisites](#prerequisites)
     - [1️⃣ Installation](#1️⃣-installation)
@@ -23,7 +26,8 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
       - [GitHub Copilot (Future MCP Support)](#github-copilot-future-mcp-support)
       - [Test with AI Assistant](#test-with-ai-assistant)
   - [Directory Structure](#directory-structure)
-  - [🏗️ Architecture](#️-architecture)
+  - [🏗️ Architecture \& Design](#️-architecture--design)
+    - [High-Level Architecture](#high-level-architecture)
     - [Transport Strategy](#transport-strategy)
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
@@ -99,6 +103,15 @@ A production-ready **Model Context Protocol (MCP)** server that provides weather
 | [**Open-Meteo API**](https://open-meteo.com/) | N/A | Free weather data provider |
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
+
+## 🏗️ MCP Weather Server - Overview
+
+This server provides **weather information tools** to AI assistants, enabling them to:
+
+- Get current weather conditions for any location
+- Retrieve weather forecasts (1-7 days)
+- Handle complex weather queries with context
+- Provide reliable, cached responses with resilience patterns
 
 ## 🚀 Quick Start
 
@@ -227,57 +240,82 @@ Once configured, you can test with natural language:
 ## Directory Structure
 
 ```
-mcp-weather-server/
-├── src/
-│   ├── config/
-│   │   └── config.ts              # Centralized configuration management
-│   ├── transports/
-│   │   ├── http-transport.ts      # HTTP transport with SSE streaming
-│   │   ├── sse-transport.ts       # Simple SSE transport for Cline
-│   │   └── http-transport.spec.ts # Transport unit tests
-│   ├── undici-resilience/         # Advanced HTTP client with resilience patterns
-│   │   ├── config/
-│   │   │   └── pool-config.ts     # Connection pool configuration
-│   │   ├── http/
-│   │   │   └── pool-manager.ts    # HTTP connection pool management
-│   │   ├── resilience/
-│   │   │   ├── circuit-breaker.ts # Circuit breaker pattern
-│   │   │   ├── retry-strategy.ts  # Exponential backoff retry
-│   │   │   ├── rate-limiter.ts    # Request rate limiting
-│   │   │   └── bulkhead.ts        # Bulkhead isolation pattern
-│   │   ├── streaming/
-│   │   │   ├── streaming-pool-manager.ts  # SSE streaming support
-│   │   │   ├── backpressure-handler.ts    # Stream backpressure handling
-│   │   │   └── streaming-metrics.ts       # Streaming performance metrics
-│   │   ├── monitoring/
-│   │   │   └── metrics.ts         # Performance metrics collection
-│   │   ├── logger.ts              # Resilience layer logging
-│   │   ├── index.ts               # Package exports
-│   ├── types.ts                   # TypeScript type definitions
-│   ├── logger.ts                  # Structured logging with Pino
-│   ├── weather-service.ts         # Open-Meteo API integration
-│   ├── mcp-server.ts              # MCP protocol implementation
-│   ├── server.ts                  # Application entry point
-│   ├── *.spec.ts                  # Unit test files
-├── docs/
-├── memory-bank/                  # Cline Memory - Project context and documentation
-├── dist/                          # Compiled JavaScript output
-├── test-results/                  # Test execution reports
-├── .env.example                   # Environment variables template
-├── .env.production.example        # Production environment template
-├── package.json                   # Project dependencies
-├── tsconfig.json                  # TypeScript configuration
-├── vitest.config.ts               # Test framework configuration
-├── eslint.config.js               # Linting rules
-├── Dockerfile                     # Container image definition
-├── docker-compose.yml             # Development orchestration
-├── docker-compose.prod.yml        # Production orchestration
-├── README.md                      # Project documentation
-├── LICENSE                        # MIT license
-└── CHANGELOG.md                   # Version history
+src/
+├── server.ts                ← 🎯 Entry point & transport selection
+├── mcp-server.ts            ← 🧠 Core MCP protocol implementation
+├── weather-service.ts       ← 🌤️ Business logic for weather operations
+├── types.ts                 ← 📝 TypeScript interfaces
+├── logger-pino.ts           ← 📊 Production logging with Pino
+│
+├── config/                  ← ⚙️ Configuration management
+│   ├── config.ts           
+│   └── config.spec.ts
+│
+├── cache/                   ← 🗄️ Intelligent LRU caching
+│   ├── weather-cache.ts     
+│   └── weather-cache.spec.ts
+│
+├── transports/              ← 🚌 Communication protocols
+│   ├── http-transport.ts    ← HTTP with Fastify
+│   ├── sse-transport.ts     ← Simple SSE for remote AI Assitant like Cline, Copilot, Cursor etc
+│   └── *.spec.ts
+│
+├── undici-resilience/       ← 🛡️ Advanced HTTP resilience
+│   ├── index.ts             ← Main exports
+│   ├── http/                ← Connection pooling
+│   ├── resilience/          ← Circuit breaker, retry, timeout, fallback, rate limiting, bulkhead pattern.
+│   ├── streaming/           ← Backpressure handling
+│   └── monitoring/          ← Metrics and health
+│
+├── errors/                  ← 🚨 Custom error handling
+├── middleware/              ← 🛡️ Request validation
+└── utils/                   ← 🔧 Utility functions
+
 ```
 
-## 🏗️ Architecture
+## 🏗️ Architecture & Design
+
+### High-Level Architecture
+
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENT LAYER                             │
+│ AI Assistants (Cline, Claude) | AI Agents (HTTP Clients)    │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────────────┐
+│                 TRANSPORT LAYER                             │
+│  ┌──────────────┬──────────────────┬──────────────────┐    │
+│  │ Stdio        │ HTTP (Fastify)   │ SSE (Custom)     │    │
+│  │ Local Dev    │ Production APIs  │ Remote Cline     │    │
+│  └──────────────┴──────────────────┴──────────────────┘    │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────────────┐
+│                MCP PROTOCOL LAYER                           │
+│       WeatherMCPServer (src/mcp-server.ts)                 │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Tool Registration | Request Routing | Validation    │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────────────┐
+│                BUSINESS LOGIC LAYER                         │
+│       WeatherService (src/weather-service.ts)              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ API Integration | Caching | Data Transformation     │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────────────┐
+│              INFRASTRUCTURE LAYER                           │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Undici Resilience | Cache | Config | Logging        │    │
+│  │ External APIs (Open-Meteo) | Error Handling         │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Transport Strategy
 
