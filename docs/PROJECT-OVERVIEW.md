@@ -167,27 +167,35 @@ src/
 ### Request Flow Diagram
 
 ```mermaid
-AI Assistant Request: "What's the weather in London?"
-    ↓ (JSON-RPC 2.0 message)
-Transport Layer (HTTP/SSE/stdio)
-    ↓ (Parse and route)
-MCP: tools/call → get_current_weather
-    ↓
-Geocode: "London" → {lat: 51.5, lon: -0.1}
-    ↓
-Weather API: /forecast?latitude=51.5&longitude=-0.1
-    ↓ (Check cache)
-Cache Check → [Hit: Return] [Miss: Continue] Store for 5 minutes
-    ↓ (Geocoding if needed)
-Geocoding Service (coordinates lookup)
-    ↓ (Resilient HTTP request)
-Undici Resilience Client (circuit breaker, retry)
-    ↓ (External API call)
-Open-Meteo API
-    ↓ (Response processing)
-Data Transformation & Caching
-    ↓ (Return to client)
-Response: "Temperature: 15.2°C, Partly cloudy..."
+flowchart TD
+    A["🤖 AI Assistant Request:<br/>\"What's the weather in London?\""] --> B["📡 Transport Layer<br/>(HTTP/SSE/stdio)"]
+    B --> C["🔧 MCP Protocol Handler<br/>tools/call → get_current_weather"]
+    C --> D["🗺️ Geocoding Service<br/>\"London\" → {lat: 51.5, lon: -0.1}"]
+    D --> E["🗄️ Cache Check"]
+    
+    E --> F["✅ Cache Hit<br/>Return cached data"]
+    E --> G["❌ Cache Miss<br/>Continue to API"]
+    
+    G --> H["🌐 Weather API Request<br/>/forecast?latitude=51.5&longitude=-0.1"]
+    H --> I["🛡️ Undici Resilience Client<br/>(circuit breaker, retry)"]
+    I --> J["☁️ Open-Meteo API"]
+    J --> K["🔄 Data Transformation<br/>& Caching (TTL: 10min)"]
+    
+    K --> L["📤 Response to AI Assistant<br/>\"Temperature: 15.2°C, Partly cloudy...\""]
+    F --> L
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#e8f5e8
+    style G fill:#ffebee
+    style H fill:#f1f8e9
+    style I fill:#e3f2fd
+    style J fill:#e0f2f1
+    style K fill:#fff8e1
+    style L fill:#e8f5e8
 ```
 
 ---
