@@ -168,7 +168,7 @@ src/
 
 ```mermaid
 flowchart TD
-    A["🤖 AI Assistant Request:<br/>\"What's the weather in London?\""] --> B["📡 Transport Layer<br/>(HTTP/SSE/stdio)"]
+    A[🤖 AI Assistant Request:<br/> What's the weather in London?] --> B["📡 Transport Layer<br/>(HTTP/SSE/stdio)"]
     B --> C["🔧 MCP Protocol Handler<br/>tools/call → get_current_weather"]
     C --> D["🗺️ Geocoding Service<br/> London → {lat: 51.5, lon: -0.1}"]
     D --> E["🗄️ Cache Check"]
@@ -181,7 +181,7 @@ flowchart TD
     I --> J["☁️ Open-Meteo API"]
     J --> K["🔄 Data Transformation<br/>& Caching (TTL: 10min)"]
     
-    K --> L["📤 Response to AI Assistant<br/>\"Temperature: 15.2°C, Partly cloudy...\""]
+    K --> L[📤 Response to AI Assistant<br/> Temperature: 15.2°C, Partly cloudy...]
     F --> L
     
     style A fill:#e1f5fe
