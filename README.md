@@ -33,7 +33,7 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
       - [Streamable HTTP Transport Sequence Diagram](#streamable-http-transport-sequence-diagram)
-      - [SSE Transport Sequence Diagram](#sse-transport-sequence-diagram)
+      - [Custom SSE Transport Sequence Diagram](#custom-sse-transport-sequence-diagram)
       - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
     - [Component Interactions](#component-interactions)
   - [🔧 Configuration](#-configuration)
@@ -81,9 +81,9 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
 - **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
 - **🔄 Three Transport Types**: 
-  - **Stdio**: Local development with Cline in VS Code
-  - **HTTP**: Production APIs, LangChain, microservices
-  - **SSE**: Remote Cline connections, lightweight clients
+  - **Offical Stdio**: Local development with Cline in VS Code
+  - **Offica Streamble HTTP**: Production APIs, LangChain, microservices
+  - **Custom SSE**: Remote Cline connections, lightweight clients
 - **🛡️ Resilience Patterns**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
 - **⚡ High Performance**: Undici-based HTTP client with connection pooling and streaming
 - **🔒 Security First**: Input validation, Origin checks, CORS support, session management
@@ -293,7 +293,7 @@ src/
 │
 ├── transports/              ← 🚌 Communication protocols
 │   ├── http-transport.ts    ← HTTP with Fastify
-│   ├── sse-transport.ts     ← Simple SSE for remote AI Assitant like Cline, Copilot, Cursor etc
+│   ├── sse-transport.ts     ← Simple Custom SSE for remote AI Assitant like Cline, Copilot, Cursor etc
 │   └── *.spec.ts
 │
 ├── undici-resilience/       ← 🛡️ Advanced HTTP resilience
@@ -359,20 +359,20 @@ The MCP Weather Server implements a **three-transport strategy** for maximum com
 
 | Transport | Port | Best For | Protocol | Cline Support |
 |-----------|------|----------|----------|---------------|
-| **Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
-| **Streamable HTTP(/mcp)** | 8080 | Production APIs, LangChain | Bidirectional - Single Endpoint Architecture | ❌ No |
-| **SSE(/sse & /sse/messages)** | 8081 | Remote Cline, lightweight clients | SSE + HTTP| ✅ Remote |
+| **Official Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
+| **Official Streamable HTTP(/mcp)** | 8080 | Production APIs, LangChain | Bidirectional - Single Endpoint Architecture | ❌ No |
+| **Custom SSE(/sse & /sse/messages)** | 8081 | Remote Cline, lightweight clients | Custom SSE + HTTP| ✅ Remote |
 
-**Deprecation Note:** [SSE](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) is Being Deprecated in MCP.  [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport replaced [SSE](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) transport. For more detail refer [SSE-TO-StreamableHTTP](./docs/SSE-TO-StreamableHTTP.md)
+**Deprecation Note:** [Offical SSE MCP SDK](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) is Being Deprecated in MCP.  [Official Streamable HTTP MCP SDK](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport replaced [Offical SSE MCP SDK](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) transport. For more detail refer [SSE-TO-StreamableHTTP](./docs/SSE-TO-StreamableHTTP.md)
 
 #### Transport Decision Matrix
 
 | Your Need | Recommended Transport | Start Command |
 |-----------|----------------------|---------------|
 | Local Cline in VS Code | **Stdio** | (auto-spawned) |
-| Remote Cline access | **SSE** | `npm run sse` |
+| Remote Cline access | **Custom SSE** | `npm run sse` |
 | Production API | **Streamable HTTP** | `npm run http` |
-| Docker deployment | **Streamable HTTP** or **SSE** | See docker-compose |
+| Docker deployment | **Streamable HTTP**  | See docker-compose |
 | LangChain integration | **Streamable HTTP** | `npm run http` |
 | MCP Inspector testing | Any | See docs |
 
@@ -453,7 +453,7 @@ sequenceDiagram
     Note over StreamableHTTPTransport,Client: Persistent connection for notifications
 ```
 
-#### SSE Transport Sequence Diagram
+#### Custom SSE Transport Sequence Diagram
 
 ```mermaid
 sequenceDiagram
