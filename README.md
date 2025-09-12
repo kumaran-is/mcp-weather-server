@@ -32,7 +32,7 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
     - [Transport Strategy](#transport-strategy)
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
-      - [HTTP Transport Sequence Diagram](#http-transport-sequence-diagram)
+      - [Streamable HTTP Transport Sequence Diagram](#streamable-http-transport-sequence-diagram)
       - [SSE Transport Sequence Diagram](#sse-transport-sequence-diagram)
       - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
     - [Component Interactions](#component-interactions)
@@ -76,6 +76,7 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
 
 ## 🌟 Features
 
+- **🤖 LLM-Friendly Design**: Clear tool descriptions, structured responses, input validation & error context and idempotent operations
 - **🌤️ Real-time Weather**: Current weather conditions with temperature, humidity, wind speed
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
 - **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
@@ -359,8 +360,10 @@ The MCP Weather Server implements a **three-transport strategy** for maximum com
 | Transport | Port | Best For | Protocol | Cline Support |
 |-----------|------|----------|----------|---------------|
 | **Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
-| **HTTP** | 8080 | Production APIs, LangChain | HTTP + SSE | ❌ No |
-| **SSE** | 8081 | Remote Cline, lightweight clients | Simple SSE | ✅ Remote |
+| **Streamable HTTP(/mcp)** | 8080 | Production APIs, LangChain | Bidirectional - Single Endpoint Architecture | ❌ No |
+| **SSE(/sse & /sse/messages)** | 8081 | Remote Cline, lightweight clients | SSE + HTTP| ✅ Remote |
+
+**Deprecation Note:** [SSE](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) is Being Deprecated in MCP.  [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport replaced [SSE](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) transport. For more detail refer [SSE-TO-StreamableHTTP](./docs/SSE-TO-StreamableHTTP.md)
 
 #### Transport Decision Matrix
 
@@ -368,20 +371,20 @@ The MCP Weather Server implements a **three-transport strategy** for maximum com
 |-----------|----------------------|---------------|
 | Local Cline in VS Code | **Stdio** | (auto-spawned) |
 | Remote Cline access | **SSE** | `npm run sse` |
-| Production API | **HTTP** | `npm run http` |
-| Docker deployment | **HTTP** or **SSE** | See docker-compose |
-| LangChain integration | **HTTP** | `npm run http` |
+| Production API | **Streamable HTTP** | `npm run http` |
+| Docker deployment | **Streamable HTTP** or **SSE** | See docker-compose |
+| LangChain integration | **Streamable HTTP** | `npm run http` |
 | MCP Inspector testing | Any | See docs |
 
 ### System Flow
 
-#### HTTP Transport Sequence Diagram
+#### Streamable HTTP Transport Sequence Diagram
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant Fastify
-    participant HTTPTransport
+    participant StreamableHTTPTransport
     participant WeatherMCPServer
     participant WeatherService
     participant UndiciResilience
@@ -390,35 +393,35 @@ sequenceDiagram
     %% Initialization Phase
     Client->>Fastify: POST /mcp (initialize)
     Note over Client,Fastify: Headers: MCP-Protocol-Version, Accept: application/json, text/event-stream
-    Fastify->>HTTPTransport: handleRequest()
-    HTTPTransport->>WeatherMCPServer: handleInitialize()
-    WeatherMCPServer-->>HTTPTransport: Server capabilities & info
-    HTTPTransport-->>Fastify: Session UUID generated
+    Fastify->>StreamableHTTPTransport: handleRequest()
+    StreamableHTTPTransport->>WeatherMCPServer: handleInitialize()
+    WeatherMCPServer-->>StreamableHTTPTransport: Server capabilities & info
+    StreamableHTTPTransport-->>Fastify: Session UUID generated
     Fastify-->>Client: 200 OK + Mcp-Session-Id header
     Note over Fastify,Client: Returns server info + session ID
 
     Client->>Fastify: POST /mcp (notifications/initialized)
     Note over Client,Fastify: Headers include Mcp-Session-Id
-    Fastify->>HTTPTransport: processMessage()
-    HTTPTransport->>WeatherMCPServer: handleInitialized()
-    WeatherMCPServer-->>HTTPTransport: Acknowledged
-    HTTPTransport-->>Fastify: 202 Accepted
+    Fastify->>StreamableHTTPTransport: processMessage()
+    StreamableHTTPTransport->>WeatherMCPServer: handleInitialized()
+    WeatherMCPServer-->>StreamableHTTPTransport: Acknowledged
+    StreamableHTTPTransport-->>Fastify: 202 Accepted
     Fastify-->>Client: 202 Accepted
 
     %% Tool Operations
     Client->>Fastify: POST /mcp (tools/list)
     Note over Client,Fastify: Headers: Mcp-Session-Id
-    Fastify->>HTTPTransport: processMCPMessage()
-    HTTPTransport->>WeatherMCPServer: handleToolsList()
-    WeatherMCPServer-->>HTTPTransport: Available tools array
-    HTTPTransport-->>Fastify: JSON response
+    Fastify->>StreamableHTTPTransport: processMCPMessage()
+    StreamableHTTPTransport->>WeatherMCPServer: handleToolsList()
+    WeatherMCPServer-->>StreamableHTTPTransport: Available tools array
+    StreamableHTTPTransport-->>Fastify: JSON response
     Fastify-->>Client: 200 OK (tools array)
 
     %% Weather Request Flow with Resilience
     Client->>Fastify: POST /mcp (tools/call: get_current_weather)
     Note over Client,Fastify: {"name": "get_current_weather", "arguments": {"city": "London"}}
-    Fastify->>HTTPTransport: processMCPMessage()
-    HTTPTransport->>WeatherMCPServer: handleToolsCall()
+    Fastify->>StreamableHTTPTransport: processMCPMessage()
+    StreamableHTTPTransport->>WeatherMCPServer: handleToolsCall()
     WeatherMCPServer->>WeatherService: getCurrentWeather("London")
 
     %% Geocoding with Resilience Patterns
@@ -436,18 +439,18 @@ sequenceDiagram
     UndiciResilience-->>WeatherService: Weather response
 
     WeatherService-->>WeatherMCPServer: Formatted weather data
-    WeatherMCPServer-->>HTTPTransport: Tool result
-    HTTPTransport-->>Fastify: JSON-RPC response
+    WeatherMCPServer-->>StreamableHTTPTransport: Tool result
+    StreamableHTTPTransport-->>Fastify: JSON-RPC response
     Fastify-->>Client: 200 OK (SSE format if streaming)
     Note over Fastify,Client: data: {"jsonrpc":"2.0","result":...}
 
     %% SSE Stream for Real-time Updates
     Client->>Fastify: GET /mcp (SSE stream)
     Note over Client,Fastify: Accept: text/event-stream
-    Fastify->>HTTPTransport: handleGET()
-    HTTPTransport-->>Fastify: 200 OK + SSE headers
+    Fastify->>StreamableHTTPTransport: handleGET()
+    StreamableHTTPTransport-->>Fastify: 200 OK + SSE headers
     Fastify-->>Client: SSE connection established
-    Note over HTTPTransport,Client: Persistent connection for notifications
+    Note over StreamableHTTPTransport,Client: Persistent connection for notifications
 ```
 
 #### SSE Transport Sequence Diagram
