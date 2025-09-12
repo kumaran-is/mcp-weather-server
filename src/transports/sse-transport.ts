@@ -54,7 +54,8 @@ export class SimpleSSETransport {
    * Handle incoming HTTP requests
    */
   private async handleRequest(req: IncomingMessage, res: ServerResponse) {
-    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const host = req.headers?.host || 'localhost:8081';
+    const url = new URL(req.url || '/', `http://${host}`);
 
     // CORS headers for browser clients
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -300,4 +301,3 @@ export class SimpleSSETransport {
     };
   }
 }
-

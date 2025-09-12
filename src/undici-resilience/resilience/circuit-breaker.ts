@@ -23,6 +23,7 @@ export interface CircuitBreakerStats {
 export class CircuitBreaker {
   private state: CircuitState = CircuitState.CLOSED;
   private failures = 0;
+  private consecutiveFailures = 0;
   private successes = 0;
   private lastFailureTime: number | null = null;
   private lastSuccessTime: number | null = null;
@@ -103,6 +104,7 @@ export class CircuitBreaker {
     const now = Date.now();
     this.successes++;
     this.lastSuccessTime = now;
+    this.consecutiveFailures = 0; // Reset consecutive failures on success
 
     if (this.state === CircuitState.HALF_OPEN) {
       // Recovery successful, close the circuit
@@ -122,6 +124,7 @@ export class CircuitBreaker {
   private onFailure(): void {
     const now = Date.now();
     this.failures++;
+    this.consecutiveFailures++;
     this.lastFailureTime = now;
 
     if (this.state === CircuitState.HALF_OPEN) {
@@ -135,15 +138,15 @@ export class CircuitBreaker {
         failures: this.failures,
         nextAttemptTime: this.nextAttemptTime
       });
-    } else if (this.state === CircuitState.CLOSED && this.failures >= this.failureThreshold) {
-      // Too many failures, open the circuit
+    } else if (this.state === CircuitState.CLOSED && this.consecutiveFailures >= this.failureThreshold) {
+      // Too many consecutive failures, open the circuit
       this.state = CircuitState.OPEN;
       this.nextAttemptTime = now + this.recoveryTimeout;
       logger.warn('Circuit breaker opened due to failures', {
         circuitBreaker: this.name,
         previousState: CircuitState.CLOSED,
         newState: CircuitState.OPEN,
-        failures: this.failures,
+        consecutiveFailures: this.consecutiveFailures,
         threshold: this.failureThreshold,
         nextAttemptTime: this.nextAttemptTime
       });
@@ -156,6 +159,7 @@ export class CircuitBreaker {
   private reset(): void {
     this.state = CircuitState.CLOSED;
     this.failures = 0;
+    this.consecutiveFailures = 0;
     this.nextAttemptTime = null;
   }
 

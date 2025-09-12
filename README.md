@@ -1,6 +1,6 @@
 # MCP Weather Server
 
-A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **three-transport strategy** for maximum compatibility: stdio for local development, HTTP for production APIs, and SSE for remote Cline connections.
+A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **three-transport strategy** for maximum compatibility: Official stdio MCP SDK for local development, Official Streamble HTTP SDK for production APIs, and Custom SSE for remote Cline connections.
 
 This MCP Weather Server is a production-ready example of how to build robust, scalable MCP servers with proper error handling, resilience patterns, and clean architecture. The codebase demonstrates best practices for TypeScript development, async programming, and API integration.
 
@@ -292,7 +292,7 @@ src/
 │   └── weather-cache.spec.ts
 │
 ├── transports/              ← 🚌 Communication protocols
-│   ├── http-transport.ts    ← HTTP with Fastify
+│   ├── http-transport.ts    ← Streamble HTTP with Fastify
 │   ├── sse-transport.ts     ← Simple Custom SSE for remote AI Assitant like Cline, Copilot, Cursor etc
 │   └── *.spec.ts
 │
@@ -317,7 +317,7 @@ src/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    CLIENT LAYER                             │
-│ AI Assistants (Cline, Claude) | AI Agents (HTTP Clients)    │
+│ AI Assistants (Cline, Claude) | AI Agents (Streamble HTTP)  │
 └─────────────────┬───────────────────────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────────────────────┐
