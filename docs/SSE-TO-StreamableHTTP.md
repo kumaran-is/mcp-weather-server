@@ -1,6 +1,31 @@
 # 🔄 From SSE to Streamable HTTP: The Evolution of MCP Transport
 
-## 📖 Why SSE is Being Deprecated in MCP
+## � Table of Contents
+
+- [🔄 From SSE to Streamable HTTP: The Evolution of MCP Transport](#-from-sse-to-streamable-http-the-evolution-of-mcp-transport)
+  - [� Table of Contents](#-table-of-contents)
+  - [�📖 Why SSE is Being Deprecated in MCP](#-why-sse-is-being-deprecated-in-mcp)
+    - [🚫 The Legacy of Server-Sent Events (SSE)](#-the-legacy-of-server-sent-events-sse)
+      - [📡 The Two-Phone Problem](#-the-two-phone-problem)
+  - [✨ Enter Streamable HTTP: The Modern Solution](#-enter-streamable-http-the-modern-solution)
+    - [🎯 Single Endpoint Architecture](#-single-endpoint-architecture)
+    - [🚀 Key Advantages](#-key-advantages)
+      - [1. **🔄 Dynamic Connection Upgrades**](#1--dynamic-connection-upgrades)
+      - [2. **↔️ True Bidirectional Communication**](#2-️-true-bidirectional-communication)
+      - [3. **🛡️ Improved Error Handling**](#3-️-improved-error-handling)
+      - [4. **📊 Better Resource Utilization**](#4--better-resource-utilization)
+  - [🚨 Why SSE Had to Go](#-why-sse-had-to-go)
+    - [📉 Architectural Limitations](#-architectural-limitations)
+    - [💡 Real-World Impact](#-real-world-impact)
+  - [🎉 The Benefits of Migration](#-the-benefits-of-migration)
+    - [For Developers](#for-developers)
+    - [For Operations](#for-operations)
+    - [For End Users](#for-end-users)
+  - [🔮 Looking Forward](#-looking-forward)
+
+---
+
+## �📖 Why SSE is Being Deprecated in MCP
 
 ### 🚫 The Legacy of Server-Sent Events (SSE)
 
