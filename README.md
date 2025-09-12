@@ -831,8 +831,8 @@ For detailed testing scenarios including manual curl commands, environment confi
 | Use Case | Transport | Config File |
 |----------|-----------|-------------|
 | **Local Cline** | Stdio | [cline_mcp_settings.json](docs/agent_mcp_setting/cline_mcp_settings.json) |
-| **Remote Cline** | SSE | [cline_mcp_settings_sse.json](docs/agent_mcp_setting/cline_mcp_settings_sse.json) |
-| **Documentation Only** | HTTP | [cline_mcp_settings_http.json](docs/agent_mcp_setting/cline_mcp_settings_http.json) |
+| **Remote Cline** | Custom SSE | [cline_mcp_settings_sse.json](docs/agent_mcp_setting/cline_mcp_settings_sse.json) |
+| **Documentation Only** | Streamable HTTP | [cline_mcp_settings_http.json](docs/agent_mcp_setting/cline_mcp_settings_http.json) |
 
 **Note**: Cline does NOT support HTTP transport. Use Stdio for local or SSE for remote connections.
 
