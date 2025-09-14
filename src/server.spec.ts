@@ -10,8 +10,6 @@ const mockServer = {
   close: vi.fn()
 };
 const mockGetServer = vi.fn(() => mockServer);
-const mockSimpleSSETransport = vi.fn();
-const mockSSEStart = vi.fn();
 
 // Mock all dependencies before imports
 vi.mock('dotenv/config');
@@ -28,9 +26,6 @@ vi.mock('./mcp-server.js', () => ({
   WeatherMCPServer: mockWeatherMCPServer
 }));
 
-vi.mock('./transports/sse-transport.js', () => ({
-  SimpleSSETransport: mockSimpleSSETransport
-}));
 
 vi.mock('fastify', () => ({
   default: mockFastify
@@ -117,13 +112,6 @@ describe('Server Entry Point', () => {
     };
     mockFastify.mockReturnValue(mockFastifyInstance);
     
-    mockSSEInstance = {
-      start: mockSSEStart,
-      close: vi.fn().mockResolvedValue(undefined)
-    };
-    mockSimpleSSETransport.mockImplementation(() => mockSSEInstance);
-    
-    mockSSEStart.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -622,25 +610,6 @@ describe('Server Entry Point', () => {
         vi.useRealTimers();
       });
 
-      it('should handle SIGTERM for SSE transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
-        
-        mockConfig.server.transport = 'sse';
-        await main();
-        
-        // Find and execute SIGTERM handler
-        const sigTermCall = processOnSpy.mock.calls.find(
-          (call: any[]) => call[0] === 'SIGTERM'
-        );
-        
-        if (sigTermCall && sigTermCall[1]) {
-          await sigTermCall[1]();
-          expect(logger.info).toHaveBeenCalledWith('Shutting down SSE server gracefully');
-          expect(mockSSEInstance.close).toHaveBeenCalled();
-          expect(processExitSpy).toHaveBeenCalledWith(0);
-        }
-      });
 
       it('should prevent multiple shutdown attempts', async () => {
         const { main } = await import('./server.js');
@@ -669,39 +638,5 @@ describe('Server Entry Point', () => {
       });
     });
 
-    describe('SSE Transport Path', () => {
-      it('should execute main function with SSE transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
-        
-        mockConfig.server.transport = 'sse';
-        mockConfig.server.ssePort = 8081;
-        
-        await main();
-        
-        expect(mockWeatherMCPServer).toHaveBeenCalled();
-        expect(mockSimpleSSETransport).toHaveBeenCalled();
-        expect(mockSSEStart).toHaveBeenCalled();
-        expect(logger.info).toHaveBeenCalledWith('Using Simple SSE transport', { port: 8081 });
-        expect(logger.info).toHaveBeenCalledWith('Simple SSE server started on port 8081');
-      });
-
-      it('should handle SIGINT for SSE transport', async () => {
-        const { main } = await import('./server.js');
-        
-        mockConfig.server.transport = 'sse';
-        await main();
-        
-        const sigIntCall = processOnSpy.mock.calls.find(
-          (call: any[]) => call[0] === 'SIGINT'
-        );
-        
-        if (sigIntCall && sigIntCall[1]) {
-          await sigIntCall[1]();
-          expect(mockSSEInstance.close).toHaveBeenCalled();
-          expect(processExitSpy).toHaveBeenCalledWith(0);
-        }
-      });
-    });
   });
 });
