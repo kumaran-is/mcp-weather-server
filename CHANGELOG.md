@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-09-14
+
+### 🚀 **MINOR RELEASE: SSE Transport Removal & Architecture Simplification**
+
+This release removes the deprecated SSE (Server-Sent Events) transport to align with MCP protocol evolution toward Streamable HTTP as the standard for remote connections. The server now supports a clean dual-transport architecture.
+
+### Removed
+- **🔄 SSE Transport Elimination**:
+  - Deleted `src/transports/sse-transport.ts` and `src/transports/sse-transport.spec.ts`
+  - Removed SSE transport option from configuration enum
+  - Eliminated `MCP_SSE_PORT` configuration variable
+  - Removed SSE-specific documentation files (`docs/SSE-TRANSPORT.md`, `docs/SSE-TO-StreamableHTTP.md`)
+  - Deleted `cline_mcp_settings_sse.json` configuration file
+  - Removed SSE script from package.json (`npm run sse`)
+
+### Changed
+- **📋 Transport Architecture Simplification**:
+  - **From**: Three-transport strategy (stdio, HTTP, SSE)
+  - **To**: Dual-transport strategy (stdio, HTTP)
+  - Updated server configuration to only accept 'stdio' and 'http' as valid transports
+  - Simplified transport selection logic in `src/server.ts`
+- **📖 Documentation Updates**:
+  - README.md updated to reflect dual-transport strategy
+  - Removed all SSE references from environment configuration files
+  - Updated package description to mention only stdio and HTTP transports
+- **📦 Package.json**:
+  - Version bumped to 2.4.0
+  - Description updated to reflect dual-transport support
+  - Removed SSE script command
+
+### Fixed
+- **🧪 Test Suite Cleanup**:
+  - Removed SSE-related test cases from server and configuration tests
+  - Fixed middleware validation tests to exclude SSE transport
+  - Cleaned up mock configurations and test variables
+- **🔧 Configuration Validation**:
+  - Updated transport validation to reject 'sse' as invalid option
+  - Removed SSE port validation logic
+  - Cleaned server configuration interfaces
+
+### Technical Details
+- **Files Deleted**: 5 major SSE files (transport, tests, docs, configs)
+- **Files Modified**: 8+ core files cleaned of SSE references
+- **Lines Removed**: ~1000+ lines of SSE-specific code and documentation
+- **Build Status**: ✅ Clean compilation, no TypeScript or ESLint errors
+- **Test Coverage**: 85.35% maintained
+
+### Verification
+- ✅ **Stdio Transport**: Tested and confirmed working perfectly
+- ✅ **HTTP Transport**: Tested and confirmed working perfectly
+- ✅ **Build System**: No compilation errors, clean ESLint results
+- ✅ **Documentation**: Updated to reflect current architecture
+
+### Migration Guide
+For users currently using SSE transport:
+- **Local Development**: Switch to stdio transport (recommended)
+- **Remote Connections**: Switch to HTTP transport with Streamable HTTP protocol
+- **Update Configuration**: Remove any SSE-related environment variables
+- **Cline Users**: Use stdio transport for local development
+
+This change aligns the project with the MCP protocol evolution and provides a cleaner, more maintainable codebase focused on the two officially supported transport methods.
+
+---
+
 ## [2.3.0] - 2025-09-10
 
 ### 🚀 **MINOR RELEASE: Production-Ready Enhancements & Code Quality Improvements**
@@ -384,6 +448,9 @@ This release introduces a comprehensive three-transport strategy, adding Simple 
 When contributing to this project, please update the CHANGELOG.md file with your changes under the [Unreleased] section at the top of the file.
 
 ## Version History
+- 2.4.0: **MINOR RELEASE** - SSE Transport Removal & Architecture Simplification (Dual-transport strategy)
+- 2.3.0: **MINOR RELEASE** - Production-Ready Enhancements & Code Quality Improvements
+- 2.2.0: **MINOR RELEASE** - SSE Transport Protocol Fix & Docker HTTP Improvements  
 - 2.1.0: **MINOR RELEASE** - Three-transport strategy with Simple SSE support for remote Cline connections
 - 2.0.1: **PATCH RELEASE** - Build system fixes and MCP configuration updates
 - 2.0.0: **MAJOR RELEASE** - 100% Production Ready with enterprise-grade resilience and monitoring

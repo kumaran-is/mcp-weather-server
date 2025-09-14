@@ -338,15 +338,14 @@ src/
 
 ### Transport Strategy
 
-The MCP Weather Server implements a **three-transport strategy** for maximum compatibility:
+The MCP Weather Server implements a **clean dual-transport strategy** for optimal compatibility and maintainability:
 
 | Transport | Port | Best For | Protocol | Cline Support |
 |-----------|------|----------|----------|---------------|
 | **Official Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
-| **Official Streamable HTTP(/mcp)** | 8080 | Production APIs, LangChain | Bidirectional - Single Endpoint Architecture | ❌ No |
-| **Custom SSE(/sse & /sse/messages)** | 8081 | Remote Cline, lightweight clients | Custom SSE + HTTP| ✅ Remote |
+| **Official Streamable HTTP** | 8080 | Production APIs, LangChain | Streamable HTTP | ❌ No |
 
-**Deprecation Note:** [Offical SSE MCP SDK](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) is Being Deprecated in MCP.  [Official Streamable HTTP MCP SDK](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport replaced [Offical SSE MCP SDK](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) transport. For more detail refer [SSE-TO-StreamableHTTP](./docs/SSE-TO-StreamableHTTP.md)
+**Architecture Change (v2.4.0):** The SSE transport has been removed to align with MCP protocol evolution toward Streamable HTTP as the standard for remote connections. This provides a cleaner, more maintainable codebase focused on the two officially supported transport methods.
 
 #### Transport Decision Matrix
 
