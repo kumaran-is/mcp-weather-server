@@ -1,6 +1,6 @@
 # MCP Weather Server
 
-A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **three-transport strategy** for maximum compatibility: Official stdio MCP SDK for local development, Official Streamble HTTP SDK for production APIs, and Custom SSE for remote Cline connections.
+A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **dual-transport strategy** for maximum compatibility: Official stdio MCP SDK for local development and Official Streamable HTTP SDK for production APIs.
 
 This MCP Weather Server is a production-ready example of how to build robust, scalable MCP servers with proper error handling, resilience patterns, and clean architecture. The codebase demonstrates best practices for TypeScript development, async programming, and API integration.
 
@@ -82,10 +82,9 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
 - **🌤️ Real-time Weather**: Current weather conditions with temperature, humidity, wind speed
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
 - **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
-- **🔄 Three Transport Types**: 
-  - **Offical Stdio**: Local development with Cline in VS Code
-  - **Offica Streamble HTTP**: Production APIs, LangChain, microservices
-  - **Custom SSE**: Remote Cline connections, lightweight clients
+- **🔄 Dual Transport Types**: 
+  - **Official Stdio**: Local development with Cline in VS Code
+  - **Official Streamable HTTP**: Production APIs, LangChain, microservices
 - **🛡️ Resilience Patterns**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
 - **⚡ High Performance**: Undici-based HTTP client with connection pooling and streaming
 - **🔒 Security First**: Input validation, Origin checks, CORS support, session management
@@ -204,24 +203,6 @@ npm run build
 }
 ```
 
-**Remote Configuration** (for SSE):
-```json
-{
-  "mcpServers": {
-    "weather-remote": {
-      "autoApprove": [
-        "get_current_weather",
-        "get_weather_forecast",
-        "retrieve_weather_context"
-      ],
-      "disabled": false,
-      "timeout": 30000,
-      "type": "sse",
-      "url": "http://localhost:8081/sse"
-    }
-  }
-}
-```
 
 #### Claude Desktop
 **Configuration** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):

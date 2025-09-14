@@ -49,12 +49,6 @@ describe('Config Module', () => {
       expect(config.server.httpPort).toBe(9090);
     });
 
-    it('should use MCP_SSE_PORT environment variable', () => {
-      process.env.MCP_SSE_PORT = '8082';
-      const config = getConfig();
-
-      expect(config.server.ssePort).toBe(8082);
-    });
 
     it('should use LOG_LEVEL environment variable', () => {
       process.env.LOG_LEVEL = 'debug';
@@ -171,7 +165,7 @@ describe('Config Module', () => {
       config.server.transport = 'invalid' as any;
 
       expect(() => validateConfig(config)).toThrow(
-        'Invalid transport: invalid. Must be one of: stdio, http, sse',
+        'Invalid transport: invalid. Must be one of: stdio, http',
       );
     });
 
@@ -193,14 +187,6 @@ describe('Config Module', () => {
       );
     });
 
-    it('should throw error for invalid SSE port', () => {
-      const config = getConfig();
-      config.server.ssePort = 0;
-
-      expect(() => validateConfig(config)).toThrow(
-        'Invalid SSE port: 0. Must be between 1 and 65535',
-      );
-    });
 
     it('should throw error for invalid log level', () => {
       const config = getConfig();

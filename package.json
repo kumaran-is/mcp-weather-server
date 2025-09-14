@@ -1,7 +1,7 @@
 {
   "name": "mcp-weather-server",
   "version": "2.3.0",
-  "description": "MCP server with Open-Meteo weather API integration supporting stdio, HTTP, and SSE transports",
+  "description": "MCP server with Open-Meteo weather API integration supporting stdio and HTTP transports",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -10,7 +10,6 @@
     "dev": "tsx src/server.ts",
     "stdio": "MCP_TRANSPORT=stdio tsx src/server.ts",
     "http": "MCP_TRANSPORT=http tsx src/server.ts",
-    "sse": "MCP_TRANSPORT=sse tsx src/server.ts",
     "test": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",

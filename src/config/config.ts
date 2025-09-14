@@ -9,9 +9,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   // Server Configuration
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  MCP_TRANSPORT: z.enum(['stdio', 'http', 'sse']).default('stdio'),
+  MCP_TRANSPORT: z.enum(['stdio', 'http']).default('stdio'),
   MCP_HTTP_PORT: z.coerce.number().min(1024).max(65535).default(8080),
-  MCP_SSE_PORT: z.coerce.number().min(1024).max(65535).default(8081),
 
   // Open-Meteo API Configuration
   OPEN_METEO_BASE_URL: z.string().url().default('https://api.open-meteo.com/v1'),
@@ -64,9 +63,8 @@ let envConfig = parseEnvConfig();
 // Configuration interfaces
 export interface ServerConfig {
   nodeEnv: string;
-  transport: 'stdio' | 'http' | 'sse';
+  transport: 'stdio' | 'http';
   httpPort: number;
-  ssePort: number;
 }
 
 export interface APIConfig {
@@ -137,7 +135,6 @@ function buildConfig(): AppConfig {
       nodeEnv: envConfig.NODE_ENV,
       transport: envConfig.MCP_TRANSPORT,
       httpPort: envConfig.MCP_HTTP_PORT,
-      ssePort: envConfig.MCP_SSE_PORT,
     },
     api: {
       baseUrl: envConfig.OPEN_METEO_BASE_URL,
