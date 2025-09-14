@@ -295,7 +295,6 @@ describe('Config Module', () => {
         server: {
           transport: 'http',
           httpPort: 8080,
-          ssePort: 8081,
         },
         logging: {
           level: 'info',
@@ -347,7 +346,6 @@ describe('Config Module', () => {
       expect(typeof config.app.environment).toBe('string');
       expect(typeof config.server.transport).toBe('string');
       expect(typeof config.server.httpPort).toBe('number');
-      expect(typeof config.server.ssePort).toBe('number');
       expect(typeof config.logging.level).toBe('string');
       expect(typeof config.logging.pretty).toBe('boolean');
       expect(typeof config.logging.timestamp).toBe('boolean');

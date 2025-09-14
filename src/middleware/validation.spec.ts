@@ -404,8 +404,6 @@ describe('Validation Middleware', () => {
       expect(typeof middleware).toBe('function');
     });
 
-    it('should create middleware for sse transport', async () => {
-      const middleware = createValidationMiddleware('sse');
       expect(typeof middleware).toBe('function');
     });
 
