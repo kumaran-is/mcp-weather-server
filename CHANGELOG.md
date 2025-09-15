@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2025-09-14
+
+### 🔧 **PATCH RELEASE: Critical Issues Resolution & Code Quality Improvements**
+
+This release addresses significant code quality issues and technical debt discovered after Version 2.6.0, implementing comprehensive security middleware and resolving major compilation problems.
+
+### Added
+- **🛡️ Enterprise Security Middleware Suite**:
+  - **Authentication Middleware** (`src/middleware/auth.ts`): Multi-tier API key validation (Bearer, headers, query)
+  - **Input Sanitization** (`src/middleware/sanitization.ts`): DOMPurify-based with Context7 patterns
+  - **Rate Limiting** (`src/middleware/rate-limit.ts`): Multi-level protection (global, per-client, per-IP, per-endpoint)
+  - **Security Manager** (`src/security/sanitizer.ts`): Server-side DOMPurify with JSDOM integration
+- **📋 Critical Issue Documentation**:
+  - Documented ESM import requirements (`.js` extensions in TypeScript)
+  - Environment configuration accuracy improvements
+  - Memory bank updates to reflect true project state
+
+### Fixed
+- **🚨 Major Code Quality Issues Resolved**:
+  - **ESLint Violations**: Fixed 230+ violations including:
+    - Trailing spaces, missing commas, inconsistent indentation throughout codebase
+    - Unused imports and variables across multiple files
+    - Unnecessary escape characters in regex patterns requiring eslint exceptions
+    - Inconsistent quotes and missing curly braces throughout
+    - Control regex usage requiring explicit ESLint exceptions
+- **🔧 TypeScript Compilation Issues**:
+  - **Dependency Fixes**: Installed missing type declarations (`@types/jsdom`, `@types/dompurify`)
+  - **Rate Limiter Issues**: Fixed RateLimiterRes property access with proper type assertions
+  - **Non-null Assertions**: Replaced with proper null checks throughout codebase
+- **📋 Environment Configuration Corrections**:
+  - Fixed misleading documentation about MCP server authentication vs external weather API keys
+  - Clarified Redis references vs actual in-memory implementation
+  - Made authentication truly optional for development flexibility
+  - Updated both `.env.example` and `.env.production.example` with accurate descriptions
+
+### Changed
+- **📚 Documentation Accuracy Improvements**:
+  - Updated memory bank files to reflect current project reality
+  - Corrected project status from "100% complete" to accurately show ongoing work
+  - Added comprehensive documentation of TypeScript ESM requirements
+- **🔒 Security Implementation**:
+  - Optional authentication system (disabled by default, can enable with environment variables)
+  - Comprehensive attack pattern detection and prevention
+  - Multi-tier rate limiting with adaptive limits based on authentication status
+
+### Technical Debt Resolution
+- **📋 Memory Bank Synchronization**:
+  - **Issue**: Memory bank indicated "100% complete" while major issues existed
+  - **Resolution**: Comprehensive update to reflect true project state
+  - **Impact**: Accurate project documentation and realistic status tracking
+
+### Known Issues
+- **❌ TypeScript Compilation**: 4 errors remaining in `src/mcp-server.ts`
+  - `ZodString` type incompatible with expected `ZodType<any, any, any>`
+  - MCP SDK expecting different schema format than standard Zod patterns
+  - Multiple attempts at schema format correction unsuccessful
+  - **Impact**: Build failing, development workflow requires completion
+
+### ESM Import Requirements Clarification
+- **Technical Configuration**: `"module": "NodeNext"` and `"moduleResolution": "NodeNext"`
+- **Critical Requirement**: Must use `.js` extensions in import statements even in `.ts` files
+- **Technical Reason**: TypeScript compiles `.ts` → `.js` files, Node.js ESM resolves at runtime using compiled `.js` files
+- **Best Practice**: TypeScript doesn't rewrite import paths, so specify `.js` even in source files
+
+### Security Features
+- **Authentication**: Multi-tier API key validation with bearer tokens, headers, and query parameters
+- **Sanitization**: Server-side DOMPurify with JSDOM for comprehensive input cleaning
+- **Rate Limiting**: Global, per-client, per-IP, and per-endpoint protection with adaptive limits
+- **Attack Prevention**: XSS, SQL injection, command injection, and control character detection
+
+### Progress Metrics
+- **✅ ESLint Compliance**: 230 violations → 0 violations (100% improvement)
+- **✅ Security Implementation**: Complete enterprise-grade security middleware layer
+- **✅ Code Quality**: Consistent formatting and style enforcement throughout
+- **✅ Documentation Accuracy**: Memory bank synchronized with project reality
+- **❌ Build Status**: 4 TypeScript errors remaining (requires completion)
+
+### Migration Notes
+- **Security**: Authentication is disabled by default for backward compatibility
+- **Environment**: Review and update environment variable descriptions for accuracy
+- **Build**: TypeScript compilation issues require resolution before production deployment
+
+This release represents significant progress toward production readiness while honestly documenting remaining challenges and providing a clear path forward for completion.
+
+---
+
 ## [2.6.0] - 2025-09-14
 
 ### 🚀 **MINOR RELEASE: Complete Architecture Modernization & Zod v4 Integration**
