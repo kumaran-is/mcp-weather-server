@@ -1,7 +1,7 @@
 {
   "name": "mcp-weather-server",
-  "version": "2.4.0",
-  "description": "MCP server with Open-Meteo weather API integration supporting stdio and HTTP transports",
+  "version": "2.5.0",
+  "description": "Modern MCP server with Open-Meteo weather API integration using latest SDK patterns, supporting stdio and HTTP transports",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -24,7 +24,8 @@
     "lru-cache": "~11.2.1",
     "pino": "~9.9.4",
     "undici": "~7.16.0",
-    "uuid": "~13.0.0"
+    "uuid": "~13.0.0",
+    "zod": "~3.23.8"
   },
   "devDependencies": {
     "@types/long": "~5.0.0",

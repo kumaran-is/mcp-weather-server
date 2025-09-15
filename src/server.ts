@@ -29,9 +29,9 @@ export async function main() {
       platform: process.platform
     });
 
-    // Create MCP server instance
-    const weatherServer = new WeatherMCPServer();
-    const server = weatherServer.getServer();
+    // Create MCP server instance with modern SDK
+    const weatherMCPServer = new WeatherMCPServer();
+    const mcpServer = weatherMCPServer.getServer();
 
     // Choose transport based on configuration
     if (config.server.transport === 'http') {
@@ -75,8 +75,8 @@ export async function main() {
             }
           };
 
-          // Connect the MCP server to the transport
-          await server.connect(transport);
+          // Connect the modern MCP server to the transport
+          await mcpServer.connect(transport);
         } else {
           // Invalid request
           return reply.status(400).send({
@@ -179,7 +179,7 @@ export async function main() {
       logger.info('Using stdio transport');
 
       const stdioTransport = new StdioServerTransport();
-      await server.connect(stdioTransport);
+      await mcpServer.connect(stdioTransport);
 
       logger.info('MCP Weather Server started successfully with stdio transport');
     }

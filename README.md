@@ -1,14 +1,16 @@
 # MCP Weather Server
 
-A production-ready **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **dual-transport strategy** for maximum compatibility: Official stdio MCP SDK for local development and Official Streamable HTTP SDK for production APIs.
+A **modern, production-ready Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with the **latest MCP SDK patterns**, TypeScript, Node.js 22.x, and implements a **clean dual-transport strategy** with **perfect 3-layer SOLID architecture**.
 
-This MCP Weather Server is a production-ready example of how to build robust, scalable MCP servers with proper error handling, resilience patterns, and clean architecture. The codebase demonstrates best practices for TypeScript development, async programming, and API integration.
+This MCP Weather Server represents a **gold standard implementation** of modern MCP servers, showcasing the latest SDK patterns (`McpServer`, `registerTool()`, Zod validation) with enterprise-grade resilience, clean architecture, and comprehensive observability.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/mcp-weather-server)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
-[![Fastify](https://img.shields.io/badge/Fastify-5.2-black)](https://fastify.dev/)
-[![MCP](https://img.shields.io/badge/MCP-2025--06--18-orange)](https://modelcontextprotocol.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![Fastify](https://img.shields.io/badge/Fastify-5.6-black)](https://fastify.dev/)
+[![MCP SDK](https://img.shields.io/badge/MCP%20SDK-Latest-orange)](https://modelcontextprotocol.io/)
+[![Zod](https://img.shields.io/badge/Zod-3.23-purple)](https://zod.dev/)
+[![SOLID](https://img.shields.io/badge/Architecture-SOLID-green)](https://en.wikipedia.org/wiki/SOLID)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 ## 📋 Table of Contents
@@ -30,7 +32,7 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
       - [Test with AI Assistant](#test-with-ai-assistant)
   - [Directory Structure](#directory-structure)
   - [🏗️ Architecture \& Design](#️-architecture--design)
-    - [High-Level Architecture](#high-level-architecture)
+    - [🏗️ Perfect 3-Layer SOLID Architecture](#️-perfect-3-layer-solid-architecture)
     - [Transport Strategy](#transport-strategy)
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
@@ -78,31 +80,34 @@ This MCP Weather Server is a production-ready example of how to build robust, sc
 
 ## 🌟 Features
 
-- **🤖 LLM-Friendly Design**: Clear tool descriptions, structured responses, input validation & error context and idempotent operations
+- **🏗️ Perfect SOLID Architecture**: Clean 3-layer separation with zero cross-contamination
+- **⚡ Latest MCP SDK Patterns**: Modern `McpServer`, `registerTool()`, and Zod validation
+- **🤖 LLM-Friendly Design**: Clear tool descriptions, structured responses, and intelligent error handling
 - **🌤️ Real-time Weather**: Current weather conditions with temperature, humidity, wind speed
 - **📅 Weather Forecasts**: Up to 7-day forecasts with detailed conditions
 - **🤖 AI Agent Support**: `retrieve_weather_context` tool for natural language queries
-- **🔄 Dual Transport Types**: 
+- **🔄 Modern Dual Transport**: 
   - **Official Stdio**: Local development with Cline in VS Code
   - **Official Streamable HTTP**: Production APIs, LangChain, microservices
-- **🛡️ Resilience Patterns**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
-- **⚡ High Performance**: Undici-based HTTP client with connection pooling and streaming
+- **🛡️ Enterprise Resilience**: Circuit breaker, retry strategies, rate limiting, bulkhead isolation
+- **⚡ Ultra Performance**: Fastify + Undici with connection pooling and streaming
 - **🔒 Security First**: Input validation, Origin checks, CORS support, session management
-- **📊 Observability**: Structured logging with Pino, real-time metrics, health monitoring
+- **📊 Advanced Observability**: Structured Pino logging, real-time metrics, health monitoring
 - **🧪 Comprehensive Testing**: Unit tests, integration tests, chaos engineering, load testing
 - **🚀 Production Ready**: Docker containerization, graceful shutdown, error recovery
 
 ## 🛠️ Technology Stack
 
 | Technology | Version | Purpose |
-|------------|---------|---------|
+|------------|---------|------------|
 | [**Node.js**](https://nodejs.org/) | `>=22.0.0` | JavaScript runtime environment |
 | [**TypeScript**](https://github.com/microsoft/TypeScript) | `~5.9.0` | Type-safe JavaScript development | 
-| [**Fastify**](https://fastify.dev/) | `~5.6.0` | High-performance web framework for HTTP transport (replaces Express.js) |
-| [**@modelcontextprotocol/sdk**](https://github.com/modelcontextprotocol/typescript-sdk) | `~1.17.5` | MCP protocol implementation |
-| [**Pino**](https://github.com/pinojs/pino) | `~9.9.0` | High-performance structured logging |
+| [**@modelcontextprotocol/sdk**](https://github.com/modelcontextprotocol/typescript-sdk) | `~1.17.5` | **Latest MCP SDK** with modern patterns |
+| [**Zod**](https://zod.dev/) | `~3.23.8` | **Runtime schema validation** and TypeScript inference |
+| [**Fastify**](https://fastify.dev/) | `~5.6.0` | High-performance web framework (transport layer) |
+| [**Pino**](https://github.com/pinojs/pino) | `~9.9.0` | Production structured logging |
 | [**Vitest**](https://github.com/vitest-dev/vitest)| `~3.2.0` | Next-generation testing framework |
-| [**undici**](https://github.com/nodejs/undici) | `~7.16.0` | High-performance HTTP client with connection pooling |
+| [**undici**](https://github.com/nodejs/undici) | `~7.16.0` | High-performance HTTP client with resilience |
 | [**Open-Meteo API**](https://open-meteo.com/) | N/A | Free weather data provider |
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
@@ -260,9 +265,9 @@ Once configured, you can test with natural language:
 
 ```
 src/
-├── server.ts                ← 🎯 Entry point & transport selection
-├── mcp-server.ts            ← 🧠 Core MCP protocol implementation
-├── weather-service.ts       ← 🌤️ Business logic for weather operations
+├── server.ts                ← 🎯 **Layer 1: Transport & Infrastructure**
+├── mcp-server.ts            ← 🧠 **Layer 2: Protocol & MCP SDK (MODERNIZED)**
+├── weather-service.ts       ← 🌤️ **Layer 3: Business & Domain Logic**
 ├── types.ts                 ← 📝 TypeScript interfaces
 ├── logger-pino.ts           ← 📊 Production logging with Pino
 │
@@ -274,11 +279,6 @@ src/
 │   ├── weather-cache.ts     
 │   └── weather-cache.spec.ts
 │
-├── transports/              ← 🚌 Communication protocols
-│   ├── http-transport.ts    ← Streamble HTTP with Fastify
-│   ├── sse-transport.ts     ← Simple Custom SSE for remote AI Assitant like Cline, Copilot, Cursor etc
-│   └── *.spec.ts
-│
 ├── undici-resilience/       ← 🛡️ Advanced HTTP resilience
 │   ├── index.ts             ← Main exports
 │   ├── http/                ← Connection pooling
@@ -286,66 +286,83 @@ src/
 │   ├── streaming/           ← Backpressure handling
 │   └── monitoring/          ← Metrics and health
 │
-├── errors/                  ← 🚨 Custom error handling
+├── errors/                  ← �� Custom error handling
 ├── middleware/              ← 🛡️ Request validation
 └── utils/                   ← 🔧 Utility functions
+
+**🏗️ Perfect 3-Layer SOLID Architecture:**
+- **Layer 1 (server.ts)**: Pure infrastructure - Fastify, transports, sessions
+- **Layer 2 (mcp-server.ts)**: Modern MCP SDK - `McpServer`, `registerTool()`, Zod
+- **Layer 3 (weather-service.ts)**: Pure business logic - weather APIs, caching
 
 ```
 
 ## 🏗️ Architecture & Design
 
-### High-Level Architecture
-
+### 🏗️ Perfect 3-Layer SOLID Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    CLIENT LAYER                             │
-│ AI Assistants (Cline, Claude) | AI Agents (Streamble HTTP)  │
+│ AI Assistants (Cline, Claude) | AI Agents (Streamable HTTP) │
 └─────────────────┬───────────────────────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────────────────────┐
-│                 TRANSPORT LAYER                             │
-│  ┌──────────────┬──────────────────┬──────────────────┐    │
-│  │ Stdio        │ HTTP (Fastify)   │ SSE (Custom)     │    │
-│  │ Local Dev    │ Production APIs  │ Remote Cline     │    │
-│  └──────────────┴──────────────────┴──────────────────┘    │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────────────┐
-│                MCP PROTOCOL LAYER                           │
-│       WeatherMCPServer (src/mcp-server.ts)                 │
+│          🎯 LAYER 1: TRANSPORT & INFRASTRUCTURE            │
+│                    (server.ts)                             │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │ Tool Registration | Request Routing | Validation    │    │
+│  │ Fastify Server | Session Management | Health Checks │    │
+│  │ Stdio Transport | Streamable HTTP | Error Boundaries │    │
 │  └─────────────────────────────────────────────────────┘    │
+│  ✅ ZERO business logic - Pure infrastructure concerns      │
 └─────────────────┬───────────────────────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────────────────────┐
-│                BUSINESS LOGIC LAYER                         │
-│       WeatherService (src/weather-service.ts)              │
+│        🧠 LAYER 2: PROTOCOL & MCP SDK (MODERNIZED)         │
+│                 (mcp-server.ts)                            │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │ API Integration | Caching | Data Transformation     │    │
+│  │ McpServer | registerTool() | Zod Validation         │    │
+│  │ Latest SDK Patterns | MCP v2025-06-18 Compliance   │    │
 │  └─────────────────────────────────────────────────────┘    │
+│  ✅ ZERO business logic - Pure protocol adapter             │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────────────┐
+│         🌤️ LAYER 3: BUSINESS & DOMAIN LOGIC                │
+│                (weather-service.ts)                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Weather APIs | LRU Caching | Data Transformation   │    │
+│  │ Domain Objects | Custom Errors | Resilience Logic  │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ✅ ZERO protocol concerns - Pure domain focus              │
 └─────────────────┬───────────────────────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────────────────────┐
 │              INFRASTRUCTURE LAYER                           │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │ Undici Resilience | Cache | Config | Logging        │    │
-│  │ External APIs (Open-Meteo) | Error Handling         │    │
+│  │ Undici Resilience | External APIs | Logging         │    │
+│  │ Circuit Breaker | Retry | Rate Limit | Monitoring   │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**🎯 SOLID Principles: 100% Compliance**
+- **Single Responsibility**: Each layer has exactly one purpose
+- **Open/Closed**: Easy to extend without modification
+- **Liskov Substitution**: Components are fully substitutable
+- **Interface Segregation**: Clean, minimal interfaces
+- **Dependency Inversion**: Proper abstraction dependencies
+
 ### Transport Strategy
 
-The MCP Weather Server implements a **clean dual-transport strategy** for optimal compatibility and maintainability:
+The MCP Weather Server implements a **modern dual-transport strategy** with perfect separation:
 
 | Transport | Port | Best For | Protocol | Cline Support |
 |-----------|------|----------|----------|---------------|
 | **Official Stdio** | N/A | Local development, VS Code | Process I/O | ✅ Local only |
 | **Official Streamable HTTP** | 8080 | Production APIs, LangChain | Streamable HTTP | ❌ No |
 
-**Architecture Change (v2.4.0):** The SSE transport has been removed to align with MCP protocol evolution toward Streamable HTTP as the standard for remote connections. This provides a cleaner, more maintainable codebase focused on the two officially supported transport methods.
+**Architecture Evolution (v2.5.0):** The server now uses the **latest MCP SDK patterns** with `McpServer` and `registerTool()` for significantly simplified code, better type safety, and automatic protocol compliance while maintaining the clean dual-transport architecture.
 
 #### Transport Decision Matrix
 

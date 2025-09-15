@@ -1,18 +1,17 @@
-import { Server } from '@modelcontextprotocol/sdk/server';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WeatherService } from './weather-service.js';
 import { logger } from './logger-pino.js';
-import { MCPTool } from './types.js';
 import { createValidationMiddleware } from './middleware/validation.js';
 import { VERSION, NAME } from './utils/version.js';
+import { z } from 'zod';
 
 /**
  * Weather MCP Server
- * Implements the Model Context Protocol for weather information
+ * Implements the Model Context Protocol for weather information using latest SDK patterns
  * Supports current weather, forecasts, and agentic RAG queries
  */
 export class WeatherMCPServer {
-  private server: Server;
+  private mcpServer: McpServer;
   private weatherService: WeatherService;
   private validateRequest: ReturnType<typeof createValidationMiddleware>;
 
@@ -20,517 +19,205 @@ export class WeatherMCPServer {
     this.weatherService = new WeatherService();
     this.validateRequest = createValidationMiddleware('stdio'); // Default to stdio
 
-    // Initialize MCP server with configuration
-    this.server = new Server(
-      {
-        name: NAME,
-        version: VERSION
-      },
-      {
-        capabilities: {
-          tools: { listChanged: true },
-          logging: {}
-        }
-      }
-    );
+    // Initialize MCP server with modern SDK
+    this.mcpServer = new McpServer({
+      name: NAME,
+      version: VERSION
+    });
 
-    this.setupToolHandlers();
+    this.setupTools();
     this.setupErrorHandling();
 
-    logger.info('Weather MCP Server initialized', {
-      name: 'weather-mcp-server',
-      version: '1.0.0',
+    logger.info('Weather MCP Server initialized with modern SDK', {
+      name: NAME,
+      version: VERSION,
       protocolVersion: '2025-06-18'
     });
   }
 
+
   /**
-   * Process MCP messages directly
-   * This method handles all MCP protocol messages
+   * Format weather data for display
    */
-  async processMessage(message: any): Promise<any> {
-    const startTime = Date.now();
-
-    try {
-      // Validate the incoming request
-      await this.validateRequest(message);
-      
-      logger.debug('Processing MCP message', { method: message.method, id: message.id });
-
-      switch (message.method) {
-        case 'initialize':
-          return await this.handleInitialize(message);
-
-        case 'notifications/initialized':
-          return await this.handleInitialized(message);
-
-        case 'shutdown':
-          return await this.handleShutdown(message);
-
-        case 'tools/list':
-          return await this.handleToolsList(message);
-
-        case 'tools/call':
-          return await this.handleToolsCall(message);
-
-        default:
-          logger.logMCPError(-32601, `Method '${message.method}' not found`);
-          return {
-            jsonrpc: '2.0',
-            id: message.id,
-            error: {
-              code: -32601,
-              message: `Method '${message.method}' not found`
-            }
-          };
-      }
-    } catch (error) {
-      logger.logError(error as Error, {
-        method: message.method,
-        id: message.id,
-        duration: Date.now() - startTime
-      });
-
-      return {
-        jsonrpc: '2.0',
-        id: message.id,
-        error: {
-          code: -32603,
-          message: 'Internal error',
-          data: { details: (error as Error).message }
-        }
-      };
-    }
+  private formatWeatherText(weather: any): string {
+    return `Weather in ${weather.location}:\n` +
+           `• Temperature: ${weather.temperature}°C\n` +
+           `• Condition: ${weather.description}\n` +
+           `• Humidity: ${weather.humidity}%\n` +
+           `• Wind Speed: ${weather.windSpeed} m/s\n` +
+           `• Feels Like: ${weather.feelsLike}°C\n` +
+           `• Pressure: ${weather.pressure} hPa` +
+           (weather.timestamp ? `\n• Last Updated: ${new Date(weather.timestamp).toLocaleString()}` : '');
   }
 
   /**
-   * Handle initialize request
+   * Format forecast data for display
    */
-  private async handleInitialize(message: any): Promise<any> {
-    const { protocolVersion, capabilities, clientInfo } = message.params || {};
-
-    logger.logMCPLifecycle('initialize', {
-      clientInfo,
-      protocolVersion,
-      capabilities
-    });
-
-    // Validate protocol version - accept both current and older versions for compatibility
-    const supportedVersions = ['2025-06-18', '2025-03-26'];
-    if (!supportedVersions.includes(protocolVersion)) {
-      logger.logMCPError(-32602, 'Unsupported protocol version', {
-        requested: protocolVersion,
-        supported: supportedVersions
-      });
-
-      return {
-        jsonrpc: '2.0',
-        id: message.id,
-        error: {
-          code: -32602,
-          message: 'Unsupported protocol version',
-          data: {
-            supported: supportedVersions,
-            requested: protocolVersion
-          }
-        }
-      };
-    }
-
-    // Return server capabilities and information
-    // Echo back the client's protocol version for compatibility
-    const response = {
-      jsonrpc: '2.0',
-      id: message.id,
-      result: {
-        protocolVersion: protocolVersion,
-        capabilities: {
-          tools: { listChanged: true },
-          logging: {}
-        },
-        serverInfo: {
-          name: NAME,
-          title: 'Weather MCP Server',
-          version: VERSION,
-          description: 'MCP server providing weather information using Open-Meteo API'
-        }
-      }
-    };
-
-    logger.logMCPLifecycle('initialize_response', {
-      protocolVersion: response.result.protocolVersion,
-      capabilities: response.result.capabilities
-    });
-
-    return response;
-  }
-
-  /**
-   * Handle initialized notification
-   */
-  private async handleInitialized(_message: any): Promise<any> {
-    logger.logMCPLifecycle('initialized_notification');
-    // Notifications don't require a response
-    return null;
-  }
-
-  /**
-   * Handle shutdown request
-   */
-  private async handleShutdown(message: any): Promise<any> {
-    logger.logMCPLifecycle('shutdown');
-    await this.gracefulShutdown();
-
-    return {
-      jsonrpc: '2.0',
-      id: message.id,
-      result: {}
-    };
-  }
-
-  /**
-   * Handle tools/list request
-   */
-  private async handleToolsList(message: any): Promise<any> {
-    logger.debug('Listing available tools');
-
-    const tools: MCPTool[] = [
-      {
-        name: 'get_current_weather',
-        description: 'Get current weather for a city using Open-Meteo API',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            city: {
-              type: 'string',
-              description: 'City name (e.g., "London", "New York", "Tokyo")'
-            }
-          },
-          required: ['city']
-        }
-      },
-      {
-        name: 'get_weather_forecast',
-        description: 'Get weather forecast for a city (1-7 days)',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            city: {
-              type: 'string',
-              description: 'City name'
-            },
-            days: {
-              type: 'number',
-              description: 'Number of days for forecast (1-7)',
-              minimum: 1,
-              maximum: 7,
-              default: 5
-            }
-          },
-          required: ['city']
-        }
-      },
-      {
-        name: 'retrieve_weather_context',
-        description: 'Retrieve weather context for AI agent queries',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            query: {
-              type: 'string',
-              description: 'Query containing city reference (e.g., "weather in London for travel")'
-            }
-          },
-          required: ['query']
-        }
-      }
-    ];
-
-    logger.debug('Tools listed successfully', { toolCount: tools.length });
-
-    return {
-      jsonrpc: '2.0',
-      id: message.id,
-      result: { tools }
-    };
-  }
-
-  /**
-   * Handle tools/call request
-   */
-  private async handleToolsCall(message: any): Promise<any> {
-    const { name, arguments: args } = message.params || {};
-    const startTime = Date.now();
-
-    logger.logToolCall(name, args);
-
-    try {
-      let result: any;
-
-      switch (name) {
-        case 'get_current_weather':
-          result = await this.handleGetCurrentWeather(args);
-          break;
-
-        case 'get_weather_forecast':
-          result = await this.handleGetWeatherForecast(args);
-          break;
-
-        case 'retrieve_weather_context':
-          result = await this.handleRetrieveWeatherContext(args);
-          break;
-
-        default:
-          logger.logMCPError(-32601, `Unknown tool: ${name}`);
-          return {
-            jsonrpc: '2.0',
-            id: message.id,
-            error: {
-              code: -32601,
-              message: `Unknown tool: ${name}`
-            }
-          };
-      }
-
-      logger.logPerformance(`tool_${name}`, startTime, {
-        success: true,
-        args
-      });
-
-      return {
-        jsonrpc: '2.0',
-        id: message.id,
-        result
-      };
-
-    } catch (error) {
-      logger.logError(error as Error, {
-        tool: name,
-        args,
-        duration: Date.now() - startTime
-      });
-
-      // Return appropriate MCP error response
-      const err = error as Error;
-      let errorCode = -32603; // Internal error
-      let errorMessage = `Tool execution failed: ${err.message}`;
-
-      if (err.message.includes('Invalid city parameter') ||
-          err.message.includes('City not found') ||
-          err.message.includes('Days must be between')) {
-        errorCode = -32602; // Invalid params
-      }
-
-      return {
-        jsonrpc: '2.0',
-        id: message.id,
-        error: {
-          code: errorCode,
-          message: errorMessage
-        }
-      };
-    }
-  }
-
-  /**
-   * Handle get_current_weather tool
-   */
-  private async handleGetCurrentWeather(args: any) {
-    if (!args || typeof args.city !== 'string' || args.city.trim() === '') {
-      throw new Error('Invalid city parameter: city must be a non-empty string');
-    }
-
-    const weather = await this.weatherService.getCurrentWeather(args.city.trim());
-
-    return {
-      content: [{
-        type: 'text',
-        text: `Weather in ${weather.location}:\n` +
-              `• Temperature: ${weather.temperature}°C\n` +
-              `• Condition: ${weather.description}\n` +
-              `• Humidity: ${weather.humidity}%\n` +
-              `• Wind Speed: ${weather.windSpeed} m/s\n` +
-              `• Feels Like: ${weather.feelsLike}°C\n` +
-              `• Pressure: ${weather.pressure} hPa` +
-              (weather.timestamp ? `\n• Last Updated: ${new Date(weather.timestamp).toLocaleString()}` : '')
-      }]
-    };
-  }
-
-  /**
-   * Handle get_weather_forecast tool
-   */
-  private async handleGetWeatherForecast(args: any) {
-    if (!args || typeof args.city !== 'string' || args.city.trim() === '') {
-      throw new Error('Invalid city parameter: city must be a non-empty string');
-    }
-
-    const days = args.days || 5;
-    if (days < 1 || days > 7) {
-      throw new Error('Days must be between 1 and 7');
-    }
-
-    const forecast = await this.weatherService.getForecast(args.city.trim(), days);
-
+  private formatForecastText(forecast: any, days: number): string {
     const forecastText = forecast.forecasts
-      .map(f =>
+      .map((f: any) =>
         `${f.date}: ${f.temperature}°C (${f.temperatureMin}°C - ${f.temperatureMax}°C), ${f.description}, Humidity: ${f.humidity}%` +
         (f.windSpeed ? `, Wind: ${f.windSpeed} m/s` : '') +
         (f.precipitation ? `, Precipitation: ${f.precipitation} mm` : '')
       )
       .join('\n');
 
-    return {
-      content: [{
-        type: 'text',
-        text: `${days}-day weather forecast for ${forecast.location}:\n\n${forecastText}`
-      }]
-    };
+    return `${days}-day weather forecast for ${forecast.location}:\n\n${forecastText}`;
   }
 
   /**
-   * Handle retrieve_weather_context tool (for AI agents)
+   * Format weather context for AI queries
    */
-  private async handleRetrieveWeatherContext(args: any) {
-    if (!args || typeof args.query !== 'string' || args.query.trim() === '') {
-      throw new Error('Invalid query parameter: query must be a non-empty string');
-    }
+  private formatWeatherContext(weather: any, query: string): string {
+    return `Weather context for "${query}":\n\n` +
+           `Location: ${weather.location}\n` +
+           `Current Temperature: ${weather.temperature}°C\n` +
+           `Conditions: ${weather.description}\n` +
+           `Humidity: ${weather.humidity}%\n` +
+           `Wind Speed: ${weather.windSpeed} m/s\n\n` +
+           `This information can be used for travel planning, activity suggestions, or general weather awareness.`;
+  }
 
-    const query = args.query.trim();
-
-    // Extract city from query using simple pattern matching
+  /**
+   * Extract city from natural language query
+   */
+  private extractCityFromQuery(query: string): string {
     const cityMatch = query.match(/(?:weather\s+(?:like\s+)?in\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?)|in\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?)|for\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?)|weather\s+([A-Za-z]+(?:\s+[A-Za-z]+)*?))/i);
 
     if (!cityMatch) {
       throw new Error('No city found in query. Please include a city name in your query.');
     }
 
-    const city = (cityMatch[1] || cityMatch[2] || cityMatch[3] || cityMatch[4]).trim();
-    const weather = await this.weatherService.getCurrentWeather(city);
-
-    return {
-      content: [{
-        type: 'text',
-        text: `Weather context for "${query}":\n\n` +
-              `Location: ${weather.location}\n` +
-              `Current Temperature: ${weather.temperature}°C\n` +
-              `Conditions: ${weather.description}\n` +
-              `Humidity: ${weather.humidity}%\n` +
-              `Wind Speed: ${weather.windSpeed} m/s\n\n` +
-              `This information can be used for travel planning, activity suggestions, or general weather awareness.`
-      }]
-    };
+    return (cityMatch[1] || cityMatch[2] || cityMatch[3] || cityMatch[4]).trim();
   }
 
   /**
-   * Set up tool handlers with MCP SDK
+   * Set up tools using modern MCP SDK patterns
    */
-  private setupToolHandlers(): void {
-    // Register tools/list handler
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      logger.debug('Listing available tools');
-
-      const tools: MCPTool[] = [
-        {
-          name: 'get_current_weather',
-          description: 'Get current weather for a city using Open-Meteo API',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              city: {
-                type: 'string',
-                description: 'City name (e.g., "London", "New York", "Tokyo")'
-              }
-            },
-            required: ['city']
-          }
-        },
-        {
-          name: 'get_weather_forecast',
-          description: 'Get weather forecast for a city (1-7 days)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              city: {
-                type: 'string',
-                description: 'City name'
-              },
-              days: {
-                type: 'number',
-                description: 'Number of days for forecast (1-7)',
-                minimum: 1,
-                maximum: 7,
-                default: 5
-              }
-            },
-            required: ['city']
-          }
-        },
-        {
-          name: 'retrieve_weather_context',
-          description: 'Retrieve weather context for AI agent queries',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              query: {
-                type: 'string',
-                description: 'Query containing city reference (e.g., "weather in London for travel")'
-              }
-            },
-            required: ['query']
-          }
+  private setupTools(): void {
+    // Register get_current_weather tool
+    this.mcpServer.registerTool(
+      'get_current_weather',
+      {
+        title: 'Current Weather',
+        description: 'Get current weather for a city using Open-Meteo API',
+        inputSchema: {
+          city: z.string().min(1).describe('City name (e.g., "London", "New York", "Tokyo")')
         }
-      ];
+      },
+      async ({ city }) => {
+        const startTime = Date.now();
+        logger.logToolCall('get_current_weather', { city });
 
-      logger.debug('Tools listed successfully', { toolCount: tools.length });
+        try {
+          const weather = await this.weatherService.getCurrentWeather(city.trim());
+          
+          logger.logPerformance('tool_get_current_weather', startTime, {
+            success: true,
+            city: city.trim()
+          });
 
-      return { tools };
-    });
-
-    // Register tools/call handler
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-      const startTime = Date.now();
-
-      logger.logToolCall(name, args);
-
-      try {
-        let result: any;
-
-        switch (name) {
-          case 'get_current_weather':
-            result = await this.handleGetCurrentWeather(args);
-            break;
-
-          case 'get_weather_forecast':
-            result = await this.handleGetWeatherForecast(args);
-            break;
-
-          case 'retrieve_weather_context':
-            result = await this.handleRetrieveWeatherContext(args);
-            break;
-
-          default:
-            throw new Error(`Unknown tool: ${name}`);
+          return {
+            content: [{
+              type: 'text',
+              text: this.formatWeatherText(weather)
+            }]
+          };
+        } catch (error) {
+          logger.logError(error as Error, {
+            tool: 'get_current_weather',
+            city,
+            duration: Date.now() - startTime
+          });
+          throw error;
         }
-
-        logger.logPerformance(`tool_${name}`, startTime, {
-          success: true,
-          args
-        });
-
-        return result;
-
-      } catch (error) {
-        logger.logError(error as Error, {
-          tool: name,
-          args,
-          duration: Date.now() - startTime
-        });
-
-        throw error;
       }
-    });
+    );
+
+    // Register get_weather_forecast tool
+    this.mcpServer.registerTool(
+      'get_weather_forecast',
+      {
+        title: 'Weather Forecast',
+        description: 'Get weather forecast for a city (1-7 days)',
+        inputSchema: {
+          city: z.string().min(1).describe('City name'),
+          days: z.number().min(1).max(7).default(5).describe('Number of days for forecast (1-7)')
+        }
+      },
+      async ({ city, days = 5 }) => {
+        const startTime = Date.now();
+        logger.logToolCall('get_weather_forecast', { city, days });
+
+        try {
+          const forecast = await this.weatherService.getForecast(city.trim(), days);
+          
+          logger.logPerformance('tool_get_weather_forecast', startTime, {
+            success: true,
+            city: city.trim(),
+            days
+          });
+
+          return {
+            content: [{
+              type: 'text',
+              text: this.formatForecastText(forecast, days)
+            }]
+          };
+        } catch (error) {
+          logger.logError(error as Error, {
+            tool: 'get_weather_forecast',
+            city,
+            days,
+            duration: Date.now() - startTime
+          });
+          throw error;
+        }
+      }
+    );
+
+    // Register retrieve_weather_context tool
+    this.mcpServer.registerTool(
+      'retrieve_weather_context',
+      {
+        title: 'Weather Context Retriever',
+        description: 'Retrieve weather context for AI agent queries',
+        inputSchema: {
+          query: z.string().min(1).describe('Query containing city reference (e.g., "weather in London for travel")')
+        }
+      },
+      async ({ query }) => {
+        const startTime = Date.now();
+        logger.logToolCall('retrieve_weather_context', { query });
+
+        try {
+          const city = this.extractCityFromQuery(query.trim());
+          const weather = await this.weatherService.getCurrentWeather(city);
+          
+          logger.logPerformance('tool_retrieve_weather_context', startTime, {
+            success: true,
+            query: query.trim(),
+            extractedCity: city
+          });
+
+          return {
+            content: [{
+              type: 'text',
+              text: this.formatWeatherContext(weather, query.trim())
+            }]
+          };
+        } catch (error) {
+          logger.logError(error as Error, {
+            tool: 'retrieve_weather_context',
+            query,
+            duration: Date.now() - startTime
+          });
+          throw error;
+        }
+      }
+    );
+
+    logger.info('Weather tools registered successfully', { toolCount: 3 });
   }
 
   /**
@@ -575,8 +262,8 @@ export class WeatherMCPServer {
   /**
    * Get the underlying MCP server instance
    */
-  public getServer(): Server {
-    return this.server;
+  public getServer(): McpServer {
+    return this.mcpServer;
   }
 
   /**
@@ -584,8 +271,8 @@ export class WeatherMCPServer {
    */
   public getStats() {
     return {
-      serverName: 'weather-mcp-server',
-      version: '1.0.0',
+      serverName: NAME,
+      version: VERSION,
       protocolVersion: '2025-06-18',
       toolsCount: 3,
       uptime: process.uptime(),
