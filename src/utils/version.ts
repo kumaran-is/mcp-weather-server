@@ -3,9 +3,12 @@
  */
 
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-// Get version from package.json using CommonJS approach
+// Get version from package.json using ES module approach
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const packageJsonPath = join(__dirname, '..', '..', 'package.json');
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 
