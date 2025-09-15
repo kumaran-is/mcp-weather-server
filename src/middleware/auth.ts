@@ -191,25 +191,38 @@ function isValidApiKeyFormat(apiKey: string): boolean {
  */
 async function validateApiKey(apiKey: string): Promise<AuthContext | null> {
   try {
-    // In production, this would validate against a database or external service
-    // For now, validate against environment configuration
-    const validKeys = getValidApiKeys();
-    
-    if (!validKeys.has(apiKey)) {
-      return null;
-    }
-
-    const keyInfo = validKeys.get(apiKey)!;
-    
+  // Check if MCP server authentication is enabled
+  const mcpServerKeys = getMcpServerApiKeys();
+  
+  if (mcpServerKeys.size === 0) {
+    // Authentication disabled - allow all requests with default permissions
     return {
       apiKey,
-      keyId: keyInfo.id,
-      permissions: keyInfo.permissions,
+      keyId: 'unauthenticated',
+      permissions: ['weather:read', 'weather:forecast'],
       rateLimit: {
-        limit: keyInfo.rateLimit || config.RATE_LIMIT_PER_CLIENT,
-        window: keyInfo.rateLimitWindow || config.RATE_LIMIT_WINDOW_MS
+        limit: config.RATE_LIMIT_PER_CLIENT,
+        window: config.RATE_LIMIT_WINDOW_MS
       }
     };
+  }
+  
+  // Authentication enabled - validate against configured keys
+  if (!mcpServerKeys.has(apiKey)) {
+    return null;
+  }
+
+  const keyInfo = mcpServerKeys.get(apiKey)!;
+  
+  return {
+    apiKey,
+    keyId: keyInfo.id,
+    permissions: keyInfo.permissions,
+    rateLimit: {
+      limit: keyInfo.rateLimit || config.RATE_LIMIT_PER_CLIENT,
+      window: keyInfo.rateLimitWindow || config.RATE_LIMIT_WINDOW_MS
+    }
+  };
   } catch (error) {
     logger.error('API key validation error', {
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -219,10 +232,10 @@ async function validateApiKey(apiKey: string): Promise<AuthContext | null> {
 }
 
 /**
- * Get valid API keys from configuration
- * In production, this would be replaced with a database lookup
+ * Get MCP server API keys from configuration (optional authentication)
+ * Returns empty map if authentication is disabled
  */
-function getValidApiKeys(): Map<string, {
+function getMcpServerApiKeys(): Map<string, {
   id: string;
   permissions: string[];
   rateLimit?: number;
@@ -230,38 +243,25 @@ function getValidApiKeys(): Map<string, {
 }> {
   const keys = new Map();
 
-  // Development keys
-  if (config.NODE_ENV === 'development') {
-    keys.set('dev_12345678901234567890123456789012', {
-      id: 'dev_001',
-      permissions: ['weather:read', 'weather:forecast'],
-      rateLimit: 1000,
-      rateLimitWindow: 60000
-    });
-  }
-
-  // Production keys from environment
-  if (config.WEATHER_API_KEY) {
-    keys.set(config.WEATHER_API_KEY, {
-      id: 'weather_primary',
-      permissions: ['weather:read', 'weather:forecast', 'weather:alerts'],
-      rateLimit: config.RATE_LIMIT_PER_CLIENT,
-      rateLimitWindow: config.RATE_LIMIT_WINDOW_MS
-    });
-  }
-
-  // Additional keys from environment (comma-separated)
-  const additionalKeys = process.env.ADDITIONAL_API_KEYS?.split(',') || [];
-  additionalKeys.forEach((key, index) => {
+  // Check for MCP server API keys in environment
+  const mcpServerKeys = process.env.MCP_SERVER_API_KEYS?.split(',') || [];
+  
+  mcpServerKeys.forEach((key, index) => {
     if (key.trim()) {
       keys.set(key.trim(), {
-        id: `additional_${index}`,
-        permissions: ['weather:read'],
-        rateLimit: Math.floor(config.RATE_LIMIT_PER_CLIENT / 2),
+        id: `mcp_client_${index}`,
+        permissions: ['weather:read', 'weather:forecast', 'weather:alerts'],
+        rateLimit: config.RATE_LIMIT_PER_CLIENT,
         rateLimitWindow: config.RATE_LIMIT_WINDOW_MS
       });
     }
   });
+
+  // Development keys (only if MCP_SERVER_API_KEYS not set)
+  if (keys.size === 0 && config.NODE_ENV === 'development') {
+    // No authentication required in development by default
+    logger.info('MCP server authentication disabled - allowing all requests');
+  }
 
   return keys;
 }
