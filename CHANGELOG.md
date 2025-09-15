@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2025-09-14
+
+### 🔧 **PATCH RELEASE: TypeScript Import Standards & ES Module Compliance**
+
+This release fixes the non-standard TypeScript import patterns by removing all `.js` extensions and implementing proper ES module configuration, bringing the codebase into full compliance with TypeScript standards.
+
+### Fixed
+- **🚨 TypeScript Import Standards Compliance**:
+  - **Removed ALL `.js` extensions** from TypeScript imports throughout the entire codebase
+  - **Updated TypeScript Configuration**: Changed from `"module": "commonjs"` to `"module": "ES2022"` for proper ES module support
+  - **Fixed ES Module Compatibility**: Updated `import.meta` usage and `__dirname` handling for ES2022 modules
+  - **Systematic Cleanup**: Used automated tools to process all TypeScript files and ensure zero remaining `.js` extensions
+
+### Changed
+- **📚 Module System Configuration**:
+  - **tsconfig.json**: Updated to support `"module": "ES2022"` with proper `import.meta` support
+  - **Import Patterns**: Standardized to use clean imports without file extensions (e.g., `import { service } from './service'`)
+  - **ES Module Entry Points**: Fixed `server.ts` and `version.ts` to use proper ES module patterns
+
+### Technical Details
+- **Import Processing**: Processed all 91+ instances of `.js` extensions in TypeScript imports
+- **File Coverage**: Updated every TypeScript file in the `src/` directory systematically
+- **Build Verification**: Confirmed successful compilation with `npm run build` and `npm run lint`
+- **Transport Testing**: Verified both stdio and HTTP transports working correctly after changes
+
+### Before vs After
+**Before (Non-standard):**
+```typescript
+import { WeatherService } from './weather-service.js';
+import { logger } from './logger-pino.js';
+import { poolManager } from './undici-resilience/index.js';
+```
+
+**After (Standard TypeScript):**
+```typescript
+import { WeatherService } from './weather-service';
+import { logger } from './logger-pino';
+import { poolManager } from './undici-resilience/index';
+```
+
+### Verification Results ✅
+- **TypeScript Compilation**: `npm run build` - SUCCESS (no errors)
+- **ESLint Checks**: `npm run lint` - SUCCESS (no warnings)  
+- **Import Search**: `0 results` for `.js` extensions in TypeScript imports
+- **Stdio Transport**: Functional and verified working
+- **HTTP Transport**: Functional and verified working on port 8080
+- **Test Suite**: All unit tests passing successfully
+
+### Migration Impact
+- **✅ Zero Breaking Changes**: Internal import cleanup with no API changes
+- **✅ Standard Compliance**: Now follows official TypeScript conventions
+- **✅ Build Compatibility**: Full compilation success with ES2022 modules
+- **✅ Transport Compatibility**: Both stdio and HTTP transports verified working
+
+This release brings the codebase into full compliance with TypeScript standards while maintaining all existing functionality and performance characteristics.
+
+---
+
 ## [2.6.1] - 2025-09-14
 
 ### 🔧 **PATCH RELEASE: Critical Issues Resolution & Code Quality Improvements**

@@ -2,8 +2,6 @@
 
 A **Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, and implements a **dual-transport strategy** with **3-layer SOLID architecture**.
 
-**Current Status (v2.6.1)**: The project has undergone significant code quality improvements with all ESLint violations resolved and comprehensive security middleware implemented. Some TypeScript compilation issues remain under active resolution.
-
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/mcp-weather-server)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
