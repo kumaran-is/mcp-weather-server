@@ -18,6 +18,12 @@ const envSchema = z.object({
 
   // Security Configuration
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:8080'),
+  WEATHER_API_KEY: z.string().optional(),
+  ADDITIONAL_API_KEYS: z.string().optional(),
+
+  // Rate Limiting Configuration
+  RATE_LIMIT_PER_CLIENT: z.coerce.number().min(1).max(10000).default(100),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().min(1000).max(3600000).default(60000),
 
   // Logging Configuration
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
