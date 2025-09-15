@@ -309,20 +309,24 @@ export class AuditLogger extends EventEmitter {
     let filteredEvents = [...this.events];
 
     // Apply filters
-    if (filter.startTime !== undefined) {
-      filteredEvents = filteredEvents.filter(e => e.timestamp >= filter.startTime!);
+    if (typeof filter.startTime === 'number') {
+      const startTime = filter.startTime;
+      filteredEvents = filteredEvents.filter(e => e.timestamp >= startTime);
     }
-    if (filter.endTime !== undefined) {
-      filteredEvents = filteredEvents.filter(e => e.timestamp <= filter.endTime!);
+    if (typeof filter.endTime === 'number') {
+      const endTime = filter.endTime;
+      filteredEvents = filteredEvents.filter(e => e.timestamp <= endTime);
     }
     if (filter.userId) {
       filteredEvents = filteredEvents.filter(e => e.userId === filter.userId);
     }
     if (filter.action) {
-      filteredEvents = filteredEvents.filter(e => e.action.includes(filter.action));
+      const action = filter.action;
+      filteredEvents = filteredEvents.filter(e => e.action.includes(action));
     }
     if (filter.resource) {
-      filteredEvents = filteredEvents.filter(e => e.resource.includes(filter.resource));
+      const resource = filter.resource;
+      filteredEvents = filteredEvents.filter(e => e.resource.includes(resource));
     }
     if (filter.outcome) {
       filteredEvents = filteredEvents.filter(e => e.outcome === filter.outcome);

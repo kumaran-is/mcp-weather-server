@@ -46,7 +46,8 @@ export class ContextManager {
     preferredResponseSize: 2000,
   };
 
-  constructor(private readonly customLimits?: Partial<ContextLimits>) {}
+  // eslint-disable-next-line no-unused-vars
+  constructor(private readonly _customLimits?: Partial<ContextLimits>) {}
 
   /**
    * Get effective context limits (custom + defaults)
@@ -54,7 +55,7 @@ export class ContextManager {
   private getLimits(): ContextLimits {
     return {
       ...this.defaultLimits,
-      ...this.customLimits,
+      ...this._customLimits,
     };
   }
 
