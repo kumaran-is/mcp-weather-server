@@ -103,7 +103,7 @@ This MCP Weather Server represents a **gold standard implementation** of modern 
 | [**Node.js**](https://nodejs.org/) | `>=22.0.0` | JavaScript runtime environment |
 | [**TypeScript**](https://github.com/microsoft/TypeScript) | `~5.9.0` | Type-safe JavaScript development | 
 | [**@modelcontextprotocol/sdk**](https://github.com/modelcontextprotocol/typescript-sdk) | `~1.17.5` | **Latest MCP SDK** with modern patterns |
-| [**Zod**](https://zod.dev/) | `~3.23.8` | **Runtime schema validation** and TypeScript inference |
+| [**Zod**](https://zod.dev/) | `~4.0.1` | **Runtime schema validation** and TypeScript inference |
 | [**Fastify**](https://fastify.dev/) | `~5.6.0` | High-performance web framework (transport layer) |
 | [**Pino**](https://github.com/pinojs/pino) | `~9.9.0` | Production structured logging |
 | [**Vitest**](https://github.com/vitest-dev/vitest)| `~3.2.0` | Next-generation testing framework |
