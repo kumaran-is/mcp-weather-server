@@ -270,28 +270,76 @@ src/
 ├── logger-pino.ts           ← 📊 Production logging with Pino
 │
 ├── config/                  ← ⚙️ Configuration management
-│   ├── config.ts           
-│   └── config.spec.ts
+│   ├── config.ts           ← Main configuration with Zod validation
+│   ├── config.spec.ts      ← Configuration tests
+│   └── auth-config.ts      ← Authentication configuration
 │
 ├── cache/                   ← 🗄️ Intelligent LRU caching
-│   ├── weather-cache.ts     
-│   └── weather-cache.spec.ts
+│   ├── weather-cache.ts    ← Multi-tier caching system
+│   └── weather-cache.spec.ts ← Cache layer tests
 │
-├── undici-resilience/       ← 🛡️ Advanced HTTP resilience
-│   ├── index.ts             ← Main exports
+├── errors/                  ← 🚨 Custom error handling
+│   ├── weather-errors.ts   ← Specialized error classes
+│   └── weather-errors.spec.ts ← Error handling tests
+│
+├── middleware/              ← 🛡️ Request validation & security
+│   ├── validation.ts       ← JSON-RPC & MCP validation
+│   ├── validation.spec.ts  ← Validation tests
+│   ├── auth.ts             ← Authentication middleware
+│   ├── rate-limit.ts       ← Rate limiting protection
+│   └── sanitization.ts     ← Input sanitization
+│
+├── security/                ← � Security utilities
+│   └── sanitizer.ts        ← DOMPurify-based sanitization
+│
+├── undici-resilience/       ← �🛡️ Advanced HTTP resilience
+│   ├── index.ts             ← Main exports & pool manager
+│   ├── index.spec.ts       ← Resilience integration tests
+│   ├── logger.ts           ← Resilience-specific logging
+│   │
+│   ├── config/              ← Resilience configuration
+│   │   └── pool-config.ts  ← Pool & resilience settings
+│   │
 │   ├── http/                ← Connection pooling
-│   ├── resilience/          ← Circuit breaker, retry, timeout, fallback, rate limiting, bulkhead pattern.
+│   │   └── pool-manager.ts ← HTTP connection management
+│   │
+│   ├── resilience/          ← Resilience patterns
+│   │   ├── circuit-breaker.ts     ← Circuit breaker pattern
+│   │   ├── circuit-breaker.spec.ts ← Circuit breaker tests
+│   │   ├── retry-strategy.ts      ← Retry with backoff
+│   │   ├── rate-limiter.ts        ← Request throttling
+│   │   └── bulkhead.ts           ← Resource isolation
+│   │
 │   ├── streaming/           ← Backpressure handling
+│   │   ├── streaming-pool-manager.ts    ← Streaming pool management
+│   │   ├── streaming-metrics.ts         ← Stream metrics collection
+│   │   └── backpressure-handler.ts     ← Adaptive backpressure
+│   │
 │   └── monitoring/          ← Metrics and health
+│       └── metrics.ts      ← Performance metrics
 │
-├── errors/                  ← �� Custom error handling
-├── middleware/              ← 🛡️ Request validation
-└── utils/                   ← 🔧 Utility functions
+└── utils/                   ← � Utility functions
+    ├── version.ts          ← Version information utility
+    └── version.spec.ts     ← Version utility tests
 
 **🏗️ Perfect 3-Layer SOLID Architecture:**
 - **Layer 1 (server.ts)**: Pure infrastructure - Fastify, transports, sessions
 - **Layer 2 (mcp-server.ts)**: Modern MCP SDK - `McpServer`, `registerTool()`, Zod
 - **Layer 3 (weather-service.ts)**: Pure business logic - weather APIs, caching
+
+**🔒 Security & Middleware Layer:**
+- **Authentication**: Multi-tier API key validation system
+- **Rate Limiting**: Global, per-client, per-IP, per-endpoint protection
+- **Input Sanitization**: DOMPurify-based with attack pattern detection
+- **Validation**: JSON-RPC 2.0 and MCP protocol compliance
+
+**🛡️ Enterprise Resilience Layer:**
+- **Circuit Breaker**: Automatic failure detection and recovery
+- **Retry Strategy**: Exponential backoff with jitter
+- **Rate Limiting**: Token bucket and sliding window algorithms
+- **Bulkhead Pattern**: Resource isolation and protection
+- **Connection Pooling**: Optimized HTTP connection reuse
+- **Streaming Support**: Backpressure handling and adaptive thresholds
 
 ```
 
