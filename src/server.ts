@@ -191,7 +191,7 @@ export async function main() {
 }
 
 // Only run main if this is the entry point (not imported as a module)
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
     logger.fatal('Uncaught exception in main process', { error: (error as Error).message });
