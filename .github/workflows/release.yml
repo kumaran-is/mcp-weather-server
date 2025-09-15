@@ -1,0 +1,274 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 2.6.3)'
+        required: true
+        type: string
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full validation
+        run: |
+          npm run lint
+          npm run test:coverage
+          npm run build
+          
+      - name: Validate version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "Manual release for version: $VERSION"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "Tag-triggered release for version: $VERSION"
+          fi
+          
+          # Validate semantic version format
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: $VERSION (expected: X.Y.Z)"
+            exit 1
+          fi
+          
+          echo "✅ Version format valid: $VERSION"
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+
+  build-artifacts:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: validate-release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Create tarball
+        run: |
+          mkdir -p release-artifacts
+          tar -czf release-artifacts/mcp-weather-server-${{ env.RELEASE_VERSION }}.tar.gz \
+            dist/ package.json README.md CHANGELOG.md LICENSE docs/ .env.example .env.production.example
+
+      - name: Generate checksums
+        run: |
+          cd release-artifacts
+          sha256sum *.tar.gz > checksums.txt
+          cat checksums.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+
+  docker-build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: validate-release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.repository == 'kumaran-is/mcp-weather-server'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: kumaranis/mcp-weather-server
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ env.RELEASE_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.repository == 'kumaran-is/mcp-weather-server' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, build-artifacts, docker-build]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+
+      - name: Generate release notes
+        run: |
+          echo "# MCP Weather Server v${{ env.RELEASE_VERSION }}" > release-notes.md
+          echo "" >> release-notes.md
+          
+          # Extract changelog section for this version
+          if grep -q "## \[$(echo ${{ env.RELEASE_VERSION }})\]" CHANGELOG.md; then
+            echo "## What's Changed" >> release-notes.md
+            echo "" >> release-notes.md
+            
+            # Extract content between this version and the next
+            sed -n "/## \[$(echo ${{ env.RELEASE_VERSION }})\]/,/## \[/p" CHANGELOG.md | \
+            sed '1d;$d' | \
+            sed '/^$/d' >> release-notes.md
+          else
+            echo "## What's Changed" >> release-notes.md
+            echo "" >> release-notes.md
+            echo "- Release v${{ env.RELEASE_VERSION }}" >> release-notes.md
+            echo "" >> release-notes.md
+          fi
+          
+          echo "" >> release-notes.md
+          echo "## 📦 Installation" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### NPM" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "npm install -g mcp-weather-server@${{ env.RELEASE_VERSION }}" >> release-notes.md
+          echo '```' >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Docker" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "docker pull kumaranis/mcp-weather-server:${{ env.RELEASE_VERSION }}" >> release-notes.md
+          echo '```' >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Source" >> release-notes.md
+          echo "Download the source code tarball from the assets below." >> release-notes.md
+          echo "" >> release-notes.md
+          echo "## 🔍 Verification" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "Verify the downloaded tarball with SHA256 checksums:" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "sha256sum -c checksums.txt" >> release-notes.md
+          echo '```' >> release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          name: Release v${{ env.RELEASE_VERSION }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+          files: |
+            release-artifacts/*.tar.gz
+            release-artifacts/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    needs: github-release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update README version badge
+        run: |
+          # Update version badge in README.md
+          sed -i "s/Version-v[0-9]\+\.[0-9]\+\.[0-9]\+/Version-v${{ env.RELEASE_VERSION }}/g" README.md
+          
+          # Update any version references in documentation
+          find docs/ -name "*.md" -type f -exec sed -i "s/version [0-9]\+\.[0-9]\+\.[0-9]\+/version ${{ env.RELEASE_VERSION }}/g" {} \;
+
+      - name: Update memory bank with release
+        run: |
+          echo "" >> memory-bank/progress.md
+          echo "### ✅ Version ${{ env.RELEASE_VERSION }} Released ($(date -u +"%B %d, %Y"))" >> memory-bank/progress.md
+          echo "- **Release Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> memory-bank/progress.md
+          echo "- **GitHub Release**: https://github.com/kumaran-is/mcp-weather-server/releases/tag/v${{ env.RELEASE_VERSION }}" >> memory-bank/progress.md
+          echo "- **Docker Image**: kumaranis/mcp-weather-server:${{ env.RELEASE_VERSION }}" >> memory-bank/progress.md
+          echo "- **Status**: ✅ Production Ready" >> memory-bank/progress.md
+
+      - name: Commit documentation updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git add README.md docs/ memory-bank/
+            git commit -m "docs: update documentation for v${{ env.RELEASE_VERSION }} release"
+            git push origin main
+          else
+            echo "No documentation changes to commit"
+          fi
+
+  post-release:
+    name: Post-Release Tasks
+    runs-on: ubuntu-latest
+    needs: [github-release, update-documentation]
+    
+    steps:
+      - name: Notify success
+        run: |
+          echo "🎉 Release v${{ env.RELEASE_VERSION }} completed successfully!"
+          echo ""
+          echo "📋 Release Summary:"
+          echo "- ✅ GitHub Release: Created"
+          echo "- ✅ Docker Image: Published"
+          echo "- ✅ Documentation: Updated"
+          echo "- ✅ Artifacts: Available for download"
+          echo ""
+          echo "🔗 Links:"
+          echo "- Release: https://github.com/kumaran-is/mcp-weather-server/releases/tag/v${{ env.RELEASE_VERSION }}"
+          echo "- Docker: https://hub.docker.com/r/kumaranis/mcp-weather-server"
+          echo ""
+          echo "🚀 The release is now live and ready for users!"
