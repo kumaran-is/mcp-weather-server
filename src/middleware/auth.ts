@@ -7,7 +7,6 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { config } from '../config/auth-config.js';
 import { SecurityManager } from '../security/sanitizer.js';
 import { logger } from '../logger-pino.js';
-import { ValidationError } from '../errors/weather-errors.js';
 
 /**
  * Authentication context for validated requests
@@ -35,7 +34,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
 const API_KEY_PATTERNS = {
   development: /^dev_[a-zA-Z0-9]{32}$/,
   production: /^prod_[a-zA-Z0-9]{64}$/,
-  test: /^test_[a-zA-Z0-9]{16}$/
+  test: /^test_[a-zA-Z0-9]{16}$/,
 } as const;
 
 /**
@@ -47,7 +46,7 @@ export function createAuthMiddleware() {
 
   return async function authMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     const correlationId = request.headers['x-correlation-id'] || 'unknown';
     const startTime = Date.now();
@@ -55,13 +54,13 @@ export function createAuthMiddleware() {
     try {
       // Extract API key from Authorization header or query parameter
       let apiKey = extractApiKey(request);
-      
+
       if (!apiKey) {
         logger.warn('Authentication failed: Missing API key', {
           correlationId,
           ip: request.ip,
           userAgent: request.headers['user-agent'],
-          path: request.url
+          path: request.url,
         });
 
         return reply.code(401).send({
@@ -69,8 +68,8 @@ export function createAuthMiddleware() {
             code: 'MISSING_API_KEY',
             message: 'API key is required',
             hint: 'Provide API key in Authorization header as "Bearer <key>" or api_key query parameter',
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
@@ -82,7 +81,7 @@ export function createAuthMiddleware() {
         logger.warn('Authentication failed: Invalid API key format', {
           correlationId,
           ip: request.ip,
-          keyPrefix: apiKey.substring(0, 8) + '...'
+          keyPrefix: apiKey.substring(0, 8) + '...',
         });
 
         return reply.code(401).send({
@@ -90,19 +89,19 @@ export function createAuthMiddleware() {
             code: 'INVALID_API_KEY_FORMAT',
             message: 'Invalid API key format',
             hint: 'API key must match the expected format for your environment',
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
       // Validate API key and get context
       const authContext = await validateApiKey(apiKey);
-      
+
       if (!authContext) {
         logger.warn('Authentication failed: Invalid API key', {
           correlationId,
           ip: request.ip,
-          keyPrefix: apiKey.substring(0, 8) + '...'
+          keyPrefix: apiKey.substring(0, 8) + '...',
         });
 
         return reply.code(401).send({
@@ -110,8 +109,8 @@ export function createAuthMiddleware() {
             code: 'INVALID_API_KEY',
             message: 'Invalid or expired API key',
             hint: 'Verify your API key is correct and not expired',
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
@@ -123,7 +122,7 @@ export function createAuthMiddleware() {
         correlationId,
         keyId: authContext.keyId,
         permissions: authContext.permissions,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
     } catch (error) {
@@ -131,7 +130,7 @@ export function createAuthMiddleware() {
         correlationId,
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return reply.code(500).send({
@@ -139,8 +138,8 @@ export function createAuthMiddleware() {
           code: 'AUTH_MIDDLEWARE_ERROR',
           message: 'Internal authentication error',
           hint: 'Please try again or contact support if the issue persists',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
   };
@@ -182,7 +181,7 @@ function isValidApiKeyFormat(apiKey: string): boolean {
     // For unknown environments, accept any key with minimum length
     return apiKey.length >= 32 && /^[a-zA-Z0-9_-]+$/.test(apiKey);
   }
-  
+
   return pattern.test(apiKey);
 }
 
@@ -192,40 +191,43 @@ function isValidApiKeyFormat(apiKey: string): boolean {
 async function validateApiKey(apiKey: string): Promise<AuthContext | null> {
   try {
   // Check if MCP server authentication is enabled
-  const mcpServerKeys = getMcpServerApiKeys();
-  
-  if (mcpServerKeys.size === 0) {
+    const mcpServerKeys = getMcpServerApiKeys();
+
+    if (mcpServerKeys.size === 0) {
     // Authentication disabled - allow all requests with default permissions
+      return {
+        apiKey,
+        keyId: 'unauthenticated',
+        permissions: ['weather:read', 'weather:forecast'],
+        rateLimit: {
+          limit: config.RATE_LIMIT_PER_CLIENT,
+          window: config.RATE_LIMIT_WINDOW_MS,
+        },
+      };
+    }
+
+    // Authentication enabled - validate against configured keys
+    if (!mcpServerKeys.has(apiKey)) {
+      return null;
+    }
+
+    const keyInfo = mcpServerKeys.get(apiKey);
+    if (!keyInfo) {
+      return null;
+    }
+
     return {
       apiKey,
-      keyId: 'unauthenticated',
-      permissions: ['weather:read', 'weather:forecast'],
+      keyId: keyInfo.id,
+      permissions: keyInfo.permissions,
       rateLimit: {
-        limit: config.RATE_LIMIT_PER_CLIENT,
-        window: config.RATE_LIMIT_WINDOW_MS
-      }
+        limit: keyInfo.rateLimit || config.RATE_LIMIT_PER_CLIENT,
+        window: keyInfo.rateLimitWindow || config.RATE_LIMIT_WINDOW_MS,
+      },
     };
-  }
-  
-  // Authentication enabled - validate against configured keys
-  if (!mcpServerKeys.has(apiKey)) {
-    return null;
-  }
-
-  const keyInfo = mcpServerKeys.get(apiKey)!;
-  
-  return {
-    apiKey,
-    keyId: keyInfo.id,
-    permissions: keyInfo.permissions,
-    rateLimit: {
-      limit: keyInfo.rateLimit || config.RATE_LIMIT_PER_CLIENT,
-      window: keyInfo.rateLimitWindow || config.RATE_LIMIT_WINDOW_MS
-    }
-  };
   } catch (error) {
     logger.error('API key validation error', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
     return null;
   }
@@ -245,14 +247,14 @@ function getMcpServerApiKeys(): Map<string, {
 
   // Check for MCP server API keys in environment
   const mcpServerKeys = process.env.MCP_SERVER_API_KEYS?.split(',') || [];
-  
+
   mcpServerKeys.forEach((key, index) => {
     if (key.trim()) {
       keys.set(key.trim(), {
         id: `mcp_client_${index}`,
         permissions: ['weather:read', 'weather:forecast', 'weather:alerts'],
         rateLimit: config.RATE_LIMIT_PER_CLIENT,
-        rateLimitWindow: config.RATE_LIMIT_WINDOW_MS
+        rateLimitWindow: config.RATE_LIMIT_WINDOW_MS,
       });
     }
   });
@@ -274,7 +276,7 @@ export function hasPermission(request: AuthenticatedRequest, permission: string)
     return false;
   }
 
-  return request.auth.permissions.includes(permission) || 
+  return request.auth.permissions.includes(permission) ||
          request.auth.permissions.includes('*');
 }
 
@@ -284,18 +286,18 @@ export function hasPermission(request: AuthenticatedRequest, permission: string)
 export function requirePermission(permission: string) {
   return async function permissionMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     const authRequest = request as AuthenticatedRequest;
-    
+
     if (!hasPermission(authRequest, permission)) {
       const correlationId = request.headers['x-correlation-id'] || 'unknown';
-      
+
       logger.warn('Permission denied', {
         correlationId,
         keyId: authRequest.auth?.keyId,
         requiredPermission: permission,
-        userPermissions: authRequest.auth?.permissions || []
+        userPermissions: authRequest.auth?.permissions || [],
       });
 
       return reply.code(403).send({
@@ -303,8 +305,8 @@ export function requirePermission(permission: string) {
           code: 'INSUFFICIENT_PERMISSIONS',
           message: `Permission '${permission}' is required`,
           hint: 'Contact your administrator to request additional permissions',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
   };
@@ -315,17 +317,17 @@ export function requirePermission(permission: string) {
  */
 export function createOptionalAuthMiddleware() {
   const authMiddleware = createAuthMiddleware();
-  
+
   return async function optionalAuthMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       await authMiddleware(request, reply);
     } catch (error) {
       // Continue without authentication for optional auth
       logger.debug('Optional authentication failed, continuing without auth', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };

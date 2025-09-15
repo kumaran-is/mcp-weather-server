@@ -33,6 +33,8 @@
     "zod": "~4.0.1"
   },
   "devDependencies": {
+    "@types/dompurify": "~3.0.5",
+    "@types/jsdom": "~21.1.7",
     "@types/long": "~5.0.0",
     "@types/lru-cache": "~7.10.9",
     "@types/node": "~22.0.0",

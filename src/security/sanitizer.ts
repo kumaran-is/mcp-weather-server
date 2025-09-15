@@ -20,7 +20,7 @@ export class SecurityManager {
     const dom = new JSDOM('');
     this.window = dom.window;
     this.purify = DOMPurify(this.window);
-    
+
     this.configurePurify();
   }
 
@@ -35,7 +35,7 @@ export class SecurityManager {
       KEEP_CONTENT: false, // Remove content from disallowed tags
       FORCE_BODY: false,
       SANITIZE_DOM: true,
-      SANITIZE_NAMED_PROPS: true
+      SANITIZE_NAMED_PROPS: true,
     });
   }
 
@@ -77,7 +77,7 @@ export class SecurityManager {
       // First pass: DOMPurify sanitization
       let sanitized = this.purify.sanitize(str, {
         ALLOWED_TAGS: [],
-        ALLOWED_ATTR: []
+        ALLOWED_ATTR: [],
       });
 
       // Second pass: SQL injection protection
@@ -94,9 +94,9 @@ export class SecurityManager {
     } catch (error) {
       logger.warn('String sanitization error', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        inputLength: str.length
+        inputLength: str.length,
       });
-      
+
       // If sanitization fails, return a safe empty string
       return '';
     }
@@ -106,21 +106,22 @@ export class SecurityManager {
    * Escape SQL injection patterns
    */
   private escapeSql(str: string): string {
+    // eslint-disable-next-line no-control-regex
     return str.replace(/[\0\x08\x09\x1a\n\r"'\\%]/g, (char) => {
       switch (char) {
-        case '\0': return '\\0';
-        case '\x08': return '\\b';
-        case '\x09': return '\\t';
-        case '\x1a': return '\\z';
-        case '\n': return '\\n';
-        case '\r': return '\\r';
-        case '"':
-        case "'":
-        case '\\':
-        case '%':
-          return '\\' + char;
-        default:
-          return char;
+      case '\0': return '\\0';
+      case '\x08': return '\\b';
+      case '\x09': return '\\t';
+      case '\x1a': return '\\z';
+      case '\n': return '\\n';
+      case '\r': return '\\r';
+      case '"':
+      case "'":
+      case '\\':
+      case '%':
+        return '\\' + char;
+      default:
+        return char;
       }
     });
   }
@@ -138,7 +139,7 @@ export class SecurityManager {
    */
   private sanitizePath(str: string): string {
     // Remove path traversal patterns
-    return str.replace(/\.\./g, '').replace(/[\/\\]/g, '');
+    return str.replace(/\\.\\./g, '').replace(/[/\\\\]/g, '');
   }
 
   /**
@@ -163,7 +164,7 @@ export class SecurityManager {
       /document/i,
       /window/i,
       /<[^>]*>/,
-      /['"]/
+      /['"]/,
     ];
 
     return !suspiciousPatterns.some(pattern => pattern.test(key));
@@ -191,7 +192,7 @@ export class SecurityManager {
       }
 
       return { lat: latitude, lon: longitude };
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -233,11 +234,11 @@ export class SecurityManager {
 
     // URL encode and sanitize
     let sanitized = encodeURIComponent(this.sanitizeString(param));
-    
+
     // Additional URL-specific cleaning
     sanitized = sanitized.replace(/%2F/g, ''); // Remove encoded slashes
     sanitized = sanitized.replace(/%2E/g, ''); // Remove encoded dots
-    
+
     return sanitized;
   }
 
@@ -251,7 +252,7 @@ export class SecurityManager {
 
     const sanitized = this.sanitizeString(email);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     return emailRegex.test(sanitized) && sanitized.length <= 254;
   }
 
@@ -267,7 +268,7 @@ export class SecurityManager {
       return this.sanitizeInput(payload);
     } catch (error) {
       logger.warn('JSON payload sanitization error', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       return null;
     }
@@ -282,21 +283,21 @@ export class SecurityManager {
       /<script[^>]*>.*?<\/script>/gi,
       /javascript:/gi,
       /on\w+\s*=/gi,
-      
+
       // SQL injection patterns
       /'\s*(or|and)\s*'.*?'/gi,
       /union\s+select/gi,
       /drop\s+table/gi,
-      
+
       // Command injection patterns
       /;\s*(rm|del|format|shutdown)/gi,
       /\|\s*(nc|netcat|curl|wget)/gi,
-      
+
       // Path traversal
-      /\.\.[\/\\]/g,
-      
+      /\.\.[/\\]/g,
+
       // NoSQL injection
-      /\$ne|\$gt|\$lt|\$regex/gi
+      /\$ne|\$gt|\$lt|\$regex/gi,
     ];
 
     return attackPatterns.some(pattern => pattern.test(input));
@@ -317,7 +318,7 @@ export class SecurityManager {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      "upgrade-insecure-requests"
+      'upgrade-insecure-requests',
     ].join('; ');
   }
 
@@ -337,12 +338,12 @@ export class SecurityManager {
       'accept-language',
       'cache-control',
       'if-none-match',
-      'if-modified-since'
+      'if-modified-since',
     ];
 
     for (const [key, value] of Object.entries(headers)) {
       const lowerKey = key.toLowerCase();
-      
+
       if (allowedHeaders.includes(lowerKey) && value) {
         const sanitizedValue = this.sanitizeString(String(value));
         if (sanitizedValue && sanitizedValue.length <= 1000) {
@@ -374,7 +375,7 @@ export function validateInputSize(input: any, maxSize: number = 1048576): boolea
   try {
     const size = JSON.stringify(input).length;
     return size <= maxSize;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -385,6 +386,6 @@ export function validateInputSize(input: any, maxSize: number = 1048576): boolea
 export function generateRateLimitKey(identifier: string, endpoint?: string): string {
   const sanitizedId = securityManager.sanitizeString(identifier);
   const sanitizedEndpoint = endpoint ? securityManager.sanitizeString(endpoint) : 'global';
-  
+
   return `${sanitizedId}:${sanitizedEndpoint}`;
 }

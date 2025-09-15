@@ -3,7 +3,7 @@ import { WeatherService } from './weather-service.js';
 import { logger } from './logger-pino.js';
 import { createValidationMiddleware } from './middleware/validation.js';
 import { VERSION, NAME } from './utils/version.js';
-import * as z from 'zod';
+import { z } from 'zod';
 
 /**
  * Weather MCP Server
@@ -102,13 +102,7 @@ export class WeatherMCPServer {
         title: 'Current Weather',
         description: 'Get current weather for a city using Open-Meteo API',
         inputSchema: {
-          city: z.string()
-            .min(1, { message: "City name cannot be empty" })
-            .max(100, { message: "City name too long" })
-            .refine(val => val.trim().length > 0, {
-              message: "City name cannot be only whitespace"
-            })
-            .describe('City name (e.g., "London", "New York", "Tokyo")')
+          city: z.string().describe('City name (e.g., "London", "New York", "Tokyo")')
         }
       },
       async ({ city }) => {
@@ -147,19 +141,8 @@ export class WeatherMCPServer {
         title: 'Weather Forecast',
         description: 'Get weather forecast for a city (1-7 days)',
         inputSchema: {
-          city: z.string()
-            .min(1, { message: "City name cannot be empty" })
-            .max(100, { message: "City name too long" })
-            .refine(val => val.trim().length > 0, {
-              message: "City name cannot be only whitespace"
-            })
-            .describe('City name'),
-          days: z.number()
-            .int({ message: "Days must be a whole number" })
-            .min(1, { message: "Forecast must be at least 1 day" })
-            .max(7, { message: "Forecast cannot exceed 7 days" })
-            .default(5)
-            .describe('Number of days for forecast (1-7)')
+          city: z.string().describe("City name"),
+          days: z.number().default(5).describe("Number of days for forecast (1-7)")
         }
       },
       async ({ city, days = 5 }) => {
@@ -200,16 +183,7 @@ export class WeatherMCPServer {
         title: 'Weather Context Retriever',
         description: 'Retrieve weather context for AI agent queries',
         inputSchema: {
-          query: z.string()
-            .min(5, { message: "Query must be at least 5 characters" })
-            .max(1000, { message: "Query too long" })
-            .refine(val => val.trim().length > 0, {
-              message: "Query cannot be only whitespace"
-            })
-            .refine(val => /\b(weather|forecast|temperature|rain|snow|sun|climate|conditions)\b/i.test(val), {
-              message: "Query must contain weather-related keywords"
-            })
-            .describe('Query containing city reference (e.g., "weather in London for travel")')
+          query: z.string().describe('Query containing city reference (e.g., "weather in London for travel")')
         }
       },
       async ({ query }) => {

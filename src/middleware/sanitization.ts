@@ -16,7 +16,7 @@ export function createSanitizationMiddleware() {
 
   return async function sanitizationMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     const correlationId = request.headers['x-correlation-id'] || 'unknown';
     const startTime = Date.now();
@@ -24,13 +24,13 @@ export function createSanitizationMiddleware() {
     try {
       // Check request size limits first
       const maxSize = 1048576; // 1MB default
-      
+
       if (request.body && !validateInputSize(request.body, maxSize)) {
         logger.warn('Request rejected: Input size exceeds limit', {
           correlationId,
           ip: request.ip,
           path: request.url,
-          maxSize
+          maxSize,
         });
 
         return reply.code(413).send({
@@ -38,8 +38,8 @@ export function createSanitizationMiddleware() {
             code: 'PAYLOAD_TOO_LARGE',
             message: 'Request payload exceeds size limit',
             hint: `Maximum payload size is ${maxSize} bytes`,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
@@ -47,7 +47,7 @@ export function createSanitizationMiddleware() {
       if (request.body) {
         try {
           const sanitizedBody = securityManager.sanitizeInput(request.body);
-          
+
           // Check for attack patterns in the original body
           const bodyString = JSON.stringify(request.body);
           if (securityManager.containsAttackPatterns(bodyString)) {
@@ -55,7 +55,7 @@ export function createSanitizationMiddleware() {
               correlationId,
               ip: request.ip,
               path: request.url,
-              bodySize: bodyString.length
+              bodySize: bodyString.length,
             });
 
             return reply.code(400).send({
@@ -63,8 +63,8 @@ export function createSanitizationMiddleware() {
                 code: 'MALICIOUS_INPUT_DETECTED',
                 message: 'Request contains potentially malicious content',
                 hint: 'Please review your input and remove any suspicious content',
-                timestamp: new Date().toISOString()
-              }
+                timestamp: new Date().toISOString(),
+              },
             });
           }
 
@@ -73,7 +73,7 @@ export function createSanitizationMiddleware() {
         } catch (error) {
           logger.warn('Request body sanitization failed', {
             correlationId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
 
           return reply.code(400).send({
@@ -81,8 +81,8 @@ export function createSanitizationMiddleware() {
               code: 'INVALID_REQUEST_BODY',
               message: 'Request body contains invalid data',
               hint: 'Please check your request format and try again',
-              timestamp: new Date().toISOString()
-            }
+              timestamp: new Date().toISOString(),
+            },
           });
         }
       }
@@ -90,7 +90,7 @@ export function createSanitizationMiddleware() {
       // Sanitize query parameters
       if (request.query && typeof request.query === 'object') {
         const sanitizedQuery: Record<string, any> = {};
-        
+
         for (const [key, value] of Object.entries(request.query)) {
           if (typeof value === 'string') {
             // Check for attack patterns
@@ -99,7 +99,7 @@ export function createSanitizationMiddleware() {
                 correlationId,
                 ip: request.ip,
                 path: request.url,
-                parameter: key
+                parameter: key,
               });
 
               return reply.code(400).send({
@@ -107,8 +107,8 @@ export function createSanitizationMiddleware() {
                   code: 'MALICIOUS_QUERY_PARAMETER',
                   message: `Query parameter '${key}' contains potentially malicious content`,
                   hint: 'Please review your query parameters and remove any suspicious content',
-                  timestamp: new Date().toISOString()
-                }
+                  timestamp: new Date().toISOString(),
+                },
               });
             }
 
@@ -125,7 +125,7 @@ export function createSanitizationMiddleware() {
       // Sanitize URL parameters
       if (request.params && typeof request.params === 'object') {
         const sanitizedParams: Record<string, any> = {};
-        
+
         for (const [key, value] of Object.entries(request.params)) {
           sanitizedParams[key] = securityManager.sanitizeInput(value);
         }
@@ -136,13 +136,13 @@ export function createSanitizationMiddleware() {
 
       // Sanitize and validate headers
       const sanitizedHeaders = securityManager.sanitizeHeaders(request.headers);
-      
+
       // Add sanitized headers back to request
       Object.assign(request.headers, sanitizedHeaders);
 
       // Add Content Security Policy header to response
       reply.header('Content-Security-Policy', securityManager.getContentSecurityPolicy());
-      
+
       // Add other security headers
       reply.header('X-Content-Type-Options', 'nosniff');
       reply.header('X-Frame-Options', 'DENY');
@@ -157,7 +157,7 @@ export function createSanitizationMiddleware() {
         method: request.method,
         hasBody: !!request.body,
         queryParams: Object.keys(request.query || {}).length,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
     } catch (error) {
@@ -166,7 +166,7 @@ export function createSanitizationMiddleware() {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         path: request.url,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return reply.code(500).send({
@@ -174,8 +174,8 @@ export function createSanitizationMiddleware() {
           code: 'SANITIZATION_ERROR',
           message: 'Internal request processing error',
           hint: 'Please try again or contact support if the issue persists',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
   };
@@ -190,23 +190,23 @@ export function createWeatherSanitizationMiddleware() {
 
   return async function weatherSanitizationMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     const correlationId = request.headers['x-correlation-id'] || 'unknown';
 
     try {
       // Sanitize city names if present
       const query = request.query as Record<string, any>;
-      
+
       if (query.city || query.q) {
         const cityName = query.city || query.q;
         const sanitizedCity = securityManager.sanitizeCityName(cityName);
-        
+
         if (!sanitizedCity) {
           logger.warn('Invalid city name in request', {
             correlationId,
             originalCity: cityName,
-            ip: request.ip
+            ip: request.ip,
           });
 
           return reply.code(400).send({
@@ -214,25 +214,29 @@ export function createWeatherSanitizationMiddleware() {
               code: 'INVALID_CITY_NAME',
               message: 'Invalid city name format',
               hint: 'City name should contain only letters, spaces, hyphens, and apostrophes',
-              timestamp: new Date().toISOString()
-            }
+              timestamp: new Date().toISOString(),
+            },
           });
         }
 
-        if (query.city) query.city = sanitizedCity;
-        if (query.q) query.q = sanitizedCity;
+        if (query.city) {
+          query.city = sanitizedCity;
+        }
+        if (query.q) {
+          query.q = sanitizedCity;
+        }
       }
 
       // Sanitize coordinates if present
       if (query.lat && query.lon) {
         const coordinates = securityManager.sanitizeCoordinates(query.lat, query.lon);
-        
+
         if (!coordinates) {
           logger.warn('Invalid coordinates in request', {
             correlationId,
             lat: query.lat,
             lon: query.lon,
-            ip: request.ip
+            ip: request.ip,
           });
 
           return reply.code(400).send({
@@ -240,8 +244,8 @@ export function createWeatherSanitizationMiddleware() {
               code: 'INVALID_COORDINATES',
               message: 'Invalid latitude or longitude values',
               hint: 'Latitude must be between -90 and 90, longitude between -180 and 180',
-              timestamp: new Date().toISOString()
-            }
+              timestamp: new Date().toISOString(),
+            },
           });
         }
 
@@ -251,17 +255,17 @@ export function createWeatherSanitizationMiddleware() {
 
       // Validate numeric parameters (days, limit, etc.)
       const numericParams = ['days', 'limit', 'forecast_days', 'past_days'];
-      
+
       for (const param of numericParams) {
         if (query[param] !== undefined) {
           const value = parseInt(String(query[param]), 10);
-          
+
           if (isNaN(value) || value < 0 || value > 365) {
             logger.warn('Invalid numeric parameter in request', {
               correlationId,
               parameter: param,
               value: query[param],
-              ip: request.ip
+              ip: request.ip,
             });
 
             return reply.code(400).send({
@@ -269,8 +273,8 @@ export function createWeatherSanitizationMiddleware() {
                 code: 'INVALID_NUMERIC_PARAMETER',
                 message: `Invalid value for parameter '${param}'`,
                 hint: 'Numeric parameters must be valid positive integers within reasonable limits',
-                timestamp: new Date().toISOString()
-              }
+                timestamp: new Date().toISOString(),
+              },
             });
           }
 
@@ -281,14 +285,14 @@ export function createWeatherSanitizationMiddleware() {
       logger.debug('Weather-specific sanitization completed', {
         correlationId,
         hasCity: !!(query.city || query.q),
-        hasCoordinates: !!(query.lat && query.lon)
+        hasCoordinates: !!(query.lat && query.lon),
       });
 
     } catch (error) {
       logger.error('Weather sanitization middleware error', {
         correlationId,
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
 
       return reply.code(500).send({
@@ -296,8 +300,8 @@ export function createWeatherSanitizationMiddleware() {
           code: 'WEATHER_SANITIZATION_ERROR',
           message: 'Internal weather parameter processing error',
           hint: 'Please try again or contact support if the issue persists',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
   };
@@ -312,11 +316,11 @@ export function createComprehensiveSanitizationMiddleware() {
 
   return async function comprehensiveSanitizationMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     // First apply general sanitization
     await generalSanitization(request, reply);
-    
+
     // If response was already sent (error case), don't continue
     if (reply.sent) {
       return;
@@ -335,7 +339,7 @@ export function createComprehensiveSanitizationMiddleware() {
  */
 export function sanitizeResponse(data: any): any {
   const securityManager = new SecurityManager();
-  
+
   // Remove sensitive fields from response
   const sensitiveFields = [
     'password',
@@ -345,7 +349,7 @@ export function sanitizeResponse(data: any): any {
     'auth',
     'private',
     'internal',
-    'debug'
+    'debug',
   ];
 
   function removeSensitiveFields(obj: any): any {
@@ -355,10 +359,10 @@ export function sanitizeResponse(data: any): any {
 
     if (obj && typeof obj === 'object') {
       const sanitized: any = {};
-      
+
       for (const [key, value] of Object.entries(obj)) {
         const lowerKey = key.toLowerCase();
-        
+
         // Skip sensitive fields
         if (sensitiveFields.some(field => lowerKey.includes(field))) {
           continue;
@@ -387,11 +391,11 @@ export function sanitizeResponse(data: any): any {
 export function createResponseSanitizationMiddleware() {
   return async function responseSanitizationMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     // Hook into response serialization
     const originalSend = reply.send.bind(reply);
-    
+
     reply.send = function(payload: any) {
       if (payload && typeof payload === 'object') {
         const sanitizedPayload = sanitizeResponse(payload);
