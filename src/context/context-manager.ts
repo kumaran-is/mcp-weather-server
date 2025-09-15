@@ -46,7 +46,7 @@ export class ContextManager {
     preferredResponseSize: 2000,
   };
 
-  constructor(private _customLimits?: Partial<ContextLimits>) {}
+  constructor(private readonly customLimits?: Partial<ContextLimits>) {}
 
   /**
    * Get effective context limits (custom + defaults)
@@ -54,7 +54,7 @@ export class ContextManager {
   private getLimits(): ContextLimits {
     return {
       ...this.defaultLimits,
-      ...this._customLimits,
+      ...this.customLimits,
     };
   }
 
@@ -185,10 +185,10 @@ export class ContextManager {
     let summaryText: string;
 
     if (Array.isArray(data)) {
-      summary = this.summarizeArray(data, options);
+      summary = this.summarizeArray(data);
       summaryText = 'Array summarized to key statistics and sample items';
     } else if (typeof data === 'object' && data !== null) {
-      summary = this.summarizeObject(data, options);
+      summary = this.summarizeObject(data);
       summaryText = 'Object summarized to essential fields';
     } else {
       summary = this.summarizeText(String(data), options);
@@ -284,7 +284,7 @@ export class ContextManager {
   /**
    * Summarize array data
    */
-  private summarizeArray(data: any[], _options: OptimizationOptions): any {
+  private summarizeArray(data: any[]): any {
     const summary: any = {
       _summary: true,
       totalItems: data.length,
@@ -315,7 +315,7 @@ export class ContextManager {
   /**
    * Summarize object data
    */
-  private summarizeObject(data: any, _options: OptimizationOptions): any {
+  private summarizeObject(data: any): any {
     const summary: any = { _summary: true };
 
     // Keep essential fields (first level only)
