@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getConfig, validateConfig, Config } from './config.js';
+import { getConfig, validateConfig, Config } from './config';
 
 describe('Config Module', () => {
   let originalEnv: typeof process.env;

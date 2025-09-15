@@ -3,7 +3,7 @@
  * Provides comprehensive observability for production deployments
  */
 
-import { logger } from '../../logger-pino.js';
+import { logger } from '../../logger-pino';
 
 export interface RequestMetrics {
   totalRequests: number;

@@ -4,8 +4,8 @@
  */
 
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { SecurityManager, validateInputSize } from '../security/sanitizer.js';
-import { logger } from '../logger-pino.js';
+import { SecurityManager, validateInputSize } from '../security/sanitizer';
+import { logger } from '../logger-pino';
 
 /**
  * Sanitization middleware factory

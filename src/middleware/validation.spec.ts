@@ -8,8 +8,8 @@ import {
   createValidationMiddleware,
   RateLimitValidator,
   rateLimiter,
-} from './validation.js';
-import { ValidationError, MCPProtocolError } from '../errors/weather-errors.js';
+} from './validation';
+import { ValidationError, MCPProtocolError } from '../errors/weather-errors';
 
 // Mock the logger
 vi.mock('../logger-pino.js', () => ({

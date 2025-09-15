@@ -7,13 +7,13 @@
 
 import 'dotenv/config';
 import Fastify from 'fastify';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { WeatherMCPServer } from './mcp-server.js';
-import { logger } from './logger-pino.js';
-import { getConfig } from './config/config.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
+import { WeatherMCPServer } from './mcp-server';
+import { logger } from './logger-pino';
+import { getConfig } from './config/config';
 import { randomUUID } from 'node:crypto';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types';
 
 /**
  * Main entry point for the MCP Weather Server
@@ -140,7 +140,7 @@ export async function main() {
         logger.info('Shutting down gracefully');
         
         // Stop metrics collection
-        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics.js');
+        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics');
         streamingMetricsCollector.cleanup();
         
         // Close all transports
@@ -191,7 +191,7 @@ export async function main() {
 }
 
 // Only run main if this is the entry point (not imported as a module)
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
     logger.fatal('Uncaught exception in main process', { error: (error as Error).message });

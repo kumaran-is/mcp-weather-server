@@ -30,9 +30,9 @@ vi.mock('./cache/weather-cache.js', () => ({
 }));
 
 // Import mocked modules to access mocks
-import { poolManager } from './undici-resilience/index.js';
-import { weatherCache } from './cache/weather-cache.js';
-import { logger } from './logger-pino.js';
+import { poolManager } from './undici-resilience/index';
+import { weatherCache } from './cache/weather-cache';
+import { logger } from './logger-pino';
 
 describe('WeatherService', () => {
   let weatherService: WeatherService;

@@ -1,8 +1,8 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { WeatherService } from './weather-service.js';
-import { logger } from './logger-pino.js';
-import { createValidationMiddleware } from './middleware/validation.js';
-import { VERSION, NAME } from './utils/version.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { WeatherService } from './weather-service';
+import { logger } from './logger-pino';
+import { createValidationMiddleware } from './middleware/validation';
+import { VERSION, NAME } from './utils/version';
 import { z } from 'zod';
 
 /**

@@ -4,9 +4,9 @@
  */
 
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { config } from '../config/auth-config.js';
-import { SecurityManager } from '../security/sanitizer.js';
-import { logger } from '../logger-pino.js';
+import { config } from '../config/auth-config';
+import { SecurityManager } from '../security/sanitizer';
+import { logger } from '../logger-pino';
 
 /**
  * Authentication context for validated requests

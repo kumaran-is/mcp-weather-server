@@ -3,7 +3,7 @@
  * Provides backward-compatible config exports for middleware
  */
 
-import { rawConfig } from './config.js';
+import { rawConfig } from './config';
 
 // Simple config object for backward compatibility
 export const config = {

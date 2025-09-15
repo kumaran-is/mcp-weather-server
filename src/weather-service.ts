@@ -1,9 +1,9 @@
-import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types.js';
-import { poolManager } from './undici-resilience/index.js';
-import { logger } from './logger-pino.js';
-import { weatherCache } from './cache/weather-cache.js';
-import { GeocodingError, WeatherAPIError } from './errors/weather-errors.js';
-import { VERSION, NAME } from './utils/version.js';
+import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types';
+import { poolManager } from './undici-resilience/index';
+import { logger } from './logger-pino';
+import { weatherCache } from './cache/weather-cache';
+import { GeocodingError, WeatherAPIError } from './errors/weather-errors';
+import { VERSION, NAME } from './utils/version';
 
 /**
  * Weather service that integrates with Open-Meteo API

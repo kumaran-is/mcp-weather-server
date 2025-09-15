@@ -3,8 +3,8 @@
  * Ensures all incoming requests meet the JSON-RPC 2.0 and MCP specifications
  */
 
-import { logger } from '../logger-pino.js';
-import { ValidationError, MCPProtocolError } from '../errors/weather-errors.js';
+import { logger } from '../logger-pino';
+import { ValidationError, MCPProtocolError } from '../errors/weather-errors';
 import { setInterval } from 'timers';
 
 /**
