@@ -3,7 +3,7 @@
  * Environment-based configuration with validation and type safety
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Environment variable schema
 const envSchema = z.object({
