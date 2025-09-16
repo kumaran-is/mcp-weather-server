@@ -36,7 +36,6 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
       - [Streamable HTTP Transport Sequence Diagram](#streamable-http-transport-sequence-diagram)
-      - [Custom SSE Transport Sequence Diagram](#custom-sse-transport-sequence-diagram)
       - [Stdio Transport Sequence Diagram](#stdio-transport-sequence-diagram)
     - [Component Interactions](#component-interactions)
   - [🔧 Configuration](#-configuration)
@@ -51,7 +50,6 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
     - [Quick Test Commands](#quick-test-commands)
       - [Unit Tests](#unit-tests)
       - [HTTP Transport Testing](#http-transport-testing)
-      - [SSE Transport Testing](#sse-transport-testing)
       - [Stdio Transport Testing](#stdio-transport-testing)
       - [MCP Inspector Testing](#mcp-inspector-testing)
       - [Postman Testing](#postman-testing)
@@ -115,7 +113,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 
 ```mermaid
 flowchart TD
-    A[🤖 AI Assistant Request:<br/> What's the weather in London?] --> B["📡 Transport Layer<br/>(HTTP/SSE/stdio)"]
+    A[🤖 AI Assistant Request:<br/> What's the weather in London?] --> B["📡 Transport Layer<br/>(HTTP/stdio)"]
     B --> C["🔧 MCP Protocol Handler<br/>tools/call → get_current_weather"]
     C --> D["🗺️ Geocoding Service<br/> London → {lat: 51.5, lon: -0.1}"]
     D --> E["🗄️ Cache Check"]
@@ -499,7 +497,6 @@ The same weather tools work whether called from Cline (stdio) or a web client (H
 | Your Need | Recommended Transport | Start Command |
 |-----------|----------------------|---------------|
 | Local Cline in VS Code | **Stdio** | (auto-spawned) |
-| Remote Cline access | **Custom SSE** | `npm run sse` |
 | Production API | **Streamable HTTP** | `npm run http` |
 | Docker deployment | **Streamable HTTP**  | See docker-compose |
 | LangChain integration | **Streamable HTTP** | `npm run http` |
@@ -580,43 +577,6 @@ sequenceDiagram
     StreamableHTTPTransport-->>Fastify: 200 OK + SSE headers
     Fastify-->>Client: SSE connection established
     Note over StreamableHTTPTransport,Client: Persistent connection for notifications
-```
-
-#### Custom SSE Transport Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant Cline
-    participant SSETransport
-    participant WeatherMCPServer
-    participant WeatherService
-    participant OpenMeteoAPI
-
-    %% Connection Establishment
-    Cline->>SSETransport: GET /sse (Accept: text/event-stream)
-    SSETransport-->>Cline: SSE stream opened
-    SSETransport-->>Cline: event: connected + clientId
-    
-    %% Bidirectional Communication
-    Cline->>SSETransport: POST /sse (initialize)
-    SSETransport->>WeatherMCPServer: handleInitialize()
-    WeatherMCPServer-->>SSETransport: Server info
-    SSETransport-->>Cline: SSE event: response
-    
-    %% Tool Call
-    Cline->>SSETransport: POST /sse (tools/call)
-    SSETransport->>WeatherMCPServer: handleToolCall()
-    WeatherMCPServer->>WeatherService: getCurrentWeather(city)
-    WeatherService->>OpenMeteoAPI: GET /forecast
-    OpenMeteoAPI-->>WeatherService: Weather data
-    WeatherService-->>WeatherMCPServer: Formatted result
-    WeatherMCPServer-->>SSETransport: Tool response
-    SSETransport-->>Cline: SSE event: tool result
-    
-    %% Heartbeat
-    loop Every 30 seconds
-        SSETransport-->>Cline: event: heartbeat
-    end
 ```
 
 #### Stdio Transport Sequence Diagram
@@ -755,12 +715,11 @@ The server uses environment variables for configuration. Copy `.env.example` to 
 ### Key Configuration Options
 
 ```bash
-# Transport selection (stdio, http, sse)
+# Transport selection (stdio, http)
 MCP_TRANSPORT=stdio
 
 # Port configuration
 MCP_HTTP_PORT=8080  # For HTTP transport
-MCP_SSE_PORT=8081   # For SSE transport
 
 # Logging
 LOG_LEVEL=info
@@ -907,23 +866,6 @@ curl -X POST http://localhost:8080/mcp \
 curl http://localhost:8080/health
 ```
 
-#### SSE Transport Testing
-
-**Start SSE Server**
-```bash
-npm run sse
-```
-
-**Test with curl**
-```bash
-# Connect to SSE stream
-curl -N -H "Accept: text/event-stream" http://localhost:8081/sse
-
-# Send command (in another terminal)
-curl -X POST http://localhost:8081/sse \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}'
-```
 
 #### Stdio Transport Testing
 
