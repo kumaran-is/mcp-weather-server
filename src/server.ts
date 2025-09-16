@@ -60,7 +60,7 @@ export async function main() {
           // New initialization request - create new transport
           transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
-            onsessioninitialized: (sessionId) => {
+            onsessioninitialized: (sessionId: string) => {
               // Store the transport by session ID
               transports[sessionId] = transport;
             },
@@ -191,6 +191,7 @@ export async function main() {
 }
 
 // Only run main if this is the entry point (not imported as a module)
+// In CommonJS, check if require.main === module
 if (require.main === module) {
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
