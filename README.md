@@ -475,10 +475,24 @@ The server uses **two different technologies** that serve **completely different
 **Benefits of This Separation:**
 - **Reusable Logic**: Same McpServer works with multiple transports
 - **Clean Architecture**: HTTP concerns vs Protocol concerns vs Business logic
-- **Flexibility**: Can add new transports (WebSocket, gRPC) without changing MCP logic
+- **🚀 Flexibility**: Can add new transports (WebSocket, gRPC, TCP, Unix sockets) without changing MCP logic
 - **Standards Compliance**: Fastify handles HTTP standards, McpServer handles MCP standards
 
-The same weather tools work whether called from Cline (stdio) or a web client (HTTP) because the McpServer layer is transport-agnostic.
+**Future Transport Extensibility:**
+The architecture supports adding any transport protocol:
+- **WebSocket**: Real-time bidirectional communication for web apps
+- **gRPC**: High-performance RPC for microservices integration  
+- **TCP/Unix Sockets**: Direct socket communication for local services
+- **Custom Protocols**: Any protocol implementing the Transport interface
+
+**Example: Adding WebSocket Support**
+```typescript
+// No changes needed to McpServer or WeatherService!
+const wsTransport = new WebSocketTransport(server);
+await mcpServer.connect(wsTransport); // Same MCP logic works
+```
+
+The same weather tools work whether called from Cline (stdio) or a web client (HTTP) because the McpServer layer is transport-agnostic. This flexibility enables the server to adapt to any integration scenario without code duplication.
 
 #### Transport Decision Matrix
 
