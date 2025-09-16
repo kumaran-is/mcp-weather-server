@@ -84,39 +84,13 @@ export interface GeocodingAPIResponse {
   generationtime_ms: number;
 }
 
-export interface MCPTool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: string;
-    properties: Record<string, any>;
-    required: string[];
-  };
-}
-
-export interface MCPServerConfig {
-  name: string;
-  version: string;
-  protocolVersion: string;
-  capabilities: {
-    tools?: { listChanged?: boolean };
-    logging?: {};
-    resources?: { subscribe?: boolean; listChanged?: boolean };
-    prompts?: { listChanged?: boolean };
-  };
-}
-
 export interface TransportConfig {
-  type: 'stdio' | 'http' | 'websocket';
+  type: 'stdio' | 'http';
   http?: {
     port: number;
     allowedOrigins: string[];
     sessionTimeout: number;
     maxSessions: number;
-  };
-  websocket?: {
-    port: number;
-    secure: boolean;
   };
 }
 

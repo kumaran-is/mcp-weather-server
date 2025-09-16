@@ -7,13 +7,13 @@
 
 import 'dotenv/config';
 import Fastify from 'fastify';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { WeatherMCPServer } from './mcp-server.js';
-import { logger } from './logger-pino.js';
-import { getConfig } from './config/config.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
+import { WeatherMCPServer } from './mcp-server';
+import { logger } from './logger-pino';
+import { getConfig } from './config/config';
 import { randomUUID } from 'node:crypto';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types';
 
 /**
  * Main entry point for the MCP Weather Server
@@ -29,34 +29,12 @@ export async function main() {
       platform: process.platform
     });
 
-    // Create MCP server instance
-    const weatherServer = new WeatherMCPServer();
-    const server = weatherServer.getServer();
+    // Create MCP server instance with modern SDK
+    const weatherMCPServer = new WeatherMCPServer();
+    const mcpServer = weatherMCPServer.getServer();
 
     // Choose transport based on configuration
-    if (config.server.transport === 'sse') {
-      // Simple SSE Transport for Cline remote compatibility
-      const ssePort = config.server.ssePort || 8081;
-      logger.info('Using Simple SSE transport', { port: ssePort });
-      
-      const { SimpleSSETransport } = await import('./transports/sse-transport.js');
-      const sseTransport = new SimpleSSETransport(weatherServer);
-      await sseTransport.start();
-      
-      logger.info(`Simple SSE server started on port ${ssePort}`);
-      logger.info('Connect Cline remotely with URL: http://your-server:8081/sse');
-      
-      // Graceful shutdown
-      const shutdown = async () => {
-        logger.info('Shutting down SSE server gracefully');
-        await sseTransport.close();
-        process.exit(0);
-      };
-      
-      process.on('SIGTERM', shutdown);
-      process.on('SIGINT', shutdown);
-      
-    } else if (config.server.transport === 'http') {
+    if (config.server.transport === 'http') {
       const port = config.server.httpPort;
       logger.info('Using HTTP transport', { port });
 
@@ -82,7 +60,7 @@ export async function main() {
           // New initialization request - create new transport
           transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
-            onsessioninitialized: (sessionId) => {
+            onsessioninitialized: (sessionId: string) => {
               // Store the transport by session ID
               transports[sessionId] = transport;
             },
@@ -97,8 +75,8 @@ export async function main() {
             }
           };
 
-          // Connect the MCP server to the transport
-          await server.connect(transport);
+          // Connect the modern MCP server to the transport
+          await mcpServer.connect(transport);
         } else {
           // Invalid request
           return reply.status(400).send({
@@ -162,7 +140,7 @@ export async function main() {
         logger.info('Shutting down gracefully');
         
         // Stop metrics collection
-        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics.js');
+        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics');
         streamingMetricsCollector.cleanup();
         
         // Close all transports
@@ -201,7 +179,7 @@ export async function main() {
       logger.info('Using stdio transport');
 
       const stdioTransport = new StdioServerTransport();
-      await server.connect(stdioTransport);
+      await mcpServer.connect(stdioTransport);
 
       logger.info('MCP Weather Server started successfully with stdio transport');
     }
@@ -213,7 +191,8 @@ export async function main() {
 }
 
 // Only run main if this is the entry point (not imported as a module)
-if (import.meta.url === `file://${process.argv[1]}`) {
+// In CommonJS, check if require.main === module
+if (require.main === module) {
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
     logger.fatal('Uncaught exception in main process', { error: (error as Error).message });

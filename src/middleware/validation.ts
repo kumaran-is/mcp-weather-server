@@ -3,8 +3,8 @@
  * Ensures all incoming requests meet the JSON-RPC 2.0 and MCP specifications
  */
 
-import { logger } from '../logger-pino.js';
-import { ValidationError, MCPProtocolError } from '../errors/weather-errors.js';
+import { logger } from '../logger-pino';
+import { ValidationError, MCPProtocolError } from '../errors/weather-errors';
 import { setInterval } from 'timers';
 
 /**
@@ -33,7 +33,7 @@ export interface ValidationRule {
  * Validation context for detailed error reporting
  */
 export interface ValidationContext {
-  transport: 'stdio' | 'http' | 'sse';
+  transport: 'stdio' | 'http';
   clientId?: string;
   requestId?: string | number;
 }
@@ -145,10 +145,10 @@ export function validateToolCallRequest(params: any): void {
   case 'get_current_weather':
     validateWeatherToolParams(params.arguments);
     break;
-  case 'get_forecast':
+  case 'get_weather_forecast':
     validateForecastToolParams(params.arguments);
     break;
-  case 'analyze_weather_query':
+  case 'retrieve_weather_context':
     validateAnalyzeQueryParams(params.arguments);
     break;
   default:
@@ -303,7 +303,7 @@ export function sanitizeInput(input: string): string {
 /**
  * Validation middleware factory for different transports
  */
-export function createValidationMiddleware(transport: 'stdio' | 'http' | 'sse') {
+export function createValidationMiddleware(transport: 'stdio' | 'http') {
   return async function validateRequest(request: any, context?: any): Promise<void> {
     const validationContext: ValidationContext = {
       transport,
@@ -416,4 +416,3 @@ export const rateLimiter = new RateLimitValidator();
 
 // Cleanup interval
 setInterval(() => rateLimiter.cleanup(), 60000);
-

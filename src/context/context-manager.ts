@@ -1,0 +1,445 @@
+/**
+ * LLM Context Management for Weather Server
+ * Optimizes responses for different context window sizes and LLM requirements
+ */
+
+import { logger } from '../logger-pino';
+
+export interface ContextLimits {
+  maxInputTokens: number;
+  maxOutputTokens: number;
+  maxTotalTokens: number;
+  preferredResponseSize: number;
+}
+
+export interface OptimizationOptions {
+  maxTokens: number;
+  allowPagination: boolean;
+  allowSummary: boolean;
+  allowTruncation: boolean;
+  prioritizeRecent: boolean;
+  includeMetadata: boolean;
+}
+
+export interface TokenEstimate {
+  tokens: number;
+  characters: number;
+  words: number;
+}
+
+export interface OptimizedResponse<T = any> {
+  data: T;
+  metadata: {
+    tokenEstimate: TokenEstimate;
+    optimizationApplied: string;
+    hasMore: boolean;
+    nextCursor?: string;
+    summary?: string;
+  };
+}
+
+export class ContextManager {
+  private readonly defaultLimits: ContextLimits = {
+    maxInputTokens: 4000,
+    maxOutputTokens: 4000,
+    maxTotalTokens: 8000,
+    preferredResponseSize: 2000,
+  };
+
+  // eslint-disable-next-line no-unused-vars
+  constructor(private readonly _customLimits?: Partial<ContextLimits>) {}
+
+  /**
+   * Get effective context limits (custom + defaults)
+   */
+  private getLimits(): ContextLimits {
+    return {
+      ...this.defaultLimits,
+      ...this._customLimits,
+    };
+  }
+
+  /**
+   * Estimate token count for any data structure
+   * Uses approximate calculation: ~4 characters per token for English
+   */
+  estimateTokens(data: any): TokenEstimate {
+    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    const characters = text.length;
+    const words = text.split(/\s+/).length;
+    const tokens = Math.ceil(characters / 4); // Rough estimation
+
+    return { tokens, characters, words };
+  }
+
+  /**
+   * Optimize response for LLM context constraints
+   */
+  async optimizeResponse<T>(
+    data: T,
+    options: Partial<OptimizationOptions> = {},
+  ): Promise<OptimizedResponse<T>> {
+    const limits = this.getLimits();
+    const opts: OptimizationOptions = {
+      maxTokens: limits.maxOutputTokens,
+      allowPagination: true,
+      allowSummary: true,
+      allowTruncation: false,
+      prioritizeRecent: true,
+      includeMetadata: true,
+      ...options,
+    };
+
+    const estimate = this.estimateTokens(data);
+
+    logger.debug('Context optimization analysis', {
+      currentTokens: estimate.tokens,
+      maxTokens: opts.maxTokens,
+      dataType: Array.isArray(data) ? 'array' : typeof data,
+      optimizationOptions: opts,
+    });
+
+    // If within limits, return as-is
+    if (estimate.tokens <= opts.maxTokens) {
+      return {
+        data,
+        metadata: {
+          tokenEstimate: estimate,
+          optimizationApplied: 'none',
+          hasMore: false,
+        },
+      };
+    }
+
+    // Apply optimization strategies in order of preference
+    if (opts.allowPagination && this.isPaginatable(data)) {
+      return this.applyPagination(data, opts);
+    }
+
+    if (opts.allowSummary) {
+      return this.applySummarization(data, opts);
+    }
+
+    if (opts.allowTruncation) {
+      return this.applyTruncation(data, opts);
+    }
+
+    // If no optimization allowed, warn and return truncated
+    logger.warn('Response exceeds context limit and no optimization allowed', {
+      tokens: estimate.tokens,
+      maxTokens: opts.maxTokens,
+    });
+
+    return this.applyTruncation(data, opts);
+  }
+
+  /**
+   * Check if data can be paginated
+   */
+  private isPaginatable(data: any): boolean {
+    return Array.isArray(data) && data.length > 1;
+  }
+
+  /**
+   * Apply pagination to large arrays
+   */
+  private applyPagination<T>(
+    data: T,
+    options: OptimizationOptions,
+  ): OptimizedResponse<T> {
+    if (!Array.isArray(data)) {
+      throw new Error('Cannot paginate non-array data');
+    }
+
+    const pageSize = this.calculateOptimalPageSize(data, options.maxTokens);
+    const firstPage = data.slice(0, pageSize) as T;
+    const hasMore = data.length > pageSize;
+
+    const estimate = this.estimateTokens(firstPage);
+
+    logger.debug('Applied pagination optimization', {
+      originalItems: data.length,
+      pageSize,
+      hasMore,
+      tokensAfterPagination: estimate.tokens,
+    });
+
+    return {
+      data: firstPage,
+      metadata: {
+        tokenEstimate: estimate,
+        optimizationApplied: 'pagination',
+        hasMore,
+        nextCursor: hasMore ? this.generateCursor(pageSize, data.length) : undefined,
+      },
+    };
+  }
+
+  /**
+   * Apply intelligent summarization
+   */
+  private applySummarization<T>(
+    data: T,
+    options: OptimizationOptions,
+  ): OptimizedResponse<T> {
+    let summary: any;
+    let summaryText: string;
+
+    if (Array.isArray(data)) {
+      summary = this.summarizeArray(data);
+      summaryText = 'Array summarized to key statistics and sample items';
+    } else if (typeof data === 'object' && data !== null) {
+      summary = this.summarizeObject(data);
+      summaryText = 'Object summarized to essential fields';
+    } else {
+      summary = this.summarizeText(String(data), options);
+      summaryText = 'Text summarized to fit context window';
+    }
+
+    const estimate = this.estimateTokens(summary);
+
+    logger.debug('Applied summarization optimization', {
+      originalTokens: this.estimateTokens(data).tokens,
+      summaryTokens: estimate.tokens,
+      summaryType: Array.isArray(data) ? 'array' : typeof data,
+    });
+
+    return {
+      data: summary as T,
+      metadata: {
+        tokenEstimate: estimate,
+        optimizationApplied: 'summarization',
+        hasMore: true,
+        summary: summaryText,
+      },
+    };
+  }
+
+  /**
+   * Apply truncation as last resort
+   */
+  private applyTruncation<T>(
+    data: T,
+    options: OptimizationOptions,
+  ): OptimizedResponse<T> {
+    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    const maxChars = options.maxTokens * 4; // Rough conversion
+    const truncated = text.slice(0, maxChars - 100) + '\n\n[... truncated ...]';
+
+    let result: T;
+    if (typeof data === 'string') {
+      result = truncated as T;
+    } else {
+      try {
+        result = JSON.parse(truncated) as T;
+      } catch {
+        // If JSON is invalid after truncation, return a summary object
+        result = {
+          _truncated: true,
+          _originalSize: text.length,
+          _preview: truncated.slice(0, 500),
+        } as T;
+      }
+    }
+
+    const estimate = this.estimateTokens(result);
+
+    logger.warn('Applied truncation optimization', {
+      originalTokens: this.estimateTokens(data).tokens,
+      truncatedTokens: estimate.tokens,
+      truncatedAt: maxChars,
+    });
+
+    return {
+      data: result,
+      metadata: {
+        tokenEstimate: estimate,
+        optimizationApplied: 'truncation',
+        hasMore: true,
+        summary: 'Content was truncated to fit context window',
+      },
+    };
+  }
+
+  /**
+   * Calculate optimal page size for arrays
+   */
+  private calculateOptimalPageSize(data: any[], maxTokens: number): number {
+    if (data.length === 0) {
+      return 0;
+    }
+
+    // Estimate tokens per item by sampling
+    const sampleSize = Math.min(3, data.length);
+    const sampleItems = data.slice(0, sampleSize);
+    const avgTokensPerItem = this.estimateTokens(sampleItems).tokens / sampleSize;
+
+    // Calculate page size with 10% buffer for metadata
+    const availableTokens = maxTokens * 0.9;
+    const calculatedPageSize = Math.floor(availableTokens / avgTokensPerItem);
+
+    // Ensure reasonable bounds
+    return Math.max(1, Math.min(calculatedPageSize, data.length));
+  }
+
+  /**
+   * Summarize array data
+   */
+  private summarizeArray(data: any[]): any {
+    const summary: any = {
+      _summary: true,
+      totalItems: data.length,
+      itemTypes: this.analyzeArrayTypes(data),
+      sample: data.slice(0, 3), // First 3 items as sample
+    };
+
+    // Add aggregates for numerical data
+    if (this.isNumericalArray(data)) {
+      const numbers = data.filter(item => typeof item === 'number');
+      summary.aggregates = {
+        min: Math.min(...numbers),
+        max: Math.max(...numbers),
+        avg: numbers.reduce((a, b) => a + b, 0) / numbers.length,
+        count: numbers.length,
+      };
+    }
+
+    // Add time-based aggregates for weather forecasts
+    if (this.isWeatherForecastArray(data)) {
+      summary.dateRange = this.extractDateRange(data);
+      summary.temperatureRange = this.extractTemperatureRange(data);
+    }
+
+    return summary;
+  }
+
+  /**
+   * Summarize object data
+   */
+  private summarizeObject(data: any): any {
+    const summary: any = { _summary: true };
+
+    // Keep essential fields (first level only)
+    const essentialFields = ['id', 'name', 'title', 'type', 'status', 'date', 'time', 'temperature', 'condition'];
+
+    for (const field of essentialFields) {
+      if (data[field] !== undefined) {
+        summary[field] = data[field];
+      }
+    }
+
+    // Add metadata about the original object
+    summary._metadata = {
+      totalFields: Object.keys(data).length,
+      fieldTypes: this.analyzeObjectTypes(data),
+      hasNestedObjects: this.hasNestedObjects(data),
+    };
+
+    return summary;
+  }
+
+  /**
+   * Summarize text data
+   */
+  private summarizeText(text: string, options: OptimizationOptions): string {
+    const maxChars = options.maxTokens * 4 * 0.8; // 80% of max for summary
+
+    if (text.length <= maxChars) {
+      return text;
+    }
+
+    // Extract first and last portions
+    const partSize = Math.floor(maxChars / 3);
+    const beginning = text.slice(0, partSize);
+    const ending = text.slice(-partSize);
+
+    return `${beginning}\n\n... [${text.length - (partSize * 2)} characters omitted] ...\n\n${ending}`;
+  }
+
+  /**
+   * Generate pagination cursor
+   */
+  private generateCursor(pageSize: number, totalItems: number): string {
+    return Buffer.from(JSON.stringify({
+      offset: pageSize,
+      totalItems,
+      timestamp: Date.now(),
+    })).toString('base64');
+  }
+
+  /**
+   * Helper methods for data analysis
+   */
+  private analyzeArrayTypes(data: any[]): Record<string, number> {
+    const types: Record<string, number> = {};
+    data.forEach(item => {
+      const type = Array.isArray(item) ? 'array' : typeof item;
+      types[type] = (types[type] || 0) + 1;
+    });
+    return types;
+  }
+
+  private analyzeObjectTypes(data: any): Record<string, string> {
+    const types: Record<string, string> = {};
+    Object.entries(data).forEach(([key, value]) => {
+      types[key] = Array.isArray(value) ? 'array' : typeof value;
+    });
+    return types;
+  }
+
+  private isNumericalArray(data: any[]): boolean {
+    return data.length > 0 && data.every(item => typeof item === 'number');
+  }
+
+  private isWeatherForecastArray(data: any[]): boolean {
+    return data.length > 0 && data.every(item =>
+      item && typeof item === 'object' &&
+      (item.date || item.time || item.temperature !== undefined),
+    );
+  }
+
+  private hasNestedObjects(data: any): boolean {
+    return Object.values(data).some(value =>
+      typeof value === 'object' && value !== null && !Array.isArray(value),
+    );
+  }
+
+  private extractDateRange(data: any[]): { start: string; end: string } | null {
+    const dates = data
+      .map(item => item.date || item.time)
+      .filter(Boolean)
+      .sort();
+
+    if (dates.length === 0) {
+      return null;
+    }
+
+    return {
+      start: dates[0],
+      end: dates[dates.length - 1],
+    };
+  }
+
+  private extractTemperatureRange(data: any[]): { min: number; max: number } | null {
+    const temperatures = data
+      .map(item => item.temperature || item.temp)
+      .filter(temp => typeof temp === 'number');
+
+    if (temperatures.length === 0) {
+      return null;
+    }
+
+    return {
+      min: Math.min(...temperatures),
+      max: Math.max(...temperatures),
+    };
+  }
+}
+
+// Export singleton instance with configurable limits
+export const contextManager = new ContextManager({
+  maxInputTokens: parseInt(process.env.MAX_INPUT_TOKENS || '4000'),
+  maxOutputTokens: parseInt(process.env.MAX_OUTPUT_TOKENS || '4000'),
+  maxTotalTokens: parseInt(process.env.MAX_TOTAL_TOKENS || '8000'),
+  preferredResponseSize: parseInt(process.env.PREFERRED_RESPONSE_SIZE || '2000'),
+});

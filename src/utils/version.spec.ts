@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { VERSION, NAME } from './version.js';
+import { VERSION, NAME } from './version';
 
 describe('Version Utils', () => {
   describe('VERSION constant', () => {

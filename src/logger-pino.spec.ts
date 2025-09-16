@@ -8,7 +8,7 @@ import {
   updateLoggerConfig,
   gracefulShutdown,
   rawPinoLogger
-} from './logger-pino.js';
+} from './logger-pino';
 
 // Mock pino and config modules
 vi.mock('pino', () => ({
@@ -572,7 +572,7 @@ describe('Logger-Pino', () => {
         }))
       }));
       
-      import('./logger-pino.js').then(() => {
+      import('./logger-pino').then(() => {
         expect(pino.pino).toHaveBeenCalledWith(
           expect.objectContaining({
             transport: expect.objectContaining({

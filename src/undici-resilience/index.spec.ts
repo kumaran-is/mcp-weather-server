@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { poolManager } from './index.js';
-import { PoolManager } from './http/pool-manager.js';
+import { poolManager } from './index';
+import { PoolManager } from './http/pool-manager';
 
 // Mock the PoolManager
 vi.mock('./http/pool-manager.js', () => {

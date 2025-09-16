@@ -8,8 +8,8 @@ import {
   createValidationMiddleware,
   RateLimitValidator,
   rateLimiter,
-} from './validation.js';
-import { ValidationError, MCPProtocolError } from '../errors/weather-errors.js';
+} from './validation';
+import { ValidationError, MCPProtocolError } from '../errors/weather-errors';
 
 // Mock the logger
 vi.mock('../logger-pino.js', () => ({
@@ -404,8 +404,6 @@ describe('Validation Middleware', () => {
       expect(typeof middleware).toBe('function');
     });
 
-    it('should create middleware for sse transport', async () => {
-      const middleware = createValidationMiddleware('sse');
       expect(typeof middleware).toBe('function');
     });
 

@@ -4,28 +4,30 @@ A comprehensive HTTP client library with resilience patterns for Node.js, built 
 
 ## Table of Contents
 
-1. [Features](#-features)
-2. [Installation](#-installation)
-3. [Quick Start](#-quick-start)
-4. [API Reference](#-api-reference)
-   - [Pool Manager](#pool-manager)
-   - [Circuit Breaker](#circuit-breaker)
-   - [Retry Strategies](#retry-strategies)
-   - [Metrics & Monitoring](#metrics--monitoring)
-5. [Configuration](#️-configuration)
-   - [Environment Variables](#environment-variables)
-   - [Programmatic Configuration](#programmatic-configuration)
-6. [Architecture](#️-architecture)
-   - [Core Components](#core-components)
-7. [Advanced Usage](#-advanced-usage)
-   - [Custom Pool Creation](#custom-pool-creation)
-   - [Health Checks Integration](#health-checks-integration)
-   - [Error Handling Patterns](#error-handling-patterns)
-8. [Performance Characteristics](#-performance-characteristics)
-9. [Testing](#-testing)
-10. [Contributing](#-contributing)
-11. [License](#-license)
-12. [Related Links](#-related-links)
+- [Undici Resilience Package](#undici-resilience-package)
+  - [Table of Contents](#table-of-contents)
+  - [🚀 Features](#-features)
+  - [📦 Installation](#-installation)
+  - [🏁 Quick Start](#-quick-start)
+  - [📚 API Reference](#-api-reference)
+    - [Pool Manager](#pool-manager)
+    - [Circuit Breaker](#circuit-breaker)
+    - [Retry Strategies](#retry-strategies)
+    - [Metrics \& Monitoring](#metrics--monitoring)
+  - [⚙️ Configuration](#️-configuration)
+    - [Environment Variables](#environment-variables)
+    - [Programmatic Configuration](#programmatic-configuration)
+  - [🏗️ Architecture](#️-architecture)
+    - [Core Components](#core-components)
+  - [🔧 Advanced Usage](#-advanced-usage)
+    - [Custom Pool Creation](#custom-pool-creation)
+    - [Health Checks Integration](#health-checks-integration)
+    - [Error Handling Patterns](#error-handling-patterns)
+  - [📊 Performance Characteristics](#-performance-characteristics)
+  - [🧪 Testing](#-testing)
+  - [🤝 Contributing](#-contributing)
+  - [📄 License](#-license)
+  - [🔗 Related Links](#-related-links)
 
 ## 🚀 Features
 
@@ -48,7 +50,7 @@ This package is built on undici, so you'll need to install it as a dependency.
 ## 🏁 Quick Start
 
 ```typescript
-import { poolManager, CircuitBreaker, RetryStrategies } from './undici-resilience/index.js';
+import { poolManager, CircuitBreaker, RetryStrategies } from './undici-resilience/index;
 
 // The pools are automatically initialized with optimized settings
 // Make a resilient request
@@ -65,7 +67,7 @@ console.log(data);
 ### Pool Manager
 
 ```typescript
-import { poolManager } from './undici-resilience/index.js';
+import { poolManager } from './undici-resilience/index;
 
 // Make requests through optimized pools
 const response = await poolManager.request<T>(
@@ -84,7 +86,7 @@ const allHealth = poolManager.getAllPoolHealth();
 ### Circuit Breaker
 
 ```typescript
-import { CircuitBreaker } from './undici-resilience/index.js';
+import { CircuitBreaker } from './undici-resilience/index;
 
 const breaker = new CircuitBreaker(
   'api-breaker',    // Name
@@ -101,7 +103,7 @@ const result = await breaker.execute(async () => {
 ### Retry Strategies
 
 ```typescript
-import { RetryStrategies } from './undici-resilience/index.js';
+import { RetryStrategies } from './undici-resilience/index;
 
 // Pre-configured strategies
 const aggressive = RetryStrategies.aggressive();    // Fast retries
@@ -126,7 +128,7 @@ const result = await custom.execute(async () => {
 ### Metrics & Monitoring
 
 ```typescript
-import { metricsCollector } from './undici-resilience/index.js';
+import { metricsCollector } from './undici-resilience/index;
 
 // Record metrics
 metricsCollector.recordRequestSuccess('poolName', 150, 'context');
@@ -272,7 +274,7 @@ ADAPTIVE_BACKPRESSURE=true
 ### Programmatic Configuration
 
 ```typescript
-import { DEFAULT_POOL_CONFIG, DEFAULT_RESILIENCE_CONFIG } from './undici-resilience/index.js';
+import { DEFAULT_POOL_CONFIG, DEFAULT_RESILIENCE_CONFIG } from './undici-resilience/index;
 
 // Customize pool configuration
 const customPoolConfig = {
@@ -315,7 +317,7 @@ undici-resilience/
 ### Custom Pool Creation
 
 ```typescript
-import { OptimizedPoolManager, WEATHER_POOL_CONFIG } from './undici-resilience/index.js';
+import { OptimizedPoolManager, WEATHER_POOL_CONFIG } from './undici-resilience/index;
 
 const poolManager = new OptimizedPoolManager();
 
@@ -330,7 +332,7 @@ poolManager.createPool('custom-api', 'https://api.example.com', {
 ### Health Checks Integration
 
 ```typescript
-import { metricsCollector } from './undici-resilience/index.js';
+import { metricsCollector } from './undici-resilience/index;
 
 // In your health check endpoint
 app.get('/health', (req, res) => {
@@ -351,7 +353,7 @@ app.get('/health', (req, res) => {
 ### Error Handling Patterns
 
 ```typescript
-import { poolManager } from './undici-resilience/index.js';
+import { poolManager } from './undici-resilience/index;
 
 try {
   const data = await poolManager.request('api', {
@@ -385,7 +387,7 @@ try {
 ## 🧪 Testing
 
 ```typescript
-import { poolManager, metricsCollector } from './undici-resilience/index.js';
+import { poolManager, metricsCollector } from './undici-resilience/index;
 
 // Reset metrics between tests
 beforeEach(() => {

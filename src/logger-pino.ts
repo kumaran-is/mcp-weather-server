@@ -5,8 +5,8 @@
 
 import * as pino from 'pino';
 import type { Logger as PinoLogger } from 'pino';
-import { getConfig } from './config/config.js';
-import { VERSION } from './utils/version.js';
+import { getConfig } from './config/config';
+import { VERSION } from './utils/version';
 
 // Logger configuration types
 export interface LoggerConfig {

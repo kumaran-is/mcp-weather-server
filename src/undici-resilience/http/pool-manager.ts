@@ -4,16 +4,16 @@
  */
 
 import { Pool, Dispatcher } from 'undici';
-import { CircuitBreaker, CircuitBreakerStats } from '../resilience/circuit-breaker.js';
-import { RetryStrategy } from '../resilience/retry-strategy.js';
+import { CircuitBreaker, CircuitBreakerStats } from '../resilience/circuit-breaker';
+import { RetryStrategy } from '../resilience/retry-strategy';
 import {
   PoolConfiguration,
   WEATHER_POOL_CONFIG,
   GEOCODING_POOL_CONFIG,
   DEFAULT_RESILIENCE_CONFIG
-} from '../config/pool-config.js';
-import { logger } from '../../logger-pino.js';
-import { getAPIConfig } from '../../config/config.js';
+} from '../config/pool-config';
+import { logger } from '../../logger-pino';
+import { getAPIConfig } from '../../config/config';
 
 export interface PoolStats {
   connected: number;

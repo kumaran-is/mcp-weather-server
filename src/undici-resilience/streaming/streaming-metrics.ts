@@ -3,7 +3,7 @@
  * Provides real-time insights into streaming performance, bottlenecks, and health
  */
 
-import { logger } from '../../logger-pino.js';
+import { logger } from '../../logger-pino';
 import { EventEmitter } from 'events';
 
 export interface StreamingMetrics {

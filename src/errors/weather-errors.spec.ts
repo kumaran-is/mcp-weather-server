@@ -11,7 +11,7 @@ import {
   isWeatherServiceError,
   hasStatusCode,
   toWeatherServiceError,
-} from './weather-errors.js';
+} from './weather-errors';
 
 describe('Weather Errors', () => {
   describe('WeatherServiceError (base class)', () => {

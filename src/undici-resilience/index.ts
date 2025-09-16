@@ -13,22 +13,22 @@
  */
 
 // Core exports
-export { OptimizedPoolManager, poolManager } from './http/pool-manager.js';
-export { MetricsCollector, metricsCollector } from './monitoring/metrics.js';
+export { OptimizedPoolManager, poolManager } from './http/pool-manager';
+export { MetricsCollector, metricsCollector } from './monitoring/metrics';
 
 // Configuration
-export * from './config/pool-config.js';
+export * from './config/pool-config';
 
 // Resilience patterns
-export * from './resilience/circuit-breaker.js';
-export * from './resilience/retry-strategy.js';
-export * from './resilience/bulkhead.js';
-export * from './resilience/rate-limiter.js';
+export * from './resilience/circuit-breaker';
+export * from './resilience/retry-strategy';
+export * from './resilience/bulkhead';
+export * from './resilience/rate-limiter';
 
 // Streaming components
-export * from './streaming/backpressure-handler.js';
-export * from './streaming/streaming-metrics.js';
-export * from './streaming/streaming-pool-manager.js';
+export * from './streaming/backpressure-handler';
+export * from './streaming/streaming-metrics';
+export * from './streaming/streaming-pool-manager';
 
 // Type definitions
 export type {
@@ -36,12 +36,12 @@ export type {
   CircuitBreakerConfig,
   RetryConfig,
   ResilienceConfig,
-} from './config/pool-config.js';
+} from './config/pool-config';
 
 export type {
   PoolStats,
   PoolHealth,
-} from './http/pool-manager.js';
+} from './http/pool-manager';
 
 export type {
   RequestMetrics,
@@ -49,20 +49,20 @@ export type {
   CircuitBreakerMetrics,
   ResilienceMetrics,
   HealthStatus,
-} from './monitoring/metrics.js';
+} from './monitoring/metrics';
 
 export type {
   CircuitState,
   CircuitBreakerStats,
-} from './resilience/circuit-breaker.js';
+} from './resilience/circuit-breaker';
 
 export type {
   RetryAttempt,
-} from './resilience/retry-strategy.js';
+} from './resilience/retry-strategy';
 
 // Re-export commonly used classes
-export { CircuitBreaker } from './resilience/circuit-breaker.js';
-export { RetryStrategy, RetryStrategies } from './resilience/retry-strategy.js';
+export { CircuitBreaker } from './resilience/circuit-breaker';
+export { RetryStrategy, RetryStrategies } from './resilience/retry-strategy';
 
 /**
  * Quick start example:

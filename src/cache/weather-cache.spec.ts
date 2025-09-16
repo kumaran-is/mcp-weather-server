@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { WeatherCache } from './weather-cache.js';
-import type { WeatherData, ForecastData } from '../types.js';
+import { WeatherCache } from './weather-cache';
+import type { WeatherData, ForecastData } from '../types';
 
 // Mock logger
 vi.mock('../logger-pino.js', () => ({

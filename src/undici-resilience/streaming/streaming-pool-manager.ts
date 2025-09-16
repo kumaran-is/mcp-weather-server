@@ -4,9 +4,9 @@
  */
 
 import { Pool } from 'undici';
-import { logger } from '../../logger-pino.js';
-import { BackpressureHandler, BackpressureConfig, backpressurePoolManager } from './backpressure-handler.js';
-import { streamingMetricsCollector } from './streaming-metrics.js';
+import { logger } from '../../logger-pino';
+import { BackpressureHandler, BackpressureConfig, backpressurePoolManager } from './backpressure-handler';
+import { streamingMetricsCollector } from './streaming-metrics';
 
 export interface StreamingPoolConfig {
   connections: number;

@@ -10,8 +10,6 @@ const mockServer = {
   close: vi.fn()
 };
 const mockGetServer = vi.fn(() => mockServer);
-const mockSimpleSSETransport = vi.fn();
-const mockSSEStart = vi.fn();
 
 // Mock all dependencies before imports
 vi.mock('dotenv/config');
@@ -28,9 +26,6 @@ vi.mock('./mcp-server.js', () => ({
   WeatherMCPServer: mockWeatherMCPServer
 }));
 
-vi.mock('./transports/sse-transport.js', () => ({
-  SimpleSSETransport: mockSimpleSSETransport
-}));
 
 vi.mock('fastify', () => ({
   default: mockFastify
@@ -117,13 +112,6 @@ describe('Server Entry Point', () => {
     };
     mockFastify.mockReturnValue(mockFastifyInstance);
     
-    mockSSEInstance = {
-      start: mockSSEStart,
-      close: vi.fn().mockResolvedValue(undefined)
-    };
-    mockSimpleSSETransport.mockImplementation(() => mockSSEInstance);
-    
-    mockSSEStart.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -135,18 +123,18 @@ describe('Server Entry Point', () => {
 
   describe('Basic Server Functionality', () => {
     it('should export main function', async () => {
-      const serverModule = await import('./server.js');
+      const serverModule = await import('./server');
       expect(typeof serverModule.main).toBe('function');
     });
 
     it('should be able to import server module', async () => {
-      const serverModule = await import('./server.js');
+      const serverModule = await import('./server');
       expect(serverModule).toBeDefined();
       expect(serverModule.main).toBeDefined();
     });
 
     it('should have main function that is async', async () => {
-      const serverModule = await import('./server.js');
+      const serverModule = await import('./server');
       expect(serverModule.main.constructor.name).toBe('AsyncFunction');
     });
   });
@@ -163,8 +151,8 @@ describe('Server Entry Point', () => {
         vi.clearAllMocks();
         process.env.MCP_TRANSPORT = env;
         
-        const { logger } = await import('./logger-pino.js');
-        const { main } = await import('./server.js');
+        const { logger } = await import('./logger-pino');
+        const { main } = await import('./server');
         
         // Configure for stdio transport
         mockConfig.server.transport = expected === 'stdio' ? 'stdio' : 'http';
@@ -183,7 +171,7 @@ describe('Server Entry Point', () => {
 
   describe('Server Module Structure', () => {
     it('should have proper module exports', async () => {
-      const serverModule = await import('./server.js');
+      const serverModule = await import('./server');
       expect(serverModule).toHaveProperty('main');
       expect(typeof serverModule.main).toBe('function');
     });
@@ -191,8 +179,8 @@ describe('Server Entry Point', () => {
 
   describe('Server Startup Logic', () => {
     it('should handle basic server startup flow', async () => {
-      const { main } = await import('./server.js');
-      const { logger } = await import('./logger-pino.js');
+      const { main } = await import('./server');
+      const { logger } = await import('./logger-pino');
       
       mockConfig.server.transport = 'stdio';
       await main();
@@ -208,8 +196,8 @@ describe('Server Entry Point', () => {
   describe('Main Function Execution', () => {
     describe('Stdio Transport Path', () => {
       it('should execute main function with stdio transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         mockConfig.server.transport = 'stdio';
         process.env.MCP_TRANSPORT = 'stdio';
@@ -227,8 +215,8 @@ describe('Server Entry Point', () => {
 
     describe('HTTP Transport Path', () => {
       it('should execute main function with HTTP transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         mockConfig.server.transport = 'http';
         process.env.MCP_TRANSPORT = 'http';
@@ -244,7 +232,7 @@ describe('Server Entry Point', () => {
       });
 
       it('should set up all HTTP endpoints correctly', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         process.env.MCP_TRANSPORT = 'http';
@@ -259,8 +247,8 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle POST /mcp with new session', async () => {
-        const { main } = await import('./server.js');
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { main } = await import('./server');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         
         mockConfig.server.transport = 'http';
         await main();
@@ -288,14 +276,14 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle POST /mcp with existing session', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
         
         // First create a session
         const postHandler = mockFastifyInstance.post.mock.calls[0][1];
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         (isInitializeRequest as any).mockReturnValue(true);
         
         // Create initial session
@@ -322,8 +310,8 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle POST /mcp with invalid request', async () => {
-        const { main } = await import('./server.js');
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { main } = await import('./server');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         
         mockConfig.server.transport = 'http';
         await main();
@@ -354,14 +342,14 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle GET /mcp with valid session', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
         
         // Setup session first
         const postHandler = mockFastifyInstance.post.mock.calls[0][1];
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         (isInitializeRequest as any).mockReturnValue(true);
         
         await postHandler(
@@ -387,7 +375,7 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle GET /mcp with invalid session', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
@@ -411,14 +399,14 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle DELETE /mcp', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
         
         // Setup session
         const postHandler = mockFastifyInstance.post.mock.calls[0][1];
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         (isInitializeRequest as any).mockReturnValue(true);
         
         await postHandler(
@@ -444,7 +432,7 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle /health endpoint', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
@@ -466,8 +454,8 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle Fastify listen error', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         mockConfig.server.transport = 'http';
         mockFastifyInstance.listen.mockRejectedValueOnce(new Error('Port in use'));
@@ -479,14 +467,14 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle transport cleanup on close', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
         
         // Setup session
         const postHandler = mockFastifyInstance.post.mock.calls[0][1];
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         (isInitializeRequest as any).mockReturnValue(true);
         
         await postHandler(
@@ -515,8 +503,8 @@ describe('Server Entry Point', () => {
 
     describe('Error Scenarios', () => {
       it('should handle WeatherMCPServer initialization errors', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         mockWeatherMCPServer.mockImplementationOnce(() => {
           throw new Error('Server initialization failed');
@@ -534,9 +522,9 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle configuration errors', async () => {
-        const { getConfig } = await import('./config/config.js');
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { getConfig } = await import('./config/config');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         (getConfig as any).mockImplementationOnce(() => {
           throw new Error('Configuration error');
@@ -554,8 +542,8 @@ describe('Server Entry Point', () => {
       });
 
       it('should handle transport connection errors', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         mockServer.connect.mockRejectedValueOnce(new Error('Connection failed'));
         
@@ -575,8 +563,8 @@ describe('Server Entry Point', () => {
 
     describe('Process Signal Handling', () => {
       it('should handle SIGTERM for HTTP transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
+        const { main } = await import('./server');
+        const { logger } = await import('./logger-pino');
         
         // Mock streaming metrics
         vi.mock('./undici-resilience/streaming/streaming-metrics.js', () => ({
@@ -590,7 +578,7 @@ describe('Server Entry Point', () => {
         
         // Setup a session to test cleanup
         const postHandler = mockFastifyInstance.post.mock.calls[0][1];
-        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types.js');
+        const { isInitializeRequest } = await import('@modelcontextprotocol/sdk/types');
         (isInitializeRequest as any).mockReturnValue(true);
         
         await postHandler(
@@ -622,28 +610,9 @@ describe('Server Entry Point', () => {
         vi.useRealTimers();
       });
 
-      it('should handle SIGTERM for SSE transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
-        
-        mockConfig.server.transport = 'sse';
-        await main();
-        
-        // Find and execute SIGTERM handler
-        const sigTermCall = processOnSpy.mock.calls.find(
-          (call: any[]) => call[0] === 'SIGTERM'
-        );
-        
-        if (sigTermCall && sigTermCall[1]) {
-          await sigTermCall[1]();
-          expect(logger.info).toHaveBeenCalledWith('Shutting down SSE server gracefully');
-          expect(mockSSEInstance.close).toHaveBeenCalled();
-          expect(processExitSpy).toHaveBeenCalledWith(0);
-        }
-      });
 
       it('should prevent multiple shutdown attempts', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'http';
         await main();
@@ -659,7 +628,7 @@ describe('Server Entry Point', () => {
 
     describe('Session Management', () => {
       it('should handle session creation and cleanup', async () => {
-        const { main } = await import('./server.js');
+        const { main } = await import('./server');
         
         mockConfig.server.transport = 'stdio';
         await main();
@@ -669,39 +638,5 @@ describe('Server Entry Point', () => {
       });
     });
 
-    describe('SSE Transport Path', () => {
-      it('should execute main function with SSE transport', async () => {
-        const { main } = await import('./server.js');
-        const { logger } = await import('./logger-pino.js');
-        
-        mockConfig.server.transport = 'sse';
-        mockConfig.server.ssePort = 8081;
-        
-        await main();
-        
-        expect(mockWeatherMCPServer).toHaveBeenCalled();
-        expect(mockSimpleSSETransport).toHaveBeenCalled();
-        expect(mockSSEStart).toHaveBeenCalled();
-        expect(logger.info).toHaveBeenCalledWith('Using Simple SSE transport', { port: 8081 });
-        expect(logger.info).toHaveBeenCalledWith('Simple SSE server started on port 8081');
-      });
-
-      it('should handle SIGINT for SSE transport', async () => {
-        const { main } = await import('./server.js');
-        
-        mockConfig.server.transport = 'sse';
-        await main();
-        
-        const sigIntCall = processOnSpy.mock.calls.find(
-          (call: any[]) => call[0] === 'SIGINT'
-        );
-        
-        if (sigIntCall && sigIntCall[1]) {
-          await sigIntCall[1]();
-          expect(mockSSEInstance.close).toHaveBeenCalled();
-          expect(processExitSpy).toHaveBeenCalledWith(0);
-        }
-      });
-    });
   });
 });
