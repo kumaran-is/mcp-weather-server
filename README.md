@@ -32,6 +32,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
   - [🏗️ Architecture \& Design](#️-architecture--design)
     - [🏗️ Perfect 3-Layer SOLID Architecture](#️-perfect-3-layer-solid-architecture)
     - [Transport Strategy](#transport-strategy)
+      - [McpServer vs Fastify - Architectural Layers](#mcpserver-vs-fastify---architectural-layers)
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
       - [Streamable HTTP Transport Sequence Diagram](#streamable-http-transport-sequence-diagram)
@@ -409,6 +410,75 @@ The MCP Weather Server implements a **modern dual-transport strategy** with perf
 | **Official Streamable HTTP** | 8080 | Production APIs, LangChain | Streamable HTTP | ❌ No |
 
 **Architecture Evolution (v2.5.0):** The server now uses the **latest MCP SDK patterns** with `McpServer` and `registerTool()` for significantly simplified code, better type safety, and automatic protocol compliance while maintaining the clean dual-transport architecture.
+
+#### McpServer vs Fastify - Architectural Layers
+
+**Why Both Are Needed:**
+
+The server uses **two different technologies** that serve **completely different architectural layers**:
+
+```
+┌─────────────────────────────────────────────────┐
+│              CLIENT LAYER                       │
+│        AI Assistants & Remote APIs             │
+└─────────────────┬───────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────┐
+│    🌐 FASTIFY (Transport Layer)                │
+│  • HTTP web server framework                   │
+│  • Routing (/mcp, /health endpoints)          │
+│  • Session management & connections            │
+│  • HTTP headers, CORS, middleware              │
+│  • Network-level concerns only                 │
+│  • Transport-specific (HTTP only)              │
+└─────────────────┬───────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────┐
+│    🧠 McpServer (Protocol Layer)               │
+│  • MCP protocol specification handler          │
+│  • Tool registration & schema validation       │
+│  • JSON-RPC 2.0 message format handling        │
+│  • Protocol-agnostic (works with any transport)│
+│  • Business logic orchestration                │
+└─────────────────┬───────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────┐
+│    🌤️ WeatherService (Business Layer)          │
+│  • Weather APIs & domain logic                 │
+│  • Data transformation & caching               │
+│  • External API integration                    │
+└─────────────────────────────────────────────────┘
+```
+
+**Key Differences:**
+
+| Aspect | **McpServer** (Protocol) | **Fastify** (Transport) |
+|--------|--------------------------|-------------------------|
+| **Purpose** | Implements MCP specification | HTTP web server framework |
+| **Scope** | Protocol logic, tools, schemas | HTTP routing, sessions, connections |
+| **Transport** | Works with ANY transport | HTTP only |
+| **Concerns** | MCP messages, JSON-RPC 2.0 | HTTP headers, CORS, middleware |
+| **Business Logic** | ❌ Zero business logic | ❌ Zero business logic |
+
+**Multi-Transport Architecture:**
+
+1. **HTTP Transport** (for remote connections):
+   ```
+   Client → Fastify (HTTP) → McpServer (MCP Protocol) → WeatherService
+   ```
+
+2. **Stdio Transport** (for local AI tools like Cline):
+   ```
+   Client → StdioTransport → McpServer (MCP Protocol) → WeatherService
+   ```
+
+**Benefits of This Separation:**
+- **Reusable Logic**: Same McpServer works with multiple transports
+- **Clean Architecture**: HTTP concerns vs Protocol concerns vs Business logic
+- **Flexibility**: Can add new transports (WebSocket, gRPC) without changing MCP logic
+- **Standards Compliance**: Fastify handles HTTP standards, McpServer handles MCP standards
+
+The same weather tools work whether called from Cline (stdio) or a web client (HTTP) because the McpServer layer is transport-agnostic.
 
 #### Transport Decision Matrix
 
