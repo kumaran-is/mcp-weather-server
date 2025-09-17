@@ -192,15 +192,60 @@ class ServiceFactory {
 - Easy dependency injection
 - Simplified testing with mock services
 
-### 6. Three-Transport Strategy Pattern
+### 6. Advanced Resilience Patterns Integration
 
-**Purpose**: Maximize compatibility across different client types and deployment scenarios
+**Purpose**: Enterprise-grade reliability through coordinated resilience patterns
+
+**Implementation**:
+```typescript
+// Enhanced WeatherService with full resilience stack
+export class WeatherService {
+  private weatherBulkhead: Bulkhead;
+  private geocodingBulkhead: Bulkhead;
+  private weatherRateLimiter: RateLimiter;
+  private geocodingRateLimiter: RateLimiter;
+  private retryStrategy: RetryStrategy;
+
+  // Full resilience flow for geocoding
+  private async geocodeCityWithResilience(city: string) {
+    return await this.geocodingRateLimiter.execute(async () => {
+      return await this.geocodingBulkhead.execute(async () => {
+        return await this.retryStrategy.execute(async () => {
+          return await poolManager.request(/* geocoding request */);
+        });
+      });
+    });
+  }
+
+  // Full resilience flow for weather data
+  private async fetchWeatherDataWithResilience(params) {
+    return await this.weatherRateLimiter.execute(async () => {
+      return await this.weatherBulkhead.execute(async () => {
+        return await this.retryStrategy.execute(async () => {
+          return await poolManager.request(/* weather request */);
+        });
+      });
+    });
+  }
+}
+```
+
+**Benefits**:
+- Multiple layers of protection against failures
+- Independent resource isolation (weather vs geocoding)
+- Intelligent retry with exponential backoff and jitter
+- Comprehensive monitoring and observability
+- Production-grade reliability
+
+### 7. Dual-Transport Strategy Pattern
+
+**Purpose**: Maximize compatibility with simplified architecture
 
 **Implementation**:
 ```typescript
 // Transport selection based on use case
 interface TransportStrategy {
-  type: 'stdio' | 'http' | 'sse';
+  type: 'stdio' | 'http';
   port?: number;
   capabilities: TransportCapabilities;
 }
@@ -214,25 +259,19 @@ const transportMatrix = {
     clineSupport: true
   },
   http: {
-    useCase: 'Production APIs,  LangChain/LangGraphCrewAI/AutoGen/OpenAI, microservices',
+    useCase: 'Production APIs, LangChain/LangGraph/CrewAI/AutoGen/OpenAI, microservices',
     latency: 'Low-Medium (5-20ms)',
     complexity: 'Complex',
     clineSupport: false
-  },
-  sse: {
-    useCase: 'Remote Cline connections, lightweight clients',
-    latency: 'Low (~30ms)',
-    complexity: 'Medium',
-    clineSupport: true
   }
 };
 ```
 
 **Benefits**:
-- Maximum client compatibility
+- Simplified architecture with two proven transports
 - Clear transport selection guidance
 - Optimized for specific use cases
-- Future-proof architecture
+- Maintainable and reliable
 
 ## 🔧 Critical Implementation Decisions
 
