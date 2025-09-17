@@ -4,6 +4,9 @@ import { logger } from './logger-pino';
 import { createValidationMiddleware } from './middleware/validation';
 import { VERSION, NAME } from './utils/version';
 import { z } from 'zod';
+import { securityManager } from './security/sanitizer';
+import { securityMonitor } from './security/security-monitor';
+import { auditLogger } from './audit/audit-logger';
 
 /**
  * Weather MCP Server
@@ -107,14 +110,53 @@ export class WeatherMCPServer {
       },
       async ({ city }) => {
         const startTime = Date.now();
-        logger.logToolCall('get_current_weather', { city });
+        const toolName = 'get_current_weather';
+        
+        // Security: Sanitize and validate input
+        const sanitizedInput = securityManager.sanitizeInput({ city });
+        const cleanCity = securityManager.sanitizeCityName(sanitizedInput.city);
+        
+        if (!cleanCity) {
+          // Audit: Log failed validation
+          auditLogger.logDataAccess('read', 'weather_data', 'failure', undefined, {
+            method: toolName,
+            statusCode: 400,
+            duration: Date.now() - startTime,
+            error: 'Invalid city name',
+            metadata: { originalInput: city, sanitizedInput }
+          });
+          
+          // Security: Log potential attack pattern
+          if (securityManager.containsAttackPatterns(city)) {
+            auditLogger.logSecurity('malicious_input_detected', 'weather_tools', 'success', 'high', undefined, {
+              metadata: { tool: toolName, input: city, reason: 'attack_patterns_detected' }
+            });
+          }
+          
+          throw new Error('Invalid city name provided');
+        }
+
+        logger.logToolCall(toolName, { city: cleanCity });
 
         try {
-          const weather = await this.weatherService.getCurrentWeather(city.trim());
+          // Audit: Log data access attempt
+          auditLogger.logDataAccess('read', 'weather_data', 'success', undefined, {
+            method: toolName,
+            payload: { city: cleanCity },
+            metadata: { requestType: 'current_weather' }
+          });
+
+          const weather = await this.weatherService.getCurrentWeather(cleanCity);
           
-          logger.logPerformance('tool_get_current_weather', startTime, {
+          // Audit: Log successful API usage
+          auditLogger.logApiUsage('POST', `/tools/${toolName}`, 200, Date.now() - startTime, undefined, {
+            payload: { city: cleanCity },
+            metadata: { responseSize: JSON.stringify(weather).length }
+          });
+          
+          logger.logPerformance(`tool_${toolName}`, startTime, {
             success: true,
-            city: city.trim()
+            city: cleanCity
           });
 
           return {
@@ -124,9 +166,18 @@ export class WeatherMCPServer {
             }]
           };
         } catch (error) {
+          // Audit: Log error
+          auditLogger.logDataAccess('read', 'weather_data', 'error', undefined, {
+            method: toolName,
+            statusCode: 500,
+            duration: Date.now() - startTime,
+            error: (error as Error).message,
+            payload: { city: cleanCity }
+          });
+          
           logger.logError(error as Error, {
-            tool: 'get_current_weather',
-            city,
+            tool: toolName,
+            city: cleanCity,
             duration: Date.now() - startTime
           });
           throw error;
@@ -147,28 +198,79 @@ export class WeatherMCPServer {
       },
       async ({ city, days = 5 }) => {
         const startTime = Date.now();
-        logger.logToolCall('get_weather_forecast', { city, days });
+        const toolName = 'get_weather_forecast';
+        
+        // Security: Sanitize and validate inputs
+        const sanitizedInput = securityManager.sanitizeInput({ city, days });
+        const cleanCity = securityManager.sanitizeCityName(sanitizedInput.city);
+        
+        if (!cleanCity) {
+          // Audit: Log failed validation
+          auditLogger.logDataAccess('read', 'weather_forecast', 'failure', undefined, {
+            method: toolName,
+            statusCode: 400,
+            duration: Date.now() - startTime,
+            error: 'Invalid city name',
+            metadata: { originalInput: city, sanitizedInput, days }
+          });
+          
+          // Security: Log potential attack pattern
+          if (securityManager.containsAttackPatterns(city)) {
+            auditLogger.logSecurity('malicious_input_detected', 'weather_tools', 'success', 'high', undefined, {
+              metadata: { tool: toolName, input: city, reason: 'attack_patterns_detected' }
+            });
+          }
+          
+          throw new Error('Invalid city name provided');
+        }
+
+        // Validate days parameter
+        const cleanDays = Math.max(1, Math.min(7, Math.floor(sanitizedInput.days || 5)));
+
+        logger.logToolCall(toolName, { city: cleanCity, days: cleanDays });
 
         try {
-          const forecast = await this.weatherService.getForecast(city.trim(), days);
+          // Audit: Log data access attempt
+          auditLogger.logDataAccess('read', 'weather_forecast', 'success', undefined, {
+            method: toolName,
+            payload: { city: cleanCity, days: cleanDays },
+            metadata: { requestType: 'forecast' }
+          });
+
+          const forecast = await this.weatherService.getForecast(cleanCity, cleanDays);
           
-          logger.logPerformance('tool_get_weather_forecast', startTime, {
+          // Audit: Log successful API usage
+          auditLogger.logApiUsage('POST', `/tools/${toolName}`, 200, Date.now() - startTime, undefined, {
+            payload: { city: cleanCity, days: cleanDays },
+            metadata: { responseSize: JSON.stringify(forecast).length }
+          });
+          
+          logger.logPerformance(`tool_${toolName}`, startTime, {
             success: true,
-            city: city.trim(),
-            days
+            city: cleanCity,
+            days: cleanDays
           });
 
           return {
             content: [{
               type: 'text',
-              text: this.formatForecastText(forecast, days)
+              text: this.formatForecastText(forecast, cleanDays)
             }]
           };
         } catch (error) {
+          // Audit: Log error
+          auditLogger.logDataAccess('read', 'weather_forecast', 'error', undefined, {
+            method: toolName,
+            statusCode: 500,
+            duration: Date.now() - startTime,
+            error: (error as Error).message,
+            payload: { city: cleanCity, days: cleanDays }
+          });
+          
           logger.logError(error as Error, {
-            tool: 'get_weather_forecast',
-            city,
-            days,
+            tool: toolName,
+            city: cleanCity,
+            days: cleanDays,
             duration: Date.now() - startTime
           });
           throw error;
@@ -188,28 +290,92 @@ export class WeatherMCPServer {
       },
       async ({ query }) => {
         const startTime = Date.now();
-        logger.logToolCall('retrieve_weather_context', { query });
+        const toolName = 'retrieve_weather_context';
+        
+        // Security: Sanitize and validate input
+        const sanitizedInput = securityManager.sanitizeInput({ query });
+        const cleanQuery = securityManager.sanitizeString(sanitizedInput.query);
+        
+        if (!cleanQuery || cleanQuery.length < 3) {
+          // Audit: Log failed validation
+          auditLogger.logDataAccess('read', 'weather_context', 'failure', undefined, {
+            method: toolName,
+            statusCode: 400,
+            duration: Date.now() - startTime,
+            error: 'Invalid query',
+            metadata: { originalInput: query, sanitizedInput }
+          });
+          
+          throw new Error('Invalid or too short query provided');
+        }
+
+        // Security: Check for attack patterns in query
+        if (securityManager.containsAttackPatterns(cleanQuery)) {
+          auditLogger.logSecurity('malicious_input_detected', 'weather_tools', 'success', 'high', undefined, {
+            metadata: { tool: toolName, input: query, reason: 'attack_patterns_detected' }
+          });
+          throw new Error('Query contains suspicious patterns');
+        }
+
+        logger.logToolCall(toolName, { query: cleanQuery });
 
         try {
-          const city = this.extractCityFromQuery(query.trim());
-          const weather = await this.weatherService.getCurrentWeather(city);
+          // Extract city using sanitized query
+          const city = this.extractCityFromQuery(cleanQuery);
+          const cleanCity = securityManager.sanitizeCityName(city);
           
-          logger.logPerformance('tool_retrieve_weather_context', startTime, {
+          if (!cleanCity) {
+            // Audit: Log city extraction failure
+            auditLogger.logDataAccess('read', 'weather_context', 'failure', undefined, {
+              method: toolName,
+              statusCode: 400,
+              duration: Date.now() - startTime,
+              error: 'No valid city found in query',
+              metadata: { query: cleanQuery, extractedCity: city }
+            });
+            throw new Error('No valid city found in query');
+          }
+
+          // Audit: Log data access attempt
+          auditLogger.logDataAccess('read', 'weather_context', 'success', undefined, {
+            method: toolName,
+            payload: { query: cleanQuery, city: cleanCity },
+            metadata: { requestType: 'context_retrieval' }
+          });
+
+          const weather = await this.weatherService.getCurrentWeather(cleanCity);
+          
+          // Audit: Log successful API usage
+          auditLogger.logApiUsage('POST', `/tools/${toolName}`, 200, Date.now() - startTime, undefined, {
+            payload: { query: cleanQuery, city: cleanCity },
+            metadata: { responseSize: JSON.stringify(weather).length }
+          });
+          
+          logger.logPerformance(`tool_${toolName}`, startTime, {
             success: true,
-            query: query.trim(),
-            extractedCity: city
+            query: cleanQuery,
+            extractedCity: cleanCity
           });
 
           return {
             content: [{
               type: 'text',
-              text: this.formatWeatherContext(weather, query.trim())
+              text: this.formatWeatherContext(weather, cleanQuery)
             }]
           };
         } catch (error) {
+          // Audit: Log error
+          auditLogger.logDataAccess('read', 'weather_context', 'error', undefined, {
+            method: toolName,
+            statusCode: 500,
+            duration: Date.now() - startTime,
+            error: (error as Error).message,
+            payload: { query: cleanQuery }
+          });
+          
           logger.logError(error as Error, {
-            tool: 'retrieve_weather_context',
-            query,
+            tool: toolName,
+            query: cleanQuery,
             duration: Date.now() - startTime
           });
           throw error;

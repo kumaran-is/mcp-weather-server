@@ -6,6 +6,7 @@
 import { EventEmitter } from 'events';
 import { logger } from '../logger-pino';
 import { auditLogger } from '../audit/audit-logger';
+import { getSecurityConfig } from '../config/config';
 
 export interface SecurityThreat {
   id: string;
@@ -82,43 +83,48 @@ export class SecurityMonitor extends EventEmitter {
 
   constructor(config: Partial<SecurityConfiguration> = {}) {
     super();
+    
+    // Load configuration from centralized config system
+    const securityConfig = getSecurityConfig();
+    
     this.config = {
-      enabled: process.env.SECURITY_MONITORING_ENABLED === 'true' || true,
+      enabled: securityConfig.monitoring.enabled,
       bruteForceProtection: {
         enabled: true,
-        maxAttempts: 5,
-        timeWindow: 300000,
-        blockDuration: 900000,
+        maxAttempts: securityConfig.bruteForceProtection.maxAttempts,
+        timeWindow: securityConfig.bruteForceProtection.timeWindow,
+        blockDuration: securityConfig.bruteForceProtection.blockDuration,
       },
       rateLimitMonitoring: {
         enabled: true,
-        requestsPerMinute: 100,
-        burstLimit: 20,
-        blockDuration: 300000,
+        requestsPerMinute: securityConfig.rateLimiting.requestsPerMinute,
+        burstLimit: securityConfig.rateLimiting.burstLimit,
+        blockDuration: securityConfig.rateLimiting.blockDuration,
       },
       suspiciousPatternDetection: {
         enabled: true,
-        sqlInjectionDetection: true,
-        xssDetection: true,
-        pathTraversalDetection: true,
-        commandInjectionDetection: true,
+        sqlInjectionDetection: securityConfig.threatDetection.sqlInjection,
+        xssDetection: securityConfig.threatDetection.xss,
+        pathTraversalDetection: securityConfig.threatDetection.pathTraversal,
+        commandInjectionDetection: securityConfig.threatDetection.commandInjection,
       },
       dataExfiltrationDetection: {
         enabled: true,
-        maxResponseSize: 10485760,
-        maxRequestsPerMinute: 50,
-        sensitiveDataPatterns: ['api_key', 'password', 'token', 'secret'],
+        maxResponseSize: securityConfig.inputValidation.maxRequestSize,
+        maxRequestsPerMinute: Math.floor(securityConfig.rateLimiting.requestsPerMinute / 2),
+        sensitiveDataPatterns: securityConfig.dataProtection.customMaskPatterns,
       },
       ipBlocking: {
-        enabled: true,
-        autoBlock: true,
-        whitelist: ['127.0.0.1', '::1'],
-        blacklist: [],
+        enabled: securityConfig.ipBlocking.enabled,
+        autoBlock: securityConfig.ipBlocking.autoBlock,
+        whitelist: securityConfig.ipBlocking.whitelist,
+        blacklist: securityConfig.ipBlocking.blacklist,
       },
       alerting: {
-        enabled: true,
-        criticalThreshold: 10,
-        emailRecipients: [],
+        enabled: securityConfig.alerting.enabled,
+        criticalThreshold: securityConfig.alerting.criticalThreshold,
+        webhookUrl: securityConfig.alerting.webhookUrl,
+        emailRecipients: securityConfig.alerting.emailRecipients,
       },
       ...config,
     };

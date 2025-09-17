@@ -14,6 +14,22 @@ import { logger } from './logger-pino';
 import { getConfig } from './config/config';
 import { randomUUID } from 'node:crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types';
+import { securityManager } from './security/sanitizer';
+import { securityMonitor } from './security/security-monitor';
+import { auditLogger } from './audit/audit-logger';
+
+// Extend Fastify types for security context
+declare module 'fastify' {
+  interface FastifyRequest {
+    mcpSecurityContext?: {
+      startTime: number;
+      clientIP: string;
+      userAgent: string;
+      sanitizedHeaders: Record<string, string>;
+      threats: any[];
+    };
+  }
+}
 
 /**
  * Main entry point for the MCP Weather Server
@@ -42,6 +58,128 @@ export async function main() {
       const fastify = Fastify({
         logger: false, // We use our own logger
         disableRequestLogging: true, // Disable Fastify's request logging
+      });
+
+      // Add security headers hook
+      fastify.addHook('onSend', async (request, reply, payload) => {
+        // Add security headers
+        reply.header('X-Content-Type-Options', 'nosniff');
+        reply.header('X-Frame-Options', 'DENY');
+        reply.header('X-XSS-Protection', '1; mode=block');
+        reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+        reply.header('Content-Security-Policy', securityManager.getContentSecurityPolicy());
+        reply.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        
+        return payload;
+      });
+
+      // Add comprehensive security middleware
+      fastify.addHook('preHandler', async (request, reply) => {
+        const startTime = Date.now();
+        const clientIP = request.ip;
+        const userAgent = request.headers['user-agent'] || 'unknown';
+        const method = request.method;
+        const url = request.url;
+
+        // Security: Sanitize headers
+        const sanitizedHeaders = securityManager.sanitizeHeaders(request.headers);
+        
+        // Security: Monitor request for threats
+        const threats = securityMonitor.monitorRequest(
+          method,
+          url,
+          sanitizedHeaders,
+          request.body,
+          clientIP,
+          undefined // No user ID in MCP context
+        );
+
+        // Security: Block if critical threats detected
+        if (threats.some(threat => threat.severity === 'critical')) {
+          // Audit: Log blocked request
+          auditLogger.logSecurity('request_blocked', 'http_transport', 'success', 'critical', undefined, {
+            method,
+            url,
+            statusCode: 403,
+            duration: Date.now() - startTime,
+            ip: clientIP,
+            userAgent,
+            metadata: { 
+              threatsDetected: threats.length,
+              threatTypes: threats.map(t => t.type)
+            }
+          });
+
+          return reply.status(403).send({
+            jsonrpc: '2.0',
+            error: {
+              code: -32000,
+              message: 'Request blocked due to security threat detection'
+            },
+            id: null
+          });
+        }
+
+        // Audit: Log all HTTP requests
+        auditLogger.logApiUsage(method, url, 0, 0, undefined, {
+          ip: clientIP,
+          userAgent,
+          metadata: { phase: 'request_start' }
+        });
+
+        // Add request context for later use
+        request.mcpSecurityContext = {
+          startTime,
+          clientIP,
+          userAgent,
+          sanitizedHeaders,
+          threats
+        };
+      });
+
+      // Add response logging hook
+      fastify.addHook('onResponse', async (request, reply) => {
+        const context = request.mcpSecurityContext;
+        if (!context) return;
+
+        const duration = Date.now() - context.startTime;
+        const statusCode = reply.statusCode;
+
+        // Audit: Log completed request
+        auditLogger.logApiUsage(
+          request.method,
+          request.url,
+          statusCode,
+          duration,
+          undefined,
+          {
+            ip: context.clientIP,
+            userAgent: context.userAgent,
+            metadata: { 
+              phase: 'request_complete',
+              threatsDetected: context.threats.length
+            }
+          }
+        );
+
+        // Security: Log suspicious response patterns
+        if (statusCode >= 400) {
+          auditLogger.logSecurity(
+            'http_error_response',
+            'http_transport',
+            statusCode < 500 ? 'failure' : 'error',
+            statusCode >= 500 ? 'high' : 'medium',
+            undefined,
+            {
+              method: request.method,
+              url: request.url,
+              statusCode,
+              duration,
+              ip: context.clientIP,
+              userAgent: context.userAgent
+            }
+          );
+        }
       });
 
       // Map to store transports by session ID
@@ -123,6 +261,116 @@ export async function main() {
           version: '1.0.0',
           transport: 'http',
           activeSessions: Object.keys(transports).length,
+        });
+      });
+
+      // Add security monitoring endpoints
+      fastify.get('/security/threats', async (request, reply) => {
+        const threats = securityMonitor.getThreats();
+        
+        // Audit: Log security data access
+        auditLogger.logDataAccess('read', 'security_threats', 'success', undefined, {
+          method: 'GET',
+          url: '/security/threats',
+          payload: { threatsCount: threats.length },
+          ip: request.ip,
+          userAgent: request.headers['user-agent']
+        });
+
+        return reply.send({
+          threats: threats.slice(0, 100), // Limit to last 100 threats
+          totalCount: threats.length,
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      fastify.get('/security/blocked-ips', async (request, reply) => {
+        // Note: This would need to be implemented in SecurityMonitor
+        // For now, return empty list
+        auditLogger.logDataAccess('read', 'blocked_ips', 'success', undefined, {
+          method: 'GET',
+          url: '/security/blocked-ips',
+          ip: request.ip,
+          userAgent: request.headers['user-agent']
+        });
+
+        return reply.send({
+          blockedIPs: [],
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      // Add audit endpoints
+      fastify.get('/audit/events', async (request, reply) => {
+        const query = request.query as { limit?: string; offset?: string } || {};
+        const filter = {
+          limit: parseInt(query.limit as string) || 50,
+          offset: parseInt(query.offset as string) || 0
+        };
+
+        const events = auditLogger.query(filter);
+        
+        // Audit: Log audit data access
+        auditLogger.logDataAccess('read', 'audit_events', 'success', undefined, {
+          method: 'GET',
+          url: '/audit/events',
+          payload: filter,
+          metadata: { eventsReturned: events.length },
+          ip: request.ip,
+          userAgent: request.headers['user-agent']
+        });
+
+        return reply.send({
+          events,
+          pagination: {
+            limit: filter.limit,
+            offset: filter.offset,
+            total: events.length
+          },
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      fastify.get('/audit/statistics', async (request, reply) => {
+        const statistics = auditLogger.getStatistics();
+        
+        // Audit: Log statistics access
+        auditLogger.logDataAccess('read', 'audit_statistics', 'success', undefined, {
+          method: 'GET',
+          url: '/audit/statistics',
+          ip: request.ip,
+          userAgent: request.headers['user-agent']
+        });
+
+        return reply.send({
+          statistics,
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      // Add configuration endpoint
+      fastify.get('/config/security', async (request, reply) => {
+        const config = {
+          auditEnabled: auditLogger.getConfiguration().enabled,
+          securityMonitoringEnabled: true, // Hardcoded for now
+          allowedHeaders: ['content-type', 'authorization', 'mcp-session-id', 'user-agent'],
+          rateLimiting: {
+            enabled: true,
+            requestsPerMinute: 100
+          }
+        };
+
+        // Audit: Log config access
+        auditLogger.logDataAccess('read', 'security_config', 'success', undefined, {
+          method: 'GET',
+          url: '/config/security',
+          ip: request.ip,
+          userAgent: request.headers['user-agent']
+        });
+
+        return reply.send({
+          config,
+          timestamp: new Date().toISOString()
         });
       });
 
