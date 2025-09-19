@@ -28,6 +28,15 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
       - [Cursor](#cursor)
       - [GitHub Copilot (Future MCP Support)](#github-copilot-future-mcp-support)
       - [Test with AI Assistant](#test-with-ai-assistant)
+  - [Test All Weather Tools](#test-all-weather-tools)
+    - [**Quick Test - All Capabilities:**](#quick-test---all-capabilities)
+    - [**Real-World Use Cases:**](#real-world-use-cases)
+    - [**Individual Test Scenarios:**](#individual-test-scenarios)
+    - [**Edge Cases & Error Testing:**](#edge-cases--error-testing)
+    - [**Performance & Caching Test:**](#performance--caching-test)
+    - [**Comparative Weather Analysis:**](#comparative-weather-analysis)
+    - [**Expected Results:**](#expected-results)
+    - [**Expected Error Behaviors:**](#expected-error-behaviors)
   - [Directory Structure](#directory-structure)
   - [🏗️ Architecture \& Design](#️-architecture--design)
     - [🏗️ Perfect 3-Layer SOLID Architecture](#️-perfect-3-layer-solid-architecture)
@@ -257,6 +266,301 @@ Once configured, you can test with natural language:
 - "What's the weather in Paris?"
 - "Show me a 5-day forecast for New York"
 - "Is it going to rain in Seattle tomorrow?"
+
+## Test All Weather Tools
+
+**Copy and paste these natural language prompts into Cline, Claude Desktop, or any MCP-compatible AI assistant to test weather capabilities:**
+
+### **Quick Test - All Capabilities:**
+
+```bash
+I need comprehensive weather information for travel planning. Can you help me with the following?
+
+First, give me the CURRENT weather conditions for these cities:
+- London, UK
+- Tokyo, Japan
+- New York, USA
+- Sydney, Australia
+- Dubai, UAE
+
+Next, I need 5-day weather forecasts for these vacation destinations:
+- Paris, France
+- Bali, Indonesia
+- Miami, USA
+- Barcelona, Spain
+
+Finally, help me understand the weather context for these specific travel scenarios:
+- "What's the weather like in Berlin for outdoor photography?"
+- "Weather conditions in Singapore for business meetings"
+- "Is the weather in Mumbai suitable for beach activities?"
+
+Format everything in a clear, organized way that helps with travel planning decisions.
+```
+
+### **Real-World Use Cases:**
+
+**Travel Planning Assistant:**
+```bash
+I'm planning a 2-week trip across Europe starting next week. Can you check the weather for:
+
+1. Current conditions in my departure city: London
+2. 7-day forecasts for my planned stops:
+   - Paris (days 1-3)
+   - Rome (days 4-6)
+   - Vienna (days 7-9)
+   - Prague (days 10-12)
+   - Amsterdam (days 13-14)
+
+Based on the weather, should I pack heavy winter clothing or lighter layers? Any cities I should avoid due to weather conditions?
+```
+
+**Event Planning Coordinator:**
+```bash
+I'm organizing outdoor events and need detailed weather information:
+
+1. Check current weather for immediate decisions in:
+   - Los Angeles (concert tonight)
+   - Chicago (street fair this afternoon)
+   - Boston (marathon tomorrow morning)
+
+2. Get 3-day forecasts for upcoming events in:
+   - Seattle (tech conference)
+   - Denver (mountain wedding)
+   - Orlando (theme park opening)
+
+3. Weather context for: "outdoor wedding in San Francisco this weekend"
+
+Please highlight any concerning weather patterns like rain, extreme temperatures, or high winds.
+```
+
+**Agriculture & Farming Advisor:**
+```bash
+I manage farms in multiple regions and need weather data for agricultural planning:
+
+1. Current weather conditions for immediate field work decisions:
+   - Des Moines, Iowa
+   - Sacramento, California
+   - Houston, Texas
+   - Jacksonville, Florida
+
+2. 7-day forecasts for planting/harvesting schedules:
+   - Kansas City (wheat fields)
+   - Portland (orchards)
+   - Phoenix (cotton farms)
+
+3. Context analysis: "weather in Nebraska for corn planting season"
+
+Focus on precipitation, temperature ranges, and humidity levels that affect crop management.
+```
+
+**Sports & Recreation Planner:**
+```bash
+I coordinate outdoor sports activities and need weather assessments:
+
+Current conditions for today's activities:
+- Skiing in Aspen, Colorado
+- Surfing in Honolulu, Hawaii
+- Golfing in Phoenix, Arizona
+- Sailing in San Diego, California
+
+Get 5-day forecasts for upcoming tournaments:
+- Tennis in Melbourne
+- Football in Green Bay
+- Baseball in Atlanta
+
+Also check: "weather in Vancouver for mountain biking this weekend"
+
+Emphasize wind speeds, precipitation, and visibility conditions.
+```
+
+**Emergency Response Coordinator:**
+```bash
+I need weather data for emergency preparedness and response planning:
+
+1. Current severe weather check for these high-risk areas:
+   - New Orleans, Louisiana
+   - Oklahoma City, Oklahoma
+   - Buffalo, New York
+   - Phoenix, Arizona
+
+2. 3-day forecasts for resource deployment:
+   - Minneapolis (potential snowstorm)
+   - Houston (flooding risk)
+   - Los Angeles (fire weather)
+
+3. Context queries:
+   - "weather conditions in Miami for hurricane preparedness"
+   - "weather in Denver for avalanche risk assessment"
+
+Flag any extreme weather conditions, temperature anomalies, or precipitation warnings.
+```
+
+**Aviation & Transportation Manager:**
+```bash
+I manage flight operations and ground transportation. Please provide:
+
+Current weather at major hub airports:
+- Atlanta (ATL)
+- Chicago (ORD)
+- London (Heathrow area)
+- Tokyo (Narita area)
+- Dubai
+
+48-hour forecasts for flight planning:
+- Frankfurt
+- Singapore
+- Los Angeles
+- New York
+
+Weather context for: "flying conditions in Dallas today"
+
+Focus on visibility, wind speeds, precipitation, and temperature extremes that affect operations.
+```
+
+### **Individual Test Scenarios:**
+
+**Test 1 - Current Weather Retrieval:**
+```bash
+What's the current weather in London? I need temperature, humidity, wind speed, and general conditions.
+```
+
+**Test 2 - Multi-City Weather Check:**
+```bash
+Can you check the current weather in Paris, Rome, and Madrid? I'm trying to decide which city to visit today.
+```
+
+**Test 3 - Extended Forecast:**
+```bash
+Show me a 7-day weather forecast for Tokyo. I'm planning outdoor activities and need to know the best days.
+```
+
+**Test 4 - Short-term Forecast:**
+```bash
+What's the weather forecast for the next 3 days in San Francisco? Keep it brief.
+```
+
+**Test 5 - Natural Language Context Query:**
+```bash
+I'm wondering about the weather in Seattle for hiking this weekend. Can you help me understand if it's suitable?
+```
+
+**Test 6 - Business Context Query:**
+```bash
+What's the weather situation in New York for outdoor business lunch meetings?
+```
+
+**Test 7 - Extreme Weather Locations:**
+```bash
+Check the weather in these extreme locations:
+- Reykjavik, Iceland (cold climate)
+- Cairo, Egypt (hot desert)
+- Singapore (tropical)
+- La Paz, Bolivia (high altitude)
+```
+
+### **Edge Cases & Error Testing:**
+
+```bash
+Test the system's error handling with these challenging requests:
+
+1. Check weather for cities with ambiguous names:
+   - "Paris" (which Paris? France or Texas?)
+   - "London" (UK or Ontario?)
+   - "Sydney" (Australia or Nova Scotia?)
+
+2. Test with misspelled city names:
+   - "Tokio" instead of "Tokyo"
+   - "San Franciso" instead of "San Francisco"
+   - "Mosco" instead of "Moscow"
+
+3. Request forecasts with invalid parameters:
+   - "Show me a 10-day forecast for Berlin" (exceeds 7-day limit)
+   - "Get weather forecast for 0 days in Rome"
+   - "Weather forecast for -5 days in Madrid"
+
+4. Try non-existent or very small cities:
+   - "Weather in Atlantis"
+   - "Current conditions in Hogwarts"
+   - "Forecast for Middle Earth"
+
+5. Test with special characters and injection attempts:
+   - "Weather in London'; DROP TABLE weather;--"
+   - "Forecast for <script>alert('test')</script>"
+   - "Current weather in ${city}"
+
+6. Query without clear city reference:
+   - "What's the weather like?"
+   - "Is it raining?"
+   - "Tell me about the forecast"
+
+7. Multiple cities in one context query:
+   - "Weather for traveling from Paris to London to Amsterdam"
+
+Show me how the system handles these edge cases gracefully.
+```
+
+### **Performance & Caching Test:**
+
+```bash
+Let's test the caching and performance:
+
+1. First request - Check weather in London (should hit the API)
+2. Immediately check London weather again (should be cached)
+3. Wait 1 minute and check London again (still cached?)
+4. Check weather for 10 different cities rapidly:
+   - London, Paris, Tokyo, New York, Sydney
+   - Dubai, Singapore, Moscow, Rio, Cairo
+
+Notice any performance differences between cached and fresh requests?
+```
+
+### **Comparative Weather Analysis:**
+
+```bash
+I need to compare weather conditions across different regions:
+
+1. Current weather comparison:
+   - Tropical: Singapore, Bangkok, Manila
+   - Desert: Dubai, Phoenix, Cairo
+   - Temperate: London, Paris, Berlin
+   - Cold: Reykjavik, Helsinki, Oslo
+
+2. Weekly forecast comparison for vacation planning:
+   - Beach destinations: Miami, Cancun, Bali
+   - Ski resorts: Aspen, Zurich, Innsbruck
+   - City breaks: Rome, Barcelona, Prague
+
+3. Context for decision making:
+   - "Compare weather in Tokyo vs Seoul for cherry blossom viewing"
+   - "Weather differences between San Francisco and Los Angeles for tech conferences"
+
+Help me identify the best weather patterns for different activities.
+```
+
+### **Expected Results:**
+
+When testing with the prompts above, you should see:
+
+- ✅ **Current Weather**: Real-time data from Open-Meteo API with temperature, humidity, wind speed, conditions
+- ✅ **Forecasts**: Accurate 1-7 day predictions with daily high/low temperatures and conditions
+- ✅ **Context Queries**: Natural language understanding extracting city names and providing relevant weather context
+- ✅ **Caching**: Fast responses for repeated queries (10-minute cache TTL)
+- ✅ **Error Handling**: Graceful handling of invalid cities, misspellings, and edge cases
+- ✅ **Resilience**: Circuit breaker protection, automatic retries, and rate limiting
+- ✅ **Formatted Output**: Clear, readable weather information formatted for AI assistants
+- ✅ **Performance Metrics**: Correlation IDs and timing data in logs
+- ✅ **Security**: Input sanitization preventing injection attacks
+- ✅ **Multi-city Support**: Ability to handle multiple weather requests efficiently
+
+### **Expected Error Behaviors:**
+
+- 🚫 **Invalid City**: "No city found" or "Invalid city name provided" messages
+- 🚫 **API Failures**: Circuit breaker opens after repeated failures, returns cached data if available
+- 🚫 **Rate Limiting**: Requests throttled when limits exceeded (10 req/sec default)
+- 🚫 **Invalid Parameters**: Days outside 1-7 range auto-corrected to valid values
+- 🚫 **Malicious Input**: Attack patterns detected and blocked with security logging
+- 🚫 **Network Issues**: Automatic retries with exponential backoff
+- 🚫 **Service Degradation**: Graceful fallback to cached data when possible
 
 ## Directory Structure
 
