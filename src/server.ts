@@ -5,7 +5,11 @@
  * Supports both stdio and HTTP transports
  */
 
+// Suppress all dotenv output to avoid interfering with MCP protocol
+const originalLog = console.log;
+console.log = () => {};  // Temporarily disable console.log
 import 'dotenv/config';
+console.log = originalLog;  // Restore console.log
 import Fastify from 'fastify';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
@@ -39,11 +43,14 @@ export async function main() {
     const config = getConfig();
     const transportType = process.env.MCP_TRANSPORT || 'stdio';
 
-    logger.info('Starting MCP Weather Server', {
-      transport: transportType,
-      nodeVersion: process.version,
-      platform: process.platform
-    });
+    // Only log when not using stdio transport to avoid interfering with JSON-RPC
+    if (transportType !== 'stdio') {
+      logger.info('Starting MCP Weather Server', {
+        transport: transportType,
+        nodeVersion: process.version,
+        platform: process.platform
+      });
+    }
 
     // Create MCP server instance with modern SDK
     const weatherMCPServer = new WeatherMCPServer();
@@ -424,12 +431,13 @@ export async function main() {
       process.on('SIGINT', safeShutdown);
 
     } else {
-      logger.info('Using stdio transport');
+      // When using stdio transport, avoid all logging to stdout
+      // logger.info('Using stdio transport');
 
       const stdioTransport = new StdioServerTransport();
       await mcpServer.connect(stdioTransport);
 
-      logger.info('MCP Weather Server started successfully with stdio transport');
+      // logger.info('MCP Weather Server started successfully with stdio transport');
     }
 
   } catch (error) {

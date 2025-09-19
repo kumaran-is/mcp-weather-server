@@ -27,13 +27,12 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
       - [Claude Desktop](#claude-desktop)
       - [Cursor](#cursor)
       - [GitHub Copilot (Future MCP Support)](#github-copilot-future-mcp-support)
-      - [Test with AI Assistant](#test-with-ai-assistant)
   - [Test All Weather Tools](#test-all-weather-tools)
     - [**Quick Test - All Capabilities:**](#quick-test---all-capabilities)
     - [**Real-World Use Cases:**](#real-world-use-cases)
     - [**Individual Test Scenarios:**](#individual-test-scenarios)
-    - [**Edge Cases & Error Testing:**](#edge-cases--error-testing)
-    - [**Performance & Caching Test:**](#performance--caching-test)
+    - [**Edge Cases \& Error Testing:**](#edge-cases--error-testing)
+    - [**Performance \& Caching Test:**](#performance--caching-test)
     - [**Comparative Weather Analysis:**](#comparative-weather-analysis)
     - [**Expected Results:**](#expected-results)
     - [**Expected Error Behaviors:**](#expected-error-behaviors)
@@ -217,19 +216,49 @@ npm run build
 
 #### Claude Desktop
 **Configuration** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+For standard setup with your actual paths (using tsx to run TypeScript directly):
 ```json
 {
   "mcpServers": {
-    "weather": {
-      "command": "node",
-      "args": ["/path/to/mcp-weather-server/dist/server.js"],
+    "mcp-weather-server": {
+      "command": "/Users/kumaraniyyasamysrinivasan/.nvm/versions/node/v22.15.0/bin/npx",
+      "args": [
+        "tsx",
+        "/Users/kumaraniyyasamysrinivasan/mydrive/personal/mcp-weather-server/src/server.ts"
+      ],
       "env": {
-        "MCP_TRANSPORT": "stdio"
-      }
+        "MCP_TRANSPORT": "stdio",
+        "NODE_ENV": "production",
+        "PRETTY_LOGS": "false",
+        "LOG_LEVEL": "info"
+      },
+      "timeout": 30000
     }
   }
 }
 ```
+
+After adding the configuration, restart Claude Desktop to load the Weather  MCP Server.
+
+**Copy and paste below prompts into Cline or Claude Desktop to test Weather MCP capabilities:**
+
+**Travel Planning Assistant:**
+```bash
+I'm planning a 2-week trip across Europe starting next week. Can you check the weather for:
+
+1. Current conditions in my departure city: London
+2. 7-day forecasts for my planned stops:
+   - Paris (days 1-3)
+   - Rome (days 4-6)
+   - Vienna (days 7-9)
+   - Prague (days 10-12)
+   - Amsterdam (days 13-14)
+
+Based on the weather, should I pack heavy winter clothing or lighter layers? Any cities I should avoid due to weather conditions?
+```
+
+![Claude Desktop Demo](./docs/media/claudedesktop.gif)
 
 #### Cursor
 **Configuration** (`.cursor/mcp_config.json` in project root):
@@ -260,12 +289,6 @@ npm run build
   }
 }
 ```
-
-#### Test with AI Assistant
-Once configured, you can test with natural language:
-- "What's the weather in Paris?"
-- "Show me a 5-day forecast for New York"
-- "Is it going to rain in Seattle tomorrow?"
 
 ## Test All Weather Tools
 
@@ -298,21 +321,6 @@ Format everything in a clear, organized way that helps with travel planning deci
 ```
 
 ### **Real-World Use Cases:**
-
-**Travel Planning Assistant:**
-```bash
-I'm planning a 2-week trip across Europe starting next week. Can you check the weather for:
-
-1. Current conditions in my departure city: London
-2. 7-day forecasts for my planned stops:
-   - Paris (days 1-3)
-   - Rome (days 4-6)
-   - Vienna (days 7-9)
-   - Prague (days 10-12)
-   - Amsterdam (days 13-14)
-
-Based on the weather, should I pack heavy winter clothing or lighter layers? Any cities I should avoid due to weather conditions?
-```
 
 **Event Planning Coordinator:**
 ```bash

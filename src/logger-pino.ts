@@ -26,7 +26,8 @@ export interface LogContext {
 function createPinoLogger(): PinoLogger {
   const config = getConfig();
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+  const isStdioTransport = config.server.transport === 'stdio';
+
   const options: pino.LoggerOptions = {
     level: config.logging.level || 'info',
     formatters: {
@@ -63,8 +64,8 @@ function createPinoLogger(): PinoLogger {
     }
   };
 
-  // Add pretty printing in development
-  if (isDevelopment) {
+  // Add pretty printing in development (but not when using stdio transport)
+  if (isDevelopment && !isStdioTransport) {
     options.transport = {
       target: 'pino-pretty',
       options: {
@@ -79,7 +80,10 @@ function createPinoLogger(): PinoLogger {
     };
   }
 
-  return pino.pino(options);
+  // In stdio mode, logs must go to stderr to avoid interfering with JSON-RPC on stdout
+  return isStdioTransport
+    ? pino.pino(options, pino.destination({ dest: 2, sync: false }))  // 2 = stderr
+    : pino.pino(options);
 }
 
 // Create the main Pino logger instance
