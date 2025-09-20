@@ -5,7 +5,7 @@ import { createValidationMiddleware } from './middleware/validation';
 import { VERSION, NAME } from './utils/version';
 import { z } from 'zod';
 import { securityManager } from './security/sanitizer';
-import { securityMonitor } from './security/security-monitor';
+
 import { auditLogger } from './audit/audit-logger';
 
 /**
