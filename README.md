@@ -25,6 +25,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
     - [2️⃣ AI Assistant Configurations](#2️⃣-ai-assistant-configurations)
       - [Cline (VS Code)](#cline-vs-code)
       - [Claude Desktop](#claude-desktop)
+      - [Claude Desktop Demo](#claude-desktop-demo)
       - [Cursor](#cursor)
       - [GitHub Copilot (Future MCP Support)](#github-copilot-future-mcp-support)
   - [Test All Weather Tools](#test-all-weather-tools)
@@ -241,6 +242,7 @@ For standard setup with your actual paths (using tsx to run TypeScript directly)
 
 After adding the configuration, restart Claude Desktop to load the Weather  MCP Server.
 
+#### Claude Desktop Demo
 **Copy and paste below prompts into Cline or Claude Desktop to test Weather MCP capabilities:**
 
 **Travel Planning Assistant:**
@@ -258,7 +260,8 @@ I'm planning a 2-week trip across Europe starting next week. Can you check the w
 Based on the weather, should I pack heavy winter clothing or lighter layers? Any cities I should avoid due to weather conditions?
 ```
 
-![Claude Desktop Demo](./docs/media/claudedesktop.gif)
+<video src="./docs/media/claudedesktop.mp4" controls></video>
+
 
 #### Cursor
 **Configuration** (`.cursor/mcp_config.json` in project root):
