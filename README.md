@@ -223,10 +223,10 @@ For standard setup with your actual paths (using tsx to run TypeScript directly)
 {
   "mcpServers": {
     "mcp-weather-server": {
-      "command": "/Users/kumaraniyyasamysrinivasan/.nvm/versions/node/v22.15.0/bin/npx",
+      "command": "/your/path/.nvm/versions/node/v22.15.0/bin/npx",
       "args": [
         "tsx",
-        "/Users/kumaraniyyasamysrinivasan/mydrive/personal/mcp-weather-server/src/server.ts"
+        "/your/path/mcp-weather-server/src/server.ts"
       ],
       "env": {
         "MCP_TRANSPORT": "stdio",
