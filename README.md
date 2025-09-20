@@ -2,9 +2,6 @@
 
 An **Enterprise-grade Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, featuring **advanced monitoring, audit logging, security features, and resilience patterns** with **3-layer SOLID architecture**.
 
-[![CI Pipeline](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml)
-[![Security Scan](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml)
-[![Release](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/mcp-weather-server)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
@@ -13,6 +10,12 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 [![Zod](https://img.shields.io/badge/Zod-3.23-purple)](https://zod.dev/)
 [![SOLID](https://img.shields.io/badge/Architecture-SOLID-green)](https://en.wikipedia.org/wiki/SOLID)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![CI Pipeline](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml)
+[![Integration Tests](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/integration-tests.yml)
+[![Security Scan](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml)
+[![Docker Build](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/docker.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/docker.yml)
+[![Performance](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/performance.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/performance.yml)
+[![Release](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml)
 
 ## 📋 Table of Contents
 
@@ -82,6 +85,9 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
     - [Message Queueing Behavior](#message-queueing-behavior)
     - [Session Recovery Flow](#session-recovery-flow)
     - [Production Considerations](#production-considerations)
+  - [🚀 CI/CD Pipeline](#-cicd-pipeline)
+    - [Workflow Features](#workflow-features)
+    - [Available Workflows](#available-workflows)
   - [🤝 Contributing](#-contributing)
   - [📝 License](#-license)
   - [🙏 Acknowledgments](#-acknowledgments)
