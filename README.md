@@ -1353,7 +1353,7 @@ The project uses comprehensive GitHub Actions workflows for continuous integrati
 - `security.yml` - Security scanning and vulnerability checks
 - `docker.yml` - Docker image building and publishing to ghcr.io
 - `performance.yml` - Performance benchmarking and monitoring
-- `documentation.yml` - Auto-generate docs and deploy to GitHub Pages
+- `docs.yml` - Auto-generate docs and deploy to GitHub Pages
 - `dependency-update.yml` - Automated dependency management
 - `release.yml` - Release automation with changelog generation
 
