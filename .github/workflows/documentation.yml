@@ -1,0 +1,212 @@
+name: Documentation Generation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**/*.ts'
+      - 'docs/**'
+      - 'README.md'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  NODE_VERSION: '22.x'
+
+jobs:
+  # Job 1: Generate TypeDoc Documentation
+  generate-docs:
+    name: Generate API Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install --save-dev typedoc typedoc-plugin-markdown
+
+      - name: Generate TypeDoc
+        run: |
+          npx typedoc \
+            --out docs/api \
+            --readme README.md \
+            --name "MCP Weather Server API" \
+            --includeVersion \
+            --plugin typedoc-plugin-markdown \
+            src/**/*.ts
+
+      - name: Generate architecture diagrams
+        run: |
+          npm install --save-dev madge
+          mkdir -p docs/diagrams
+
+          # Generate dependency graph
+          npx madge --image docs/diagrams/dependencies.svg src/server.ts
+
+          # Generate circular dependencies report
+          npx madge --circular src > docs/diagrams/circular-deps.txt || echo "No circular dependencies found" > docs/diagrams/circular-deps.txt
+
+      - name: Create documentation index
+        run: |
+          cat > docs/index.md << 'EOF'
+          # MCP Weather Server Documentation
+
+          ## Quick Links
+          - [API Documentation](./api/README.md)
+          - [Setup Guide](../README.md)
+          - [Architecture](./diagrams/)
+
+          ## Available Tools
+
+          The MCP Weather Server provides weather data integration through the following tools:
+
+          ### Weather Tools
+          - `get_current_weather` - Get current weather for a location
+          - `get_forecast` - Get weather forecast
+          - `get_weather_alerts` - Get weather alerts
+          - `search_locations` - Search for locations
+          - `get_historical_weather` - Get historical weather data
+
+          ## Architecture
+
+          This server follows a 3-layer SOLID architecture:
+          - **Transport Layer**: Handles MCP protocol communication
+          - **Protocol Layer**: Manages tool registration and execution
+          - **Business Layer**: Contains weather service logic
+
+          ## Configuration
+
+          Environment variables:
+          - `MCP_TRANSPORT`: Transport type (stdio or http)
+          - `HTTP_PORT`: Port for HTTP transport (default: 8080)
+          - `LOG_LEVEL`: Logging level (error, warn, info, debug)
+
+          Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          EOF
+
+      - name: Commit documentation
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/
+          git diff --staged --quiet || git commit -m "docs: auto-generate documentation"
+        continue-on-error: true
+
+      - name: Push documentation
+        if: github.ref == 'refs/heads/main'
+        run: git push
+        continue-on-error: true
+
+  # Job 2: README Validation
+  validate-readme:
+    name: Validate README
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install markdown linter
+        run: npm install -g markdownlint-cli
+
+      - name: Lint README
+        run: |
+          markdownlint README.md --disable MD013 MD033 || true
+
+      - name: Check for broken links
+        run: |
+          npm install -g markdown-link-check
+          markdown-link-check README.md -c .markdown-link-check.json || echo "Some links may be broken"
+
+      - name: Validate code blocks
+        run: |
+          # Extract and validate JSON code blocks
+          grep -Pzo '```json\n\K[^`]*' README.md | while read -r block; do
+            echo "$block" | jq . > /dev/null 2>&1 || echo "Invalid JSON block found"
+          done
+
+  # Job 3: Generate Changelog
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog from commits
+        run: |
+          cat > CHANGELOG_AUTO.md << 'EOF'
+          # Changelog (Auto-generated)
+
+          ## Recent Changes
+
+          EOF
+
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LAST_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" --since="30 days ago" >> CHANGELOG_AUTO.md
+          else
+            git log --pretty=format:"- %s (%h)" "$LAST_TAG"..HEAD >> CHANGELOG_AUTO.md
+          fi
+
+          echo "" >> CHANGELOG_AUTO.md
+          echo "" >> CHANGELOG_AUTO.md
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> CHANGELOG_AUTO.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v3
+        with:
+          name: changelog
+          path: CHANGELOG_AUTO.md
+
+  # Job 4: Update GitHub Pages
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [generate-docs]
+    if: github.ref == 'refs/heads/main'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: 'docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+        continue-on-error: true

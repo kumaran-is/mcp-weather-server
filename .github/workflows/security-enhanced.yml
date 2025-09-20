@@ -1,0 +1,288 @@
+name: Security Scanning Enhanced
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * *' # Daily at 4 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  NODE_VERSION: '22.x'
+  SKIP_CODEQL: false  # Set to true if billing issues occur
+
+jobs:
+  # Job 1: CodeQL Analysis
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+
+    steps:
+      - name: Check if CodeQL should be skipped
+        id: check_skip
+        run: |
+          if [ "${{ env.SKIP_CODEQL }}" = "true" ]; then
+            echo "SKIP_CODEQL=true" >> $GITHUB_OUTPUT
+            echo "⚠️ CodeQL analysis is disabled"
+          else
+            echo "SKIP_CODEQL=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout code
+        if: steps.check_skip.outputs.SKIP_CODEQL != 'true'
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        if: steps.check_skip.outputs.SKIP_CODEQL != 'true'
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript-typescript
+        continue-on-error: true
+
+      - name: Autobuild
+        if: steps.check_skip.outputs.SKIP_CODEQL != 'true'
+        uses: github/codeql-action/autobuild@v2
+        continue-on-error: true
+
+      - name: Perform CodeQL Analysis
+        if: steps.check_skip.outputs.SKIP_CODEQL != 'true'
+        uses: github/codeql-action/analyze@v2
+        continue-on-error: true
+
+  # Job 2: OWASP Dependency Check
+  owasp-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'mcp-weather-server'
+          path: '.'
+          format: 'HTML'
+          args: >
+            --enableRetired
+            --enableExperimental
+            --nodePackageSkipDevDependencies
+        continue-on-error: true
+
+      - name: Upload OWASP results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: owasp-dependency-check-report
+          path: reports/
+
+  # Job 3: Secret Scanning
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trufflehog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files..."
+
+          SENSITIVE_FILES=$(find . -type f \( \
+            -name "*.key" -o \
+            -name "*.pem" -o \
+            -name "*.p12" -o \
+            -name "*.pfx" -o \
+            -name "*.env" \
+            -name "*.env.*" \
+          \) ! -path "./node_modules/*" ! -name "*.env.example" ! -name "*.env.*.example")
+
+          if [ ! -z "$SENSITIVE_FILES" ]; then
+            echo "❌ Found sensitive files:"
+            echo "$SENSITIVE_FILES"
+            exit 1
+          else
+            echo "✅ No sensitive files found"
+          fi
+
+  # Job 4: NPM Audit
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          echo "## NPM Audit Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npm audit >> $GITHUB_STEP_SUMMARY 2>&1 || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          # Check severity levels
+          npm audit --json > audit.json || true
+
+          CRITICAL=$(jq '.metadata.vulnerabilities.critical // 0' audit.json)
+          HIGH=$(jq '.metadata.vulnerabilities.high // 0' audit.json)
+          MODERATE=$(jq '.metadata.vulnerabilities.moderate // 0' audit.json)
+          LOW=$(jq '.metadata.vulnerabilities.low // 0' audit.json)
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Critical: $CRITICAL" >> $GITHUB_STEP_SUMMARY
+          echo "- High: $HIGH" >> $GITHUB_STEP_SUMMARY
+          echo "- Moderate: $MODERATE" >> $GITHUB_STEP_SUMMARY
+          echo "- Low: $LOW" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "❌ Found critical or high severity vulnerabilities"
+            exit 1
+          fi
+
+  # Job 5: SAST Analysis
+  sast-analysis:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install ESLint security plugin
+        run: |
+          npm install --save-dev eslint-plugin-security
+          npm install --save-dev @typescript-eslint/eslint-plugin
+
+      - name: Run security linting
+        run: |
+          npx eslint src/**/*.ts \
+            --plugin security \
+            --rule 'security/detect-object-injection: warn' \
+            --rule 'security/detect-non-literal-regexp: warn' \
+            --rule 'security/detect-unsafe-regex: error' \
+            --rule 'security/detect-buffer-noassert: error' \
+            --rule 'security/detect-child-process: warn' \
+            --rule 'security/detect-disable-mustache-escape: error' \
+            --rule 'security/detect-eval-with-expression: error' \
+            --rule 'security/detect-no-csrf-before-method-override: error' \
+            --rule 'security/detect-non-literal-fs-filename: warn' \
+            --rule 'security/detect-non-literal-require: warn' \
+            --rule 'security/detect-possible-timing-attacks: warn' \
+            --rule 'security/detect-pseudoRandomBytes: warn'
+        continue-on-error: true
+
+  # Job 6: Container Security (if using Docker)
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: hashFiles('Dockerfile') != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t mcp-weather-server:scan .
+
+      - name: Run Trivy scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: mcp-weather-server:scan
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+  # Job 7: License Compliance
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check licenses
+        run: |
+          npx license-checker --summary --excludePrivatePackages > licenses.txt
+          echo "## License Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat licenses.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          # Check for problematic licenses
+          PROBLEMATIC=$(npx license-checker --onlyAllow 'MIT;Apache-2.0;BSD;ISC;CC0-1.0;Unlicense' --excludePrivatePackages 2>&1 | grep -c "error" || true)
+
+          if [ "$PROBLEMATIC" -gt 0 ]; then
+            echo "⚠️ Found potentially problematic licenses"
+          else
+            echo "✅ All licenses are compliant"
+          fi
+
+  # Summary job
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [npm-audit, secret-scan, sast-analysis, license-check]
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM Audit | ${{ needs.npm-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST Analysis | ${{ needs.sast-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| License Check | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Generated at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

@@ -2,6 +2,9 @@
 
 An **Enterprise-grade Model Context Protocol (MCP)** server that provides weather information using the **Open-Meteo API**. Built with TypeScript, Node.js 22.x, featuring **advanced monitoring, audit logging, security features, and resilience patterns** with **3-layer SOLID architecture**.
 
+[![CI Pipeline](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml)
+[![Release](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/mcp-weather-server)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
@@ -1330,6 +1333,31 @@ For production deployments, consider:
 - Setting session timeout policies
 - Adding metrics for queue depths and session counts
 - Implementing distributed session storage for multi-server deployments
+
+## 🚀 CI/CD Pipeline
+
+The project uses comprehensive GitHub Actions workflows for continuous integration and deployment.
+
+### Workflow Features
+- **CI Pipeline**: Linting, TypeScript checks, unit tests, build verification
+- **Integration Tests**: Cross-transport testing (stdio/HTTP), API validation
+- **Security Scanning**: NPM audit, secret detection, SAST analysis, license compliance
+- **Docker Support**: Multi-platform builds (amd64/arm64) with GitHub Container Registry
+- **Performance Monitoring**: Startup benchmarks, memory profiling, load testing
+- **Documentation**: Auto-generated API docs, architecture diagrams
+- **Dependency Updates**: Automated security patches and version updates
+
+### Available Workflows
+- `ci.yml` / `ci-enhanced.yml` - Main CI pipeline with testing and validation
+- `integration-tests.yml` - Comprehensive integration and API testing
+- `security.yml` / `security-enhanced.yml` - Security scanning and vulnerability checks
+- `docker.yml` - Docker image building and publishing to ghcr.io
+- `performance.yml` - Performance benchmarking and monitoring
+- `documentation.yml` - Auto-generate docs and deploy to GitHub Pages
+- `dependency-update.yml` - Automated dependency management
+- `release.yml` - Release automation with changelog generation
+
+See [GitHub Actions Setup Guide](docs/GITHUB_ACTIONS_SETUP.md) for detailed workflow documentation.
 
 ## 🤝 Contributing
 

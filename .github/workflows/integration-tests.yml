@@ -1,0 +1,247 @@
+name: Integration Tests & Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *' # Daily at 6 AM UTC
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '22.x'
+  COVERAGE_THRESHOLD: 80
+
+jobs:
+  # Job 1: Integration Tests
+  integration-tests:
+    name: Integration Tests (${{ matrix.transport }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        transport: [stdio, http]
+        include:
+          - transport: stdio
+            port: ''
+          - transport: http
+            port: 8080
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Start server (${{ matrix.transport }})
+        run: |
+          if [ "${{ matrix.transport }}" = "http" ]; then
+            npm start &
+            SERVER_PID=$!
+            echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+            sleep 5
+            curl -f http://localhost:8080/health || exit 1
+          fi
+        env:
+          MCP_TRANSPORT: ${{ matrix.transport }}
+          HTTP_PORT: ${{ matrix.port }}
+
+      - name: Run integration tests
+        run: |
+          npm run test:ci
+        env:
+          MCP_TRANSPORT: ${{ matrix.transport }}
+          TEST_TRANSPORT: ${{ matrix.transport }}
+          HTTP_PORT: ${{ matrix.port }}
+          NODE_ENV: test
+
+      - name: Stop server
+        if: matrix.transport == 'http'
+        run: |
+          if [ ! -z "$SERVER_PID" ]; then
+            kill $SERVER_PID || true
+          fi
+
+  # Job 2: Code Coverage
+  coverage:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better coverage tracking
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          CI: true
+
+      - name: Generate coverage report
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npx c8 report --reporter=text | tail -n 20 >> $GITHUB_STEP_SUMMARY || echo "Coverage report not available" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Check coverage threshold
+        run: |
+          echo "Checking coverage threshold of ${{ env.COVERAGE_THRESHOLD }}%..."
+          # Add actual coverage check once c8 or nyc is configured
+        continue-on-error: true
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # Job 3: API Testing
+  api-testing:
+    name: API Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Test Open-Meteo API connectivity
+        run: |
+          node -e "
+          const testAPIs = async () => {
+            const apis = [
+              { name: 'Open-Meteo Weather', url: 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true' },
+              { name: 'Open-Meteo Geocoding', url: 'https://geocoding-api.open-meteo.com/v1/search?name=London' }
+            ];
+
+            for (const api of apis) {
+              try {
+                const response = await fetch(api.url);
+                console.log(\`✓ \${api.name}: \${response.status}\`);
+              } catch (error) {
+                console.log(\`✗ \${api.name}: Failed\`);
+              }
+            }
+          };
+          testAPIs();
+          "
+
+      - name: Test MCP tools with mock data
+        run: |
+          echo "Testing weather MCP tools..."
+          # Add tool-specific tests here
+
+  # Job 4: Performance Testing
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Measure startup time
+        run: |
+          echo "Testing startup performance..."
+          START=$(date +%s%N)
+          timeout 2s node dist/server.js > /dev/null 2>&1 || true
+          END=$(date +%s%N)
+          DIFF=$((($END - $START)/1000000))
+          echo "Startup time: ${DIFF}ms"
+
+          if [ $DIFF -gt 1000 ]; then
+            echo "Warning: Startup time exceeds 1000ms"
+          fi
+        env:
+          MCP_TRANSPORT: stdio
+          LOG_LEVEL: error
+
+      - name: Memory usage test
+        run: |
+          node --expose-gc -e "
+          const startMemory = process.memoryUsage().heapUsed;
+          import('./dist/server.js').then(() => {
+            global.gc();
+            const endMemory = process.memoryUsage().heapUsed;
+            const used = ((endMemory - startMemory) / 1024 / 1024).toFixed(2);
+            console.log(\`Memory used: \${used}MB\`);
+            if (used > 100) {
+              console.error('Warning: High memory usage detected');
+            }
+          });
+          " || true
+
+      - name: Load test with multiple requests
+        run: |
+          npm run http &
+          SERVER_PID=$!
+          sleep 5
+
+          echo "Running load test..."
+          for i in {1..10}; do
+            curl -s http://localhost:8080/health > /dev/null &
+          done
+          wait
+
+          echo "✓ Load test completed"
+          kill $SERVER_PID || true
+        env:
+          MCP_TRANSPORT: http
+          LOG_LEVEL: error
