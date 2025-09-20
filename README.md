@@ -260,7 +260,7 @@ I'm planning a 2-week trip across Europe starting next week. Can you check the w
 Based on the weather, should I pack heavy winter clothing or lighter layers? Any cities I should avoid due to weather conditions?
 ```
 
-<video src="./docs/media/claudedesktop.mp4" controls></video>
+![Claude Desktop](./docs/media/claudedesktop.gif)
 
 
 #### Cursor
