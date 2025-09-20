@@ -10,6 +10,12 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 [![Zod](https://img.shields.io/badge/Zod-3.23-purple)](https://zod.dev/)
 [![SOLID](https://img.shields.io/badge/Architecture-SOLID-green)](https://en.wikipedia.org/wiki/SOLID)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![CI Pipeline](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/ci.yml)
+[![Integration Tests](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/integration-tests.yml)
+[![Security Scan](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/security.yml)
+[![Docker Build](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/docker.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/docker.yml)
+[![Performance](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/performance.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/performance.yml)
+[![Release](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml)
 
 ## 📋 Table of Contents
 
@@ -79,6 +85,9 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
     - [Message Queueing Behavior](#message-queueing-behavior)
     - [Session Recovery Flow](#session-recovery-flow)
     - [Production Considerations](#production-considerations)
+  - [🚀 CI/CD Pipeline](#-cicd-pipeline)
+    - [Workflow Features](#workflow-features)
+    - [Available Workflows](#available-workflows)
   - [🤝 Contributing](#-contributing)
   - [📝 License](#-license)
   - [🙏 Acknowledgments](#-acknowledgments)
@@ -1330,6 +1339,31 @@ For production deployments, consider:
 - Setting session timeout policies
 - Adding metrics for queue depths and session counts
 - Implementing distributed session storage for multi-server deployments
+
+## 🚀 CI/CD Pipeline
+
+The project uses comprehensive GitHub Actions workflows for continuous integration and deployment.
+
+### Workflow Features
+- **CI Pipeline**: Linting, TypeScript checks, unit tests, build verification
+- **Integration Tests**: Cross-transport testing (stdio/HTTP), API validation
+- **Security Scanning**: NPM audit, secret detection, SAST analysis, license compliance
+- **Docker Support**: Multi-platform builds (amd64/arm64) with GitHub Container Registry
+- **Performance Monitoring**: Startup benchmarks, memory profiling, load testing
+- **Documentation**: Auto-generated API docs, architecture diagrams
+- **Dependency Updates**: Automated security patches and version updates
+
+### Available Workflows
+- `ci.yml` - Main CI pipeline with testing and validation
+- `integration-tests.yml` - Comprehensive integration and API testing
+- `security.yml` - Security scanning and vulnerability checks
+- `docker.yml` - Docker image building and publishing to ghcr.io
+- `performance.yml` - Performance benchmarking and monitoring
+- `docs.yml` - Auto-generate docs and deploy to GitHub Pages
+- `dependency-update.yml` - Automated dependency management
+- `release.yml` - Release automation with changelog generation
+
+See [GitHub Actions Setup Guide](docs/GITHUB_ACTIONS_SETUP.md) for detailed workflow documentation.
 
 ## 🤝 Contributing
 

@@ -1,6 +1,6 @@
 {
   "name": "mcp-weather-server",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "Enterprise-grade MCP server with Open-Meteo weather API integration, advanced monitoring, audit logging, security features, and resilience patterns",
   "main": "dist/server.js",
   "scripts": {

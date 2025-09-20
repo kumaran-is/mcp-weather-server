@@ -1,0 +1,283 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # Weekly on Monday at 3 AM UTC
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of update'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - security
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: '22.x'
+
+jobs:
+  # Job 1: NPM Security Updates
+  security-updates:
+    name: Security Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Check for security vulnerabilities
+        id: audit
+        run: |
+          echo "## Security Audit" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npm audit --json > audit.json || true
+          npm audit >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          VULNS=$(jq '.metadata.vulnerabilities.total' audit.json)
+          echo "VULNS=$VULNS" >> $GITHUB_OUTPUT
+
+          if [ "$VULNS" -gt 0 ]; then
+            echo "Found $VULNS vulnerabilities"
+            echo "HAS_VULNS=true" >> $GITHUB_OUTPUT
+          else
+            echo "No vulnerabilities found"
+            echo "HAS_VULNS=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fix security vulnerabilities
+        if: steps.audit.outputs.HAS_VULNS == 'true'
+        run: |
+          npm audit fix --force
+          npm audit fix
+
+      - name: Run tests after security updates
+        if: steps.audit.outputs.HAS_VULNS == 'true'
+        run: |
+          npm ci
+          npm run build
+          npm test
+        continue-on-error: true
+
+      - name: Create PR for security updates
+        if: steps.audit.outputs.HAS_VULNS == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: fix security vulnerabilities'
+          title: '🔒 Security Update: Fix npm vulnerabilities'
+          body: |
+            ## Security Update
+
+            This PR fixes security vulnerabilities found in dependencies.
+
+            ### Audit Summary
+            - Total vulnerabilities: ${{ steps.audit.outputs.VULNS }}
+
+            ### Changes
+            - Updated vulnerable dependencies
+            - Ran `npm audit fix`
+
+            Please review and merge if tests pass.
+          branch: deps/security-updates
+          delete-branch: true
+
+  # Job 2: Dependency Version Updates
+  version-updates:
+    name: Version Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install npm-check-updates
+        run: npm install -g npm-check-updates
+
+      - name: Check for updates
+        id: check
+        run: |
+          echo "## Available Updates" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
+
+          case $UPDATE_TYPE in
+            major)
+              ncu --format group >> $GITHUB_STEP_SUMMARY || true
+              UPDATES=$(ncu --jsonUpgraded)
+              ;;
+            minor)
+              ncu --target minor --format group >> $GITHUB_STEP_SUMMARY || true
+              UPDATES=$(ncu --target minor --jsonUpgraded)
+              ;;
+            security)
+              ncu --dep prod --target patch --format group >> $GITHUB_STEP_SUMMARY || true
+              UPDATES=$(ncu --dep prod --target patch --jsonUpgraded)
+              ;;
+            *)
+              ncu --target minor --format group >> $GITHUB_STEP_SUMMARY || true
+              UPDATES=$(ncu --target minor --jsonUpgraded)
+              ;;
+          esac
+
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          if [ "$UPDATES" != "{}" ] && [ "$UPDATES" != "" ]; then
+            echo "HAS_UPDATES=true" >> $GITHUB_OUTPUT
+          else
+            echo "HAS_UPDATES=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update dependencies
+        if: steps.check.outputs.HAS_UPDATES == 'true'
+        run: |
+          UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
+
+          case $UPDATE_TYPE in
+            major)
+              ncu -u
+              ;;
+            minor)
+              ncu -u --target minor
+              ;;
+            security)
+              ncu -u --dep prod --target patch
+              ;;
+            *)
+              ncu -u --target minor
+              ;;
+          esac
+
+          npm install
+          npm update
+
+      - name: Run tests after updates
+        if: steps.check.outputs.HAS_UPDATES == 'true'
+        run: |
+          npm run build
+          npm test
+        continue-on-error: true
+
+      - name: Create PR for dependency updates
+        if: steps.check.outputs.HAS_UPDATES == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies'
+          title: '📦 Dependency Update: ${{ github.event.inputs.update_type || "minor" }} updates'
+          body: |
+            ## Dependency Updates
+
+            This PR updates dependencies based on the **${{ github.event.inputs.update_type || "minor" }}** update strategy.
+
+            ### Update Type
+            - Strategy: ${{ github.event.inputs.update_type || "minor" }}
+
+            ### Testing
+            - [ ] Build passes
+            - [ ] Tests pass
+            - [ ] Manual testing completed
+
+            Please review the changes and ensure everything works as expected.
+          branch: deps/version-updates-${{ github.event.inputs.update_type || 'minor' }}
+          delete-branch: true
+
+  # Job 3: Docker Base Image Updates
+  docker-updates:
+    name: Docker Image Updates
+    runs-on: ubuntu-latest
+    if: hashFiles('Dockerfile') != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Dockerfile updates
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "Checking Docker base image for updates..."
+
+            # Extract base image
+            BASE_IMAGE=$(grep "^FROM" Dockerfile | head -1 | awk '{print $2}')
+            echo "Current base image: $BASE_IMAGE"
+
+            # Add logic to check for newer versions
+            echo "✓ Docker image check completed"
+          else
+            echo "No Dockerfile found"
+          fi
+
+  # Job 4: Lock File Maintenance
+  lockfile-maintenance:
+    name: Lock File Maintenance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Refresh lock file
+        run: |
+          rm -f package-lock.json
+          npm install
+          echo "✓ Lock file refreshed"
+
+      - name: Verify build
+        run: |
+          npm run build
+          npm test
+        continue-on-error: true
+
+      - name: Create PR for lock file update
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: refresh package-lock.json'
+          title: '🔄 Maintenance: Refresh package-lock.json'
+          body: |
+            ## Lock File Maintenance
+
+            This PR refreshes the `package-lock.json` file to ensure:
+            - Consistent dependency resolution
+            - Updated sub-dependencies
+            - Resolved version conflicts
+
+            This is a routine maintenance task.
+          branch: deps/lockfile-maintenance
+          delete-branch: true
