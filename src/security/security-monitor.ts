@@ -83,10 +83,9 @@ export class SecurityMonitor extends EventEmitter {
 
   constructor(config: Partial<SecurityConfiguration> = {}) {
     super();
-    
+
     // Load configuration from centralized config system
     const securityConfig = getSecurityConfig();
-    
     this.config = {
       enabled: securityConfig.monitoring.enabled,
       bruteForceProtection: {
