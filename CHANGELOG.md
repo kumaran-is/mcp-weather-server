@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-09-20
+
+### 🚀 **MINOR RELEASE: Comprehensive CI/CD Pipeline**
+
+This release introduces a complete enterprise-grade CI/CD pipeline with GitHub Actions, bringing automated testing, security scanning, performance monitoring, and release automation to the MCP Weather Server.
+
+### Added
+- **🔄 GitHub Actions CI/CD Pipeline**:
+  - **ci.yml**: Main CI pipeline with linting, testing, building, and cross-platform validation
+  - **security.yml**: Security scanning with CodeQL, OWASP, secret detection, and SAST analysis
+  - **integration-tests.yml**: Comprehensive integration testing for stdio/HTTP transports
+  - **docker.yml**: Multi-platform Docker builds with GitHub Container Registry publishing
+  - **performance.yml**: Performance benchmarking, memory profiling, and load testing
+  - **docs.yml**: Automated documentation generation with TypeDoc and GitHub Pages deployment
+  - **dependency-update.yml**: Automated dependency updates with security patches
+  - **release.yml**: Release automation with semantic versioning and changelog generation
+
+### Changed
+- **📝 Documentation**:
+  - Added GitHub Actions badges to README.md
+  - Added comprehensive CI/CD Pipeline section documenting all workflows
+  - Created GITHUB_ACTIONS_SETUP.md with billing guidance and troubleshooting
+  - Renamed documentation.yml to docs.yml for consistency with hurricane-tracker-mcp
+
+### Fixed
+- **🔧 Workflow Consistency**:
+  - Aligned all workflows with hurricane-tracker-mcp patterns
+  - Fixed hashFiles syntax in workflow conditions
+  - Standardized Node.js version (22.x) across all workflows
+  - Consistent job naming and structure
+
+### Technical Details
+- **Workflows**: 8 comprehensive GitHub Actions workflows
+- **Coverage**: CI/CD, security, Docker, performance, documentation, dependencies
+- **Compatibility**: Works with both free and paid GitHub tiers
+- **Registry**: Configured for GitHub Container Registry (ghcr.io)
+- **Testing**: Supports both stdio and HTTP transport validation
+
+### DevOps Features ✅
+- **Automated Testing**: Unit, integration, and cross-platform tests
+- **Security Scanning**: Dependency audits, secret detection, CodeQL analysis
+- **Docker Support**: Multi-platform builds (amd64/arm64)
+- **Performance Monitoring**: Startup benchmarks, memory profiling
+- **Release Automation**: Semantic versioning with changelog generation
+- **Documentation**: Auto-generated API docs with TypeDoc
+- **Dependency Management**: Weekly automated updates with PRs
+
 ## [3.0.1] - 2025-09-15
 
 ### 🔧 **PATCH RELEASE: ES Module Compatibility Fix**
