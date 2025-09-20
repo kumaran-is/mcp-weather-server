@@ -1348,9 +1348,9 @@ The project uses comprehensive GitHub Actions workflows for continuous integrati
 - **Dependency Updates**: Automated security patches and version updates
 
 ### Available Workflows
-- `ci.yml` / `ci-enhanced.yml` - Main CI pipeline with testing and validation
+- `ci.yml` - Main CI pipeline with testing and validation
 - `integration-tests.yml` - Comprehensive integration and API testing
-- `security.yml` / `security-enhanced.yml` - Security scanning and vulnerability checks
+- `security.yml` - Security scanning and vulnerability checks
 - `docker.yml` - Docker image building and publishing to ghcr.io
 - `performance.yml` - Performance benchmarking and monitoring
 - `documentation.yml` - Auto-generate docs and deploy to GitHub Pages
