@@ -59,6 +59,133 @@ When asked to "add a tool" or extend an MCP server:
 - **Document**: Update README with tool description, parameters, and example usage (e.g., JSON-RPC call or Cline config)
 - **Validate**: Ensure schema compliance, error handling (e.g., -32602 for invalid inputs), and lifecycle compatibility
 
+## DeepContext MCP Usage Protocol
+
+**MANDATORY**: Always use the deepcontext MCP server for codebase analysis and understanding. This is a core requirement for effective software engineering work.
+
+### Required Usage Patterns
+
+1. **Start Every Task**: Index the current codebase first if not already indexed
+   ```
+   use_mcp_tool: deepcontext -> index_codebase (with absolute path)
+   ```
+
+2. **Before Code Changes**: Search for related patterns, dependencies, and implementations
+   ```
+   use_mcp_tool: deepcontext -> search_codebase
+   Query examples:
+   - "authentication middleware patterns"
+   - "error handling implementation" 
+   - "MCP server configuration"
+   - "test patterns and fixtures"
+   ```
+
+3. **Understanding Architecture**: Use specific technical searches to map system design
+   ```
+   Effective queries:
+   - "dependency injection patterns"
+   - "database connection management"
+   - "API endpoint implementation"
+   - "security validation logic"
+   ```
+
+4. **Quality Assurance**: Search for testing patterns and best practices
+   ```
+   - "unit test patterns and mocks"
+   - "integration test setup"
+   - "error handling test cases"
+   - "configuration testing"
+   ```
+
+### Search Strategy Guidelines
+
+- **Use Multiple Targeted Searches**: Prefer 3-5 focused searches over 1 broad search
+- **Follow Imports/Exports**: Use search results to guide reading related files
+- **Technical Terminology**: Use specific technical terms ("middleware", "circuit breaker", "retry strategy")
+- **Implementation Focus**: Search for "how" not "what" ("user login function" vs "user management")
+
+### Integration with Memory Bank
+
+- **Before Reading Memory Bank**: Check if codebase is indexed, index if needed
+- **Document Insights**: Update memory bank with architectural patterns discovered through deepcontext
+- **Cross-Reference**: Use deepcontext to validate and expand memory bank information
+
+### Verification Protocol
+
+Always verify deepcontext availability:
+1. Check indexing status with `get_indexing_status`
+2. Re-index if codebase has significant changes
+3. Use search results to inform all code analysis and modifications
+
+**Note**: DeepContext MCP provides semantic search across 233+ code chunks, enabling deep understanding of codebase patterns and relationships. This is essential for production-grade software engineering work.
+
+## Sequential Thinking MCP Usage Protocol
+
+**MANDATORY**: Always use the sequential thinking MCP server for complex problem analysis, planning, and architectural decisions. This is a core requirement for systematic problem-solving in software engineering.
+
+### Required Usage Patterns
+
+1. **Complex Problem Analysis**: Use sequential thinking for multi-step problems that require systematic breakdown
+   ```
+   use_mcp_tool: sequential-thinking -> sequentialthinking
+   - Breaking down complex architecture decisions
+   - Planning implementation strategies
+   - Analyzing trade-offs and alternatives
+   - Debugging complex issues with multiple potential causes
+   ```
+
+2. **Before Major Code Changes**: Use sequential thinking to plan and validate approaches
+   ```
+   Examples:
+   - "How should I refactor this authentication system?"
+   - "What's the best approach to add caching to this API?"
+   - "How can I improve the error handling across this service?"
+   - "What are the implications of changing this database schema?"
+   ```
+
+3. **Architecture and Design Decisions**: Use sequential thinking for system design choices
+   ```
+   - Evaluating different architectural patterns
+   - Choosing between multiple implementation approaches
+   - Analyzing performance and scalability implications
+   - Planning migration strategies
+   ```
+
+4. **Problem Solving and Debugging**: Use sequential thinking for systematic issue resolution
+   ```
+   - Multi-step debugging scenarios
+   - Performance optimization analysis  
+   - Security vulnerability assessment
+   - Integration problem diagnosis
+   ```
+
+### Integration with DeepContext
+
+**Combined Workflow**: Use both tools together for maximum effectiveness:
+
+1. **DeepContext First**: Search codebase to understand current patterns and implementations
+2. **Sequential Thinking**: Analyze findings and plan approach systematically
+3. **DeepContext Again**: Search for additional context based on sequential thinking insights
+4. **Implementation**: Execute the planned approach with full context
+
+### When to Use Sequential Thinking
+
+- **Complex Decisions**: When multiple factors need consideration
+- **Uncertain Outcomes**: When the full scope might not be clear initially
+- **Multi-Step Solutions**: When tasks require a sequence of dependent steps
+- **Risk Assessment**: When changes could have unintended consequences
+- **Alternative Evaluation**: When comparing different approaches
+
+### Thinking Process Guidelines
+
+- **Start Broad**: Begin with general problem understanding
+- **Break Down**: Decompose complex issues into manageable parts
+- **Question Assumptions**: Challenge initial thoughts and explore alternatives
+- **Iterate**: Revise thinking as new information emerges
+- **Validate**: Use sequential thinking to verify planned approaches
+
+**Note**: Sequential Thinking MCP enables systematic, reflective problem-solving that adapts and evolves as understanding deepens. Combined with DeepContext's codebase understanding, this provides comprehensive analysis capabilities for production-grade software engineering.
+
 ## PR Checklist
 
 - [ ] Code follows MCP spec 2025-06-18 (JSON-RPC, lifecycle, transports)
@@ -70,6 +197,7 @@ When asked to "add a tool" or extend an MCP server:
 - [ ] Resilience: Error handling, timeouts, resumable SSE, session management
 - [ ] Tests: 80%+ coverage (unit, integration, e2e); simulate clients/LLMs
 - [ ] Docs: README with setup, tools, examples; inline comments for complex logic
+- [ ] **DeepContext**: Used deepcontext MCP for codebase analysis and pattern understanding
 
 ## Communication Style
 
