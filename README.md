@@ -690,38 +690,11 @@ The MCP Weather Server implements a **modern dual-transport strategy** with perf
 
 The server uses **two different technologies** that serve **completely different architectural layers**:
 
-```
-┌─────────────────────────────────────────────────┐
-│              CLIENT LAYER                       │
-│        AI Assistants & Remote APIs             │
-└─────────────────┬───────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────┐
-│    🌐 FASTIFY (Transport Layer)                │
-│  • HTTP web server framework                   │
-│  • Routing (/mcp, /health endpoints)          │
-│  • Session management & connections            │
-│  • HTTP headers, CORS, middleware              │
-│  • Network-level concerns only                 │
-│  • Transport-specific (HTTP only)              │
-└─────────────────┬───────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────┐
-│    🧠 McpServer (Protocol Layer)               │
-│  • MCP protocol specification handler          │
-│  • Tool registration & schema validation       │
-│  • JSON-RPC 2.0 message format handling        │
-│  • Protocol-agnostic (works with any transport)│
-│  • Business logic orchestration                │
-└─────────────────┬───────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────┐
-│    🌤️ WeatherService (Business Layer)          │
-│  • Weather APIs & domain logic                 │
-│  • Data transformation & caching               │
-│  • External API integration                    │
-└─────────────────────────────────────────────────┘
-```
+---
+
+![Transport Strategy](./img/transport-strategy.png)
+
+---
 
 **Key Differences:**
 
