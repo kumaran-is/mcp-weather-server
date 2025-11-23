@@ -685,50 +685,12 @@ src/
 
 ### 🏗️ Perfect 3-Layer SOLID Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CLIENT LAYER                             │
-│ AI Assistants (Cline, Claude) | AI Agents (Streamable HTTP) │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────────────┐
-│          🎯 LAYER 1: TRANSPORT & INFRASTRUCTURE            │
-│                    (server.ts)                             │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Fastify Server | Session Management | Health Checks │    │
-│  │ Stdio Transport | Streamable HTTP | Error Boundaries │    │
-│  └─────────────────────────────────────────────────────┘    │
-│  ✅ ZERO business logic - Pure infrastructure concerns      │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────────────┐
-│        🧠 LAYER 2: PROTOCOL & MCP SDK (MODERNIZED)         │
-│                 (mcp-server.ts)                            │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ McpServer | registerTool() | Zod Validation         │    │
-│  │ Latest SDK Patterns | MCP v2025-06-18 Compliance   │    │
-│  └─────────────────────────────────────────────────────┘    │
-│  ✅ ZERO business logic - Pure protocol adapter             │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────────────┐
-│         🌤️ LAYER 3: BUSINESS & DOMAIN LOGIC                │
-│                (weather-service.ts)                        │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Weather APIs | LRU Caching | Data Transformation   │    │
-│  │ Domain Objects | Custom Errors | Resilience Logic  │    │
-│  └─────────────────────────────────────────────────────┘    │
-│  ✅ ZERO protocol concerns - Pure domain focus              │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────────────┐
-│              INFRASTRUCTURE LAYER                           │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Undici Resilience | External APIs | Logging         │    │
-│  │ Circuit Breaker | Retry | Rate Limit | Monitoring   │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-```
+---
+
+![Overall](./img/detail-architetcure.png)
+
+---
+
 
 **🎯 SOLID Principles: 100% Compliance**
 - **Single Responsibility**: Each layer has exactly one purpose
