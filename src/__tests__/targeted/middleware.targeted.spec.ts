@@ -72,23 +72,24 @@ describe('Middleware Targeted Coverage Tests', () => {
     it('should create RateLimitManager instance', async () => {
       const { RateLimitManager } = await import('../../middleware/rate-limit');
 
-      const manager = new RateLimitManager({
-        max: 10,
-        window: 1000
-      });
+      const manager = new RateLimitManager();
 
       expect(manager).toBeDefined();
-      expect(manager.isRateLimited).toBeDefined();
-      expect(manager.reset).toBeDefined();
+      expect(manager.checkRateLimit).toBeDefined();
+      expect(manager.resetRateLimit).toBeDefined();
+      expect(manager.getRateLimitStatus).toBeDefined();
     });
 
-    it('should check rate limiting health', async () => {
-      const { checkRateLimiterHealth } = await import('../../middleware/rate-limit');
+    it('should create rate limiting middleware', async () => {
+      const { createRateLimitMiddleware, createAdaptiveRateLimitMiddleware, createBurstProtectionMiddleware } = await import('../../middleware/rate-limit');
 
-      const health = await checkRateLimiterHealth();
-      expect(health).toBeDefined();
-      expect(health.status).toBeDefined();
-      expect(['healthy', 'degraded', 'unhealthy']).toContain(health.status);
+      const standard = createRateLimitMiddleware();
+      const adaptive = createAdaptiveRateLimitMiddleware();
+      const burst = createBurstProtectionMiddleware();
+
+      expect(typeof standard).toBe('function');
+      expect(typeof adaptive).toBe('function');
+      expect(typeof burst).toBe('function');
     });
   });
 

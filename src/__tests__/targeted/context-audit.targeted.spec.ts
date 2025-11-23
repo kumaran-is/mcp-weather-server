@@ -125,9 +125,12 @@ describe('Audit Logger Targeted Coverage Tests', () => {
 
       const logger = new AuditLogger();
       expect(logger).toBeDefined();
-      expect(logger.logEvent).toBeDefined();
-      expect(logger.logSecurityEvent).toBeDefined();
+      expect(logger.log).toBeDefined();
+      expect(logger.logSecurity).toBeDefined();
       expect(logger.logDataAccess).toBeDefined();
+      expect(logger.query).toBeDefined();
+      expect(logger.export).toBeDefined();
+      expect(logger.getStatistics).toBeDefined();
     });
 
     it('should log audit events', async () => {
@@ -136,13 +139,16 @@ describe('Audit Logger Targeted Coverage Tests', () => {
       const logger = new AuditLogger();
 
       expect(() => {
-        logger.logEvent({
-          category: 'system',
-          action: 'startup',
-          severity: 'info',
-          userId: 'system',
-          metadata: { version: '1.0.0' }
-        });
+        logger.log(
+          'startup',
+          'system',
+          'system',
+          'low',
+          'success',
+          'system',
+          {},
+          { version: '1.0.0' }
+        );
       }).not.toThrow();
     });
 
@@ -152,13 +158,13 @@ describe('Audit Logger Targeted Coverage Tests', () => {
       const logger = new AuditLogger();
 
       expect(() => {
-        logger.logSecurityEvent({
-          category: 'authentication',
-          action: 'login',
-          severity: 'info',
-          userId: 'test-user',
-          metadata: { ip: '127.0.0.1' }
-        });
+        logger.logSecurity(
+          'login',
+          'user-account',
+          'success',
+          'test-user',
+          { ip: '127.0.0.1' }
+        );
       }).not.toThrow();
     });
 
@@ -168,13 +174,13 @@ describe('Audit Logger Targeted Coverage Tests', () => {
       const logger = new AuditLogger();
 
       expect(() => {
-        logger.logDataAccess({
-          userId: 'test-user',
-          action: 'read',
-          resource: 'weather-data',
-          resourceId: 'london',
-          metadata: {}
-        });
+        logger.logDataAccess(
+          'read',
+          'weather-data',
+          'success',
+          'test-user',
+          { resourceId: 'london' }
+        );
       }).not.toThrow();
     });
 
@@ -183,15 +189,18 @@ describe('Audit Logger Targeted Coverage Tests', () => {
 
       const logger = new AuditLogger();
 
-      logger.logEvent({
-        category: 'system',
-        action: 'test',
-        severity: 'info',
-        userId: 'test',
-        metadata: {}
-      });
+      logger.log(
+        'test',
+        'test-resource',
+        'system',
+        'low',
+        'success',
+        'test',
+        {},
+        {}
+      );
 
-      const stats = logger.getStats();
+      const stats = logger.getStatistics();
       expect(stats).toBeDefined();
       expect(stats.totalEvents).toBeDefined();
       expect(typeof stats.totalEvents).toBe('number');
@@ -202,17 +211,19 @@ describe('Audit Logger Targeted Coverage Tests', () => {
 
       const logger = new AuditLogger();
 
-      logger.logEvent({
-        category: 'system',
-        action: 'query-test',
-        severity: 'info',
-        userId: 'test-user',
-        metadata: {}
-      });
+      logger.log(
+        'query-test',
+        'test-resource',
+        'system',
+        'low',
+        'success',
+        'test-user',
+        {},
+        {}
+      );
 
       const events = logger.query({
-        category: 'system',
-        limit: 10
+        category: 'system'
       });
 
       expect(Array.isArray(events)).toBe(true);
@@ -223,13 +234,16 @@ describe('Audit Logger Targeted Coverage Tests', () => {
 
       const logger = new AuditLogger();
 
-      logger.logEvent({
-        category: 'system',
-        action: 'export-test',
-        severity: 'info',
-        userId: 'test',
-        metadata: {}
-      });
+      logger.log(
+        'export-test',
+        'test-resource',
+        'system',
+        'low',
+        'success',
+        'test',
+        {},
+        {}
+      );
 
       const exported = logger.export({}, 'json');
       expect(exported).toBeDefined();
