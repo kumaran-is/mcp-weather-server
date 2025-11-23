@@ -138,6 +138,12 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 
 ---
 
+![Overall](./img/architecture.png)
+
+---
+
+---
+
 ![Overall](./img/3-layer-architecture.png)
 
 ---
