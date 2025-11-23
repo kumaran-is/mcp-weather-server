@@ -222,10 +222,10 @@ describe('Server Startup Comprehensive Tests', () => {
       const serverConfig = config.getServerConfig();
 
       expect(serverConfig).toBeDefined();
-      expect(serverConfig.port).toBeDefined();
-      expect(typeof serverConfig.port).toBe('number');
-      expect(serverConfig.host).toBeDefined();
-      expect(typeof serverConfig.host).toBe('string');
+      expect(serverConfig.httpPort).toBeDefined();
+      expect(typeof serverConfig.httpPort).toBe('number');
+      expect(serverConfig.transport).toBeDefined();
+      expect(['stdio', 'http']).toContain(serverConfig.transport);
     });
 
     it('should have valid API configuration', async () => {
@@ -242,7 +242,10 @@ describe('Server Startup Comprehensive Tests', () => {
       const securityConfig = config.getSecurityConfig();
 
       expect(securityConfig).toBeDefined();
-      expect(securityConfig.enableAuth).toBeDefined();
+      expect(securityConfig.allowedOrigins).toBeDefined();
+      expect(Array.isArray(securityConfig.allowedOrigins)).toBe(true);
+      expect(securityConfig.monitoring).toBeDefined();
+      expect(securityConfig.rateLimiting).toBeDefined();
     });
   });
 

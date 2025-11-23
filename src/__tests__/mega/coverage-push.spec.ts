@@ -454,7 +454,7 @@ describe('Mega Coverage Push - Audit Logger', () => {
     it('should execute all audit logging methods', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       // Log events with all combinations
       const categories = ['system', 'authentication', 'authorization', 'data', 'configuration', 'security'] as const;

@@ -359,22 +359,21 @@ describe('Middleware Execution Tests - Validation', () => {
   });
 
   describe('Input Sanitization', () => {
-    it('should sanitize various input types', async () => {
+    it('should sanitize various input strings', async () => {
       const { sanitizeInput } = await import('../../middleware/validation');
 
       const inputs = [
-        { city: 'London' },
-        { lat: 51.5074, lon: -0.1278 },
-        { query: 'weather forecast' },
-        { units: 'metric' },
-        { lang: 'en' },
-        { days: 7 },
-        { format: 'json' },
+        'London',
+        'weather forecast',
+        'metric',
+        'en',
+        'json',
       ];
 
       for (const input of inputs) {
         const sanitized = sanitizeInput(input);
         expect(sanitized).toBeDefined();
+        expect(typeof sanitized).toBe('string');
       }
     });
 
@@ -382,15 +381,16 @@ describe('Middleware Execution Tests - Validation', () => {
       const { sanitizeInput } = await import('../../middleware/validation');
 
       const specialInputs = [
-        { city: "London'; DROP TABLE--" },
-        { city: '<script>alert(1)</script>' },
-        { query: '../../etc/passwd' },
-        { text: '你好世界' },
+        "London'; DROP TABLE--",
+        '<script>alert(1)</script>',
+        '../../etc/passwd',
+        '你好世界',
       ];
 
       for (const input of specialInputs) {
         const sanitized = sanitizeInput(input);
         expect(sanitized).toBeDefined();
+        expect(typeof sanitized).toBe('string');
       }
     });
   });
@@ -463,14 +463,17 @@ describe('Middleware Integration Tests', () => {
     const sanitized = sanitization.sanitizeResponse({ test: 'data' });
     expect(sanitized).toBeDefined();
 
-    const validated = validation.validateJSONRPC({
-      jsonrpc: '2.0',
-      method: 'test',
-      id: 1
-    });
-    expect(validated).toBeDefined();
+    // validateJSONRPC returns void, throws on error
+    expect(() => {
+      validation.validateJSONRPC({
+        jsonrpc: '2.0',
+        method: 'test',
+        id: 1
+      });
+    }).not.toThrow();
 
-    const input = validation.sanitizeInput({ city: 'London' });
+    const input = validation.sanitizeInput('London');
     expect(input).toBeDefined();
+    expect(typeof input).toBe('string');
   });
 });

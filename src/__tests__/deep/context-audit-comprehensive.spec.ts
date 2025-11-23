@@ -187,7 +187,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should log all event categories and severities', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       const categories = ['system', 'authentication', 'authorization', 'data', 'configuration', 'security'] as const;
       const severities = ['low', 'medium', 'high', 'critical'] as const;
@@ -229,7 +229,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should log security events with various patterns', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       const securityScenarios = [
         { category: 'authentication' as const, action: 'login_success', severity: 'low' as const },
@@ -276,7 +276,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should log data access events for all operations', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       const resources = ['weather-data', 'forecast-data', 'user-data', 'config-data', 'system-logs'];
       const actions: Array<'read' | 'write' | 'delete' | 'export'> = ['read', 'write', 'delete', 'export'];
@@ -312,7 +312,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should query events with various filters', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       // Log diverse events
       for (let i = 0; i < 50; i++) {
@@ -345,7 +345,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should export events in all formats', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       // Log some events
       for (let i = 0; i < 20; i++) {
@@ -388,7 +388,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should handle statistics generation', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       // Generate diverse events for stats
       const categories = ['system', 'authentication', 'data', 'security'] as const;
@@ -433,7 +433,7 @@ describe('Audit Logger Comprehensive Tests', () => {
     it('should handle edge cases in logging', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       // Log with minimal data
       logger.log(

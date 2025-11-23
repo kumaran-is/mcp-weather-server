@@ -97,7 +97,7 @@ describe('Execution Path Tests', () => {
     it('should execute complete audit logging workflow', async () => {
       const { AuditLogger } = await import('../../audit/audit-logger');
 
-      const logger = new AuditLogger();
+      const logger = new AuditLogger({ enabled: true });
 
       // Log various event types
       const eventTypes = [
