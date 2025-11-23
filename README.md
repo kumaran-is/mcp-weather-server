@@ -17,12 +17,19 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 [![Performance](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/performance.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/performance.yml)
 [![Release](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml/badge.svg)](https://github.com/kumaran-is/mcp-weather-server/actions/workflows/release.yml)
 
+---
+
+![Overall](./img/overall.png)
+
+---
+
 ## 📋 Table of Contents
 
 - [MCP Weather Server](#mcp-weather-server)
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Features](#-features)
   - [🛠️ Technology Stack](#️-technology-stack)
+  - [🏗️ 3-Layer SOLID MCP Architecture:](#️-3-layer-solid-mcp-architecture)
   - [📊 Data Flow](#-data-flow)
   - [🏗️ MCP Weather Server - Overview](#️-mcp-weather-server---overview)
   - [🚀 Quick Start](#-quick-start)
@@ -126,6 +133,14 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 | [**Open-Meteo API**](https://open-meteo.com/) | N/A | Free weather data provider |
 
 > **Note**: The project includes an advanced `undici-resilience` package that enhances the standard undici client with enterprise-grade resilience patterns including circuit breakers, retry strategies, rate limiting, and comprehensive monitoring. This ensures reliable weather API calls even under adverse conditions.
+
+## 🏗️ 3-Layer SOLID MCP Architecture:
+
+---
+
+![Overall](./img/3-layer-architecture.png)
+
+---
 
 ## 📊 Data Flow
 
