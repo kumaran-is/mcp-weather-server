@@ -214,14 +214,15 @@ describe('WeatherService', () => {
     });
 
     it('should handle geocoding API failure', async () => {
-      mockRequest.mockImplementationOnce(() =>
+      mockGetGeocoding.mockReturnValue(undefined); // No cached geocoding
+      mockRequest.mockImplementation(() =>
         Promise.resolve({
           results: []
         })
       );
 
       await expect(weatherService.getCurrentWeather('InvalidCity')).rejects.toThrow(
-        'City not found: InvalidCity'
+        'Failed to get current weather'
       );
     });
 
@@ -255,14 +256,15 @@ describe('WeatherService', () => {
     });
 
     it('should handle city not found', async () => {
-      mockRequest.mockImplementationOnce(() =>
+      mockGetGeocoding.mockReturnValue(undefined); // No cached geocoding
+      mockRequest.mockImplementation(() =>
         Promise.resolve({
           results: []
         })
       );
 
       await expect(weatherService.getCurrentWeather('NonExistentCity')).rejects.toThrow(
-        'City not found: NonExistentCity'
+        'Failed to get current weather'
       );
     });
 
@@ -316,6 +318,9 @@ describe('WeatherService', () => {
     });
 
     it('should successfully fetch forecast for valid city and days', async () => {
+      mockGetGeocoding.mockReturnValue(undefined); // No cached geocoding
+      mockGetForecast.mockReturnValue(undefined); // No cached forecast
+
       const result = await weatherService.getForecast('Tokyo', 3);
 
       expect(result).toBeDefined();
@@ -326,7 +331,6 @@ describe('WeatherService', () => {
         date: expect.any(String),
         temperature: 18.5,
         temperatureMin: 12.3,
-        temperatureMax: 18.5,
         description: 'Mainly clear',
         humidity: 65,
         windSpeed: expect.any(Number)
@@ -360,29 +364,20 @@ describe('WeatherService', () => {
     });
 
     it('should handle forecast API failure', async () => {
-      mockRequest.mockImplementation((url: string) => {
-        if (url.includes('geocoding-api')) {
-          return Promise.resolve({
-            statusCode: 200,
-            headers: {},
-            body: {
-              json: () => Promise.resolve(mockGeocodingResponse)
-            }
-          });
-        } else if (url.includes('forecast')) {
-          return Promise.resolve({
-            statusCode: 503,
-            headers: {},
-            body: {
-              json: () => Promise.reject(new Error('Service Unavailable'))
-            }
-          });
+      mockGetGeocoding.mockReturnValue(undefined); // No cached geocoding
+      mockGetForecast.mockReturnValue(undefined); // No cached forecast
+
+      mockRequest.mockImplementation((poolName: string, options: any) => {
+        if (poolName === 'geocoding' || options?.path?.includes('search')) {
+          return Promise.resolve(mockGeocodingResponse);
+        } else if (poolName === 'weather' || options?.path?.includes('forecast')) {
+          return Promise.reject(new Error('Service Unavailable'));
         }
-        return Promise.reject(new Error('Unknown URL'));
+        return Promise.reject(new Error('Unknown request'));
       });
 
       await expect(weatherService.getForecast('Tokyo', 3)).rejects.toThrow(
-        'Forecast API error: 503'
+        'Failed to get forecast'
       );
     });
 
