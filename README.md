@@ -52,7 +52,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
     - [**Expected Error Behaviors:**](#expected-error-behaviors)
   - [Directory Structure](#directory-structure)
   - [🏗️ Architecture \& Design](#️-architecture--design)
-    - [🏗️ Perfect 3-Layer SOLID Architecture](#️-perfect-3-layer-solid-architecture)
+    - [Perfect 3-Layer SOLID Architecture](#perfect-3-layer-solid-architecture)
     - [Transport Strategy](#transport-strategy)
       - [McpServer vs Fastify - Architectural Layers](#mcpserver-vs-fastify---architectural-layers)
       - [Transport Decision Matrix](#transport-decision-matrix)
@@ -683,7 +683,7 @@ src/
 
 ## 🏗️ Architecture & Design
 
-### 🏗️ Perfect 3-Layer SOLID Architecture
+### Perfect 3-Layer SOLID Architecture
 
 ---
 
