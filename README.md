@@ -54,7 +54,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
   - [🏗️ Architecture \& Design](#️-architecture--design)
     - [Perfect 3-Layer SOLID Architecture](#perfect-3-layer-solid-architecture)
     - [Transport Strategy](#transport-strategy)
-      - [McpServer vs Fastify - Architectural Layers](#mcpserver-vs-fastify---architectural-layers)
+      - [Fastify Web Server (Transport Layer) vs MCP Server (Protocol Layer) - Architectural Layers](#fastify-web-server-transport-layer-vs-mcp-server-protocol-layer---architectural-layers)
       - [Transport Decision Matrix](#transport-decision-matrix)
     - [System Flow](#system-flow)
       - [Streamable HTTP Transport Sequence Diagram](#streamable-http-transport-sequence-diagram)
@@ -690,11 +690,17 @@ The MCP Weather Server implements a **modern dual-transport strategy** with perf
 
 **Architecture Evolution (v2.5.0):** The server now uses the **latest MCP SDK patterns** with `McpServer` and `registerTool()` for significantly simplified code, better type safety, and automatic protocol compliance while maintaining the clean dual-transport architecture.
 
-#### McpServer vs Fastify - Architectural Layers
+#### Fastify Web Server (Transport Layer) vs MCP Server (Protocol Layer) - Architectural Layers
 
 **Why Both Are Needed:**
 
 The server uses **two different technologies** that serve **completely different architectural layers**:
+
+---
+
+![Transport Layer - Protocol Layer](./img/transport-protocol-layer.png)
+
+---
 
 ---
 
