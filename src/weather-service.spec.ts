@@ -483,7 +483,7 @@ describe('WeatherService', () => {
     });
 
     it('should handle date formatting correctly', () => {
-      const testDate = new Date('2025-01-08');
+      const testDate = new Date(2025, 0, 8); // Month is 0-indexed, so 0 = January
       const formatted = testDate.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
