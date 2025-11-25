@@ -31,7 +31,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
   - [🛠️ Technology Stack](#️-technology-stack)
   - [🏗️ 3-Layer SOLID MCP Architecture:](#️-3-layer-solid-mcp-architecture)
   - [📊 Data Flow](#-data-flow)
-  - [Request Lifecycle](#request-lifecycle)
+  - [🔄 Request Lifecycle](#-request-lifecycle)
   - [🏗️ MCP Weather Server - Overview](#️-mcp-weather-server---overview)
   - [🚀 Quick Start](#-quick-start)
     - [Prerequisites](#prerequisites)
@@ -153,7 +153,7 @@ An **Enterprise-grade Model Context Protocol (MCP)** server that provides weathe
 
 ![Data Flow Diagram](./img/data-flow.png)
 
-## Request Lifecycle
+## 🔄 Request Lifecycle
 
 ![Request Lifecycle Diagram](./img/mcp-request-lifecycle.png)
 
