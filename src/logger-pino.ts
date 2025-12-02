@@ -5,8 +5,11 @@
 
 import * as pino from 'pino';
 import type { Logger as PinoLogger } from 'pino';
-import { getConfig } from './config/config';
-import { VERSION } from './utils/version';
+import { createRequire } from 'module';
+import { getConfig } from './config/config.js';
+import { VERSION } from './utils/version.js';
+
+const require = createRequire(import.meta.url);
 
 // Logger configuration types
 export interface LoggerConfig {
@@ -18,6 +21,18 @@ export interface LoggerConfig {
 export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 export interface LogContext {
   [key: string]: any;
+}
+
+/**
+ * Check if pino-pretty is available
+ */
+function isPinoPrettyAvailable(): boolean {
+  try {
+    require.resolve('pino-pretty');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -65,7 +80,8 @@ function createPinoLogger(): PinoLogger {
   };
 
   // Add pretty printing in development (but not when using stdio transport)
-  if (isDevelopment && !isStdioTransport) {
+  // Only use pino-pretty if available (it's a dev dependency)
+  if (isDevelopment && !isStdioTransport && isPinoPrettyAvailable()) {
     options.transport = {
       target: 'pino-pretty',
       options: {

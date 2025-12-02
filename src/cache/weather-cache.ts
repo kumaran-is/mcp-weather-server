@@ -4,9 +4,9 @@
  */
 
 import { LRUCache } from 'lru-cache';
-import { WeatherData, ForecastData } from '../types';
-import { logger } from '../logger-pino';
-import { CacheError } from '../errors/weather-errors';
+import { WeatherData, ForecastData } from '../types.js';
+import { logger } from '../logger-pino.js';
+import { CacheError } from '../errors/weather-errors.js';
 
 export interface CacheConfig {
   /** Maximum number of items in cache */

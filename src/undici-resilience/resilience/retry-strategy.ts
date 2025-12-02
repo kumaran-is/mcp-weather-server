@@ -3,7 +3,7 @@
  * Implements intelligent retry logic to prevent thundering herd problems
  */
 
-import { logger } from '../../logger-pino';
+import { logger } from '../../logger-pino.js';
 
 export interface RetryConfig {
   maxRetries: number;

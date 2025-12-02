@@ -1,12 +1,12 @@
-import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types';
-import { poolManager } from './undici-resilience/index';
-import { logger } from './logger-pino';
-import { weatherCache } from './cache/weather-cache';
-import { GeocodingError, WeatherAPIError } from './errors/weather-errors';
-import { VERSION, NAME } from './utils/version';
-import { Bulkhead, bulkheadManager } from './undici-resilience/resilience/bulkhead';
-import { RateLimiter, rateLimiterManager } from './undici-resilience/resilience/rate-limiter';
-import { RetryStrategy, RetryStrategies } from './undici-resilience/resilience/retry-strategy';
+import { WeatherData, ForecastData, GeocodingResult, WeatherAPIResponse, GeocodingAPIResponse } from './types.js';
+import { poolManager } from './undici-resilience/index.js';
+import { logger } from './logger-pino.js';
+import { weatherCache } from './cache/weather-cache.js';
+import { GeocodingError, WeatherAPIError } from './errors/weather-errors.js';
+import { VERSION, NAME } from './utils/version.js';
+import { Bulkhead, bulkheadManager } from './undici-resilience/resilience/bulkhead.js';
+import { RateLimiter, rateLimiterManager } from './undici-resilience/resilience/rate-limiter.js';
+import { RetryStrategy, RetryStrategies } from './undici-resilience/resilience/retry-strategy.js';
 
 /**
  * Enhanced weather service with advanced resilience patterns

@@ -5,10 +5,10 @@
 
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
-import { config } from '../config/auth-config';
-import { generateRateLimitKey } from '../security/sanitizer';
-import { logger } from '../logger-pino';
-import { AuthenticatedRequest } from './auth';
+import { config } from '../config/auth-config.js';
+import { generateRateLimitKey } from '../security/sanitizer.js';
+import { logger } from '../logger-pino.js';
+import { AuthenticatedRequest } from './auth.js';
 
 /**
  * Rate limiter configuration interface

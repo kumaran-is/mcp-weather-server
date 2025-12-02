@@ -11,16 +11,16 @@ console.log = () => {};  // Temporarily disable console.log
 import 'dotenv/config';
 console.log = originalLog;  // Restore console.log
 import Fastify from 'fastify';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
-import { WeatherMCPServer } from './mcp-server';
-import { logger } from './logger-pino';
-import { getConfig } from './config/config';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { WeatherMCPServer } from './mcp-server.js';
+import { logger } from './logger-pino.js';
+import { getConfig } from './config/config.js';
 import { randomUUID } from 'node:crypto';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types';
-import { securityManager } from './security/sanitizer';
-import { securityMonitor } from './security/security-monitor';
-import { auditLogger } from './audit/audit-logger';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { securityManager } from './security/sanitizer.js';
+import { securityMonitor } from './security/security-monitor.js';
+import { auditLogger } from './audit/audit-logger.js';
 
 // Extend Fastify types for security context
 declare module 'fastify' {
@@ -395,7 +395,7 @@ export async function main() {
         logger.info('Shutting down gracefully');
         
         // Stop metrics collection
-        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics');
+        const { streamingMetricsCollector } = await import('./undici-resilience/streaming/streaming-metrics.js');
         streamingMetricsCollector.cleanup();
         
         // Close all transports
@@ -447,8 +447,8 @@ export async function main() {
 }
 
 // Only run main if this is the entry point (not imported as a module)
-// In CommonJS, check if require.main === module
-if (require.main === module) {
+// ESM equivalent of require.main === module
+if (import.meta.url === `file://${process.argv[1]}`) {
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
     logger.fatal('Uncaught exception in main process', { error: (error as Error).message });

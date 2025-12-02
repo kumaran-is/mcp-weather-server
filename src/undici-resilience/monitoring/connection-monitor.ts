@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { logger } from '../../logger-pino';
-import { metricsCollector, PoolMetrics } from './metrics';
+import { logger } from '../../logger-pino.js';
+import { metricsCollector, PoolMetrics } from './metrics.js';
 
 export interface ConnectionEvent {
   poolName: string;
