@@ -3,8 +3,8 @@
  * Prevents overwhelming external services and ensures fair resource usage
  */
 
-import { logger } from '../../logger-pino';
-import { DEFAULT_RATE_LIMITER_CONFIG, DEFAULT_TOKEN_BUCKET_CONFIG } from '../config/pool-config';
+import { logger } from '../../logger-pino.js';
+import { DEFAULT_RATE_LIMITER_CONFIG, DEFAULT_TOKEN_BUCKET_CONFIG } from '../config/pool-config.js';
 
 export interface RateLimitConfig {
   /** Maximum requests per time window */

@@ -4,9 +4,9 @@
  */
 
 import { EventEmitter } from 'events';
-import { logger } from '../logger-pino';
-import { auditLogger } from '../audit/audit-logger';
-import { getSecurityConfig } from '../config/config';
+import { logger } from '../logger-pino.js';
+import { auditLogger } from '../audit/audit-logger.js';
+import { getSecurityConfig } from '../config/config.js';
 
 export interface SecurityThreat {
   id: string;

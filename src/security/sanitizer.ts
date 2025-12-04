@@ -5,7 +5,7 @@
 
 import { JSDOM } from 'jsdom';
 import DOMPurify from 'dompurify';
-import { logger } from '../logger-pino';
+import { logger } from '../logger-pino.js';
 
 /**
  * Security manager for input sanitization and validation

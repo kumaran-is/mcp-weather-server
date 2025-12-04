@@ -3,7 +3,7 @@
  * Ensures optimal performance and prevents memory issues during high-throughput streaming
  */
 
-import { logger } from '../../logger-pino';
+import { logger } from '../../logger-pino.js';
 import { EventEmitter } from 'events';
 
 export interface BackpressureConfig {
